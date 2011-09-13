@@ -18,7 +18,7 @@ HWND MainGui::hWndParent = 0;
 HWND MainGui::hWndMainDlg = 0;
 Process * MainGui::selectedProcess = 0;
 
-WCHAR MainGui::stringBuffer[300] = {0};
+WCHAR MainGui::stringBuffer[600] = {0};
 
 ProcessLister MainGui::processLister;
 ImportsHandling MainGui::importsHandling;
@@ -46,7 +46,7 @@ void MainGui::initDialog(HINSTANCE hInstance)
 
 	//Register controls, required for Windows XP
 	InitCommonControls();
-	return;
+
 	DialogBox(hInstance, MAKEINTRESOURCE(IDD_DLG_MAIN),hWndParent, (DLGPROC)mainDlgProc);
 
 	//ConfigurationHolder::saveConfiguration();
@@ -165,16 +165,16 @@ LRESULT CALLBACK MainGui::mainDlgProc(HWND hWndDlg, UINT uMsg, WPARAM wParam, LP
 		case IDC_BTN_CLEARLOG:
 			clearOutputLog();
 			return TRUE;
-		case IDC_BTN_ABOUT:
+		/*case IDC_BTN_ABOUT:
 			showAboutDialog();
-			return TRUE;
+			return TRUE;*/
 		case ID_HELP_ABOUT:
 			showAboutDialog();
 			return TRUE;
-		case IDC_BTN_EXIT:
+		/*case IDC_BTN_EXIT:
 			PostQuitMessage(0);
 			EndDialog(hWndDlg, 0);
-			return TRUE;
+			return TRUE;*/
 		case ID_FILE_EXIT:
 			PostQuitMessage(0);
 			EndDialog(hWndDlg, 0);
@@ -483,7 +483,7 @@ void MainGui::DisplayContextMenuImports(HWND hwnd, POINT pt)
 {
 	BOOL menuItem = 0;
 	HTREEITEM selectedTreeNode = 0;
-	std::vector<Plugin> &pluginList = PluginLoader::getPluginList();
+	std::vector<Plugin> &pluginList = PluginLoader::getScyllaPluginList();
 	HMENU hmenuTrackPopup = getCorrectSubMenu(IDR_MENU_IMPORTS, 0);
 
 	appendPluginListToMenu(hmenuTrackPopup);
@@ -494,18 +494,12 @@ void MainGui::DisplayContextMenuImports(HWND hwnd, POINT pt)
 		if (menuItem)
 		{
 
-			if ((menuItem >= PLUGIN_MENU_BASE_ID) && (menuItem <= (int)(pluginList.size() + PLUGIN_MENU_BASE_ID)))
+			if ((menuItem >= PLUGIN_MENU_BASE_ID) && (menuItem <= (int)(PluginLoader::getScyllaPluginList().size() + PluginLoader::getImprecPluginList().size() + PLUGIN_MENU_BASE_ID)))
 			{
 				//wsprintf(stringBuffer, L"%d %s\n",menuItem,pluginList[menuItem - PLUGIN_MENU_BASE_ID].pluginName);
 				//MessageBox(0,stringBuffer,L"plugin selection",0);
 
-				DllInjectionPlugin dllInjectionPlugin;
-				dllInjectionPlugin.hProcess = ProcessAccessHelp::hProcess;
-				dllInjectionPlugin.apiReader = &apiReader;
-				dllInjectionPlugin.injectPlugin(pluginList[menuItem - PLUGIN_MENU_BASE_ID], importsHandling.moduleList,selectedProcess->imageBase, selectedProcess->imageSize);
-				
-				importsHandling.scanAndFixModuleList();
-				importsHandling.displayAllImports();
+				pluginActionHandler(menuItem);
 				return;
 			}
 
@@ -641,17 +635,31 @@ void MainGui::appendPluginListToMenu(HMENU hMenuTrackPopup)
 {
 	HMENU newMenu = CreatePopupMenu();
 	
-	std::vector<Plugin> &pluginList = PluginLoader::getPluginList();
+	std::vector<Plugin> &scyllaPluginList = PluginLoader::getScyllaPluginList();
+	std::vector<Plugin> &imprecPluginList = PluginLoader::getImprecPluginList();
 
-	if (pluginList.size() > 0)
+	if (scyllaPluginList.size() > 0)
 	{
-		for (size_t i = 0; i < pluginList.size(); i++)
+		for (size_t i = 0; i < scyllaPluginList.size(); i++)
 		{
-			AppendMenu(newMenu, MF_STRING, i + PLUGIN_MENU_BASE_ID, pluginList[i].pluginName);
+			AppendMenu(newMenu, MF_STRING, i + PLUGIN_MENU_BASE_ID, scyllaPluginList[i].pluginName);
 		}
 
 		AppendMenu(hMenuTrackPopup,MF_MENUBARBREAK,0,0);
-		AppendMenu(hMenuTrackPopup,MF_POPUP,(UINT_PTR)newMenu,TEXT("Plugins"));
+		AppendMenu(hMenuTrackPopup,MF_POPUP,(UINT_PTR)newMenu,TEXT("Scylla Plugins"));
+	}
+
+	newMenu = CreatePopupMenu();
+
+	if (imprecPluginList.size() > 0)
+	{
+		for (size_t i = 0; i < imprecPluginList.size(); i++)
+		{
+			AppendMenu(newMenu, MF_STRING, scyllaPluginList.size() + i + PLUGIN_MENU_BASE_ID, imprecPluginList[i].pluginName);
+		}
+
+		AppendMenu(hMenuTrackPopup,MF_MENUBARBREAK,0,0);
+		AppendMenu(hMenuTrackPopup,MF_POPUP,(UINT_PTR)newMenu,TEXT("ImpREC Plugins"));
 	}
 
 }
@@ -797,7 +805,15 @@ void MainGui::dumpFixActionHandler()
 			}
 		}
 
-		wcscat_s(newFilePath,MAX_PATH, L"_SCY.exe");
+		if (processAccessHelp.selectedModule)
+		{
+			wcscat_s(newFilePath,MAX_PATH, L"_SCY.dll");
+		}
+		else
+		{
+			wcscat_s(newFilePath,MAX_PATH, L"_SCY.exe");
+		}
+		
 
 		if (importRebuild.rebuildImportTable(targetFile,newFilePath,importsHandling.moduleList))
 		{
@@ -877,4 +893,38 @@ void MainGui::dllInjectActionHandler()
 void MainGui::optionsActionHandler()
 {
 	OptionsGui::initOptionsDialog(hInstance, hWndMainDlg);
+}
+
+void MainGui::pluginActionHandler( int menuItem )
+{
+	DllInjectionPlugin dllInjectionPlugin;
+
+	std::vector<Plugin> &scyllaPluginList = PluginLoader::getScyllaPluginList();
+	std::vector<Plugin> &imprecPluginList = PluginLoader::getImprecPluginList();
+
+	menuItem -= PLUGIN_MENU_BASE_ID;
+
+	dllInjectionPlugin.hProcess = ProcessAccessHelp::hProcess;
+	dllInjectionPlugin.apiReader = &apiReader;
+
+	if (menuItem < (int)scyllaPluginList.size())
+	{
+		//scylla plugin
+		dllInjectionPlugin.injectPlugin(scyllaPluginList[menuItem], importsHandling.moduleList,selectedProcess->imageBase, selectedProcess->imageSize);
+	}
+	else
+	{
+#ifndef _WIN64
+
+		menuItem -= (int)scyllaPluginList.size();
+		//imprec plugin
+		dllInjectionPlugin.injectImprecPlugin(imprecPluginList[menuItem], importsHandling.moduleList,selectedProcess->imageBase, selectedProcess->imageSize);
+
+#endif
+	}
+
+
+
+	importsHandling.scanAndFixModuleList();
+	importsHandling.displayAllImports();
 }

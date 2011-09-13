@@ -43,7 +43,7 @@ protected:
 
 	static HINSTANCE hInstance;
 	static ProcessLister processLister;
-	static WCHAR stringBuffer[300];
+	static WCHAR stringBuffer[600];
 
 	static ImportsHandling importsHandling;
 	static ProcessAccessHelp processAccessHelp;
@@ -92,4 +92,5 @@ private:
 	static void showAboutDialog();
 	static void dllInjectActionHandler();
 	static void optionsActionHandler();
+	static void pluginActionHandler( int menuItem );
 };

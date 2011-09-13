@@ -615,6 +615,10 @@ void ApiReader::setModulePriority(ModuleInfo * module)
 	{
 		module->priority = 0;
 	}
+	else if (!_wcsicmp(moduleFileName, TEXT("ShimEng.dll")))
+	{
+		module->priority = 0;
+	}
 	else if (!_wcsicmp(moduleFileName, TEXT("kernel32.dll")))
 	{
 		module->priority = 2;
@@ -677,14 +681,14 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 		}
 		else if (countHighPriority == 1)
 		{
-			//API is 100% correct if countHighPriority == 1
+			//API is 100% correct if countHighPriority == 1 and name export
 
 			*isSuspect = false;
 			for (c = 0; c < countDuplicates; c++, it1++)
 			{
 				apiFound = (ApiInfo *)((*it1).second);
 
-				if (apiFound->module->priority >= 1) //1 == high priority
+				if (apiFound->module->priority >= 1 && apiFound->name[0] != 0x00) //1 == high priority
 				{
 					return apiFound;
 				}

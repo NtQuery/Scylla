@@ -68,6 +68,45 @@ void DllInjectionPlugin::injectPlugin(Plugin & plugin, std::map<DWORD_PTR, Impor
 	closeAllHandles();
 }
 
+void DllInjectionPlugin::injectImprecPlugin(Plugin & plugin, std::map<DWORD_PTR, ImportModuleThunk> & moduleList, DWORD_PTR imageBase, DWORD_PTR imageSize)
+{
+	Plugin newPlugin;
+	size_t mapSize = (wcslen(plugin.fullpath) + 1) * sizeof(WCHAR);
+
+	HANDLE hImprecMap = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE|SEC_COMMIT, 0, (DWORD)mapSize, TEXT(PLUGIN_IMPREC_EXCHANGE_DLL_PATH));
+	
+	if (hImprecMap == NULL)
+	{
+#ifdef DEBUG_COMMENTS
+		Logger::debugLog("injectImprecPlugin :: CreateFileMapping failed 0x%X\r\n",GetLastError());
+#endif
+		return;
+	}
+
+	LPVOID lpImprecViewOfFile = MapViewOfFile(hImprecMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+
+	if (lpImprecViewOfFile == NULL)
+	{
+#ifdef DEBUG_COMMENTS
+		Logger::debugLog("injectImprecPlugin :: MapViewOfFile failed 0x%X\r\n",GetLastError());
+#endif
+		CloseHandle(hImprecMap);
+		return;
+	}
+
+	CopyMemory(lpImprecViewOfFile,plugin.fullpath, mapSize);
+
+	UnmapViewOfFile(lpImprecViewOfFile);
+
+	newPlugin.fileSize = plugin.fileSize;
+	wcscpy_s(newPlugin.pluginName, plugin.pluginName);
+	wcscpy_s(newPlugin.fullpath, PluginLoader::imprecWrapperDllPath);
+
+	injectPlugin(newPlugin,moduleList,imageBase,imageSize);
+
+	CloseHandle(hImprecMap);
+}
+
 
 
 bool DllInjectionPlugin::createFileMapping(DWORD mappingSize)

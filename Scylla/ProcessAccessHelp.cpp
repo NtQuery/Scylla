@@ -16,7 +16,7 @@ std::vector<ModuleInfo> ProcessAccessHelp::ownModuleList; //own module list
 
 
 _DInst ProcessAccessHelp::decomposerResult[MAX_INSTRUCTIONS];
-
+unsigned int ProcessAccessHelp::decomposerInstructionsCount = 0;
 _CodeInfo ProcessAccessHelp::decomposerCi = {0};
 
 _DecodedInst  ProcessAccessHelp::decodedInstructions[MAX_INSTRUCTIONS];

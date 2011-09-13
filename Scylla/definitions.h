@@ -21,7 +21,7 @@
 
 #endif
 
-#define APPVERSION "v0.2a"
+#define APPVERSION "v0.3"
 
 #define RECOMMENDED_OS "This tool was designed to work with Windows 7 x64"
 #define DEVELOPED "Developed with Microsoft Visual Studio 2010, written in pure C/C++"

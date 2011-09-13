@@ -176,7 +176,7 @@ HTREEITEM ImportsHandling::addApiToTreeView(HWND idTreeView, HTREEITEM parentDll
 	}
 	else
 	{
-		swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("va: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" rva: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" prt: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(""),importThunk->va,importThunk->rva,importThunk->apiAddressVA);
+		swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("va: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" rva: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" ptr: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(""),importThunk->va,importThunk->rva,importThunk->apiAddressVA);
 	}
 
 

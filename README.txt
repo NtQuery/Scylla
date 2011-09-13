@@ -19,7 +19,7 @@ This tool was designed to be used with Windows 7 x64, so it is recommend to use 
 But it may work with XP and Vista, too.
 
 
-Sour code is licensed under GNU GENERAL PUBLIC LICENSE v3.0
+Source code is licensed under GNU GENERAL PUBLIC LICENSE v3.0
 
 
 

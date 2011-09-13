@@ -3,6 +3,9 @@
 #include "Thunks.h"
 #include "ApiReader.h"
 
+
+#define PLUGIN_IMPREC_EXCHANGE_DLL_PATH "ScyllaImprecPluginExchangePath"
+
 #define SCYLLA_STATUS_SUCCESS 0
 #define SCYLLA_STATUS_UNKNOWN_ERROR 1
 #define SCYLLA_STATUS_UNSUPPORTED_PROTECTION 2
@@ -50,6 +53,7 @@ public:
 	}
 
 	void injectPlugin(Plugin & plugin, std::map<DWORD_PTR, ImportModuleThunk> & moduleList, DWORD_PTR imageBase, DWORD_PTR imageSize);
+	void injectImprecPlugin(Plugin & plugin, std::map<DWORD_PTR, ImportModuleThunk> & moduleList, DWORD_PTR imageBase, DWORD_PTR imageSize);
 
 private:
 	bool createFileMapping(DWORD mappingSize);

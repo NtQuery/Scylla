@@ -27,7 +27,7 @@ public:
 private:
 	DWORD numberOfFunctions;
 
-	WCHAR tempString[100];
+	WCHAR tempString[300];
 
 	TV_INSERTSTRUCT tvInsert;
 	HTREEITEM m_hItemFirstSel;
