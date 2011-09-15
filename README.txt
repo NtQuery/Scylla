@@ -22,7 +22,6 @@ But it may work with XP and Vista, too.
 Source code is licensed under GNU GENERAL PUBLIC LICENSE v3.0
 
 
-
 ******************************************************************
 
                            Known Bugs
@@ -36,6 +35,10 @@ Source code is licensed under GNU GENERAL PUBLIC LICENSE v3.0
 			  other tools cannot know which API is correct. You need to fix this manually. Your fixed dump will probably 
 			  run fine on XP but crash on Vista/7.
 
+- ImpREC plugin support:
+			Some ImpREC Plugins don't work with Windows Vista/7 because they don't "return 1" in the DllMain function.
+
+
 
 
 
@@ -44,6 +47,18 @@ Source code is licensed under GNU GENERAL PUBLIC LICENSE v3.0
                            Changelog
 
 ******************************************************************
+
+Version 0.3a:
+	- Improved import resolving
+	- fixed buffer overflow errors
+
+Version 0.3:
+	- ImpREC plugin support
+	- minor bug fix
+
+Version 0.2a:
+	- improved disassembler dialog
+	- improved iat search
 
 Version 0.2:
 	- improved process detection
