@@ -28,9 +28,9 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
 	if (SystemInformation::currenOS == UNKNOWN_OS)
 	{
-		::MessageBox(0, TEXT("Operating System is not supported"), TEXT("Error Operating System"), MB_OK);
+		MessageBox(L"Operating System is not supported", L"Error Operating System", MB_ICONERROR);
 		EndDialog(0);
-		return TRUE;
+		return FALSE;
 	}
 
 	if(ConfigurationHolder::getConfigObject(DEBUG_PRIVILEGE)->isTrue())
@@ -144,7 +144,6 @@ void MainGui::OnProcessListDrop(UINT uNotifyCode, int nID, CWindow wndCtl)
 void MainGui::OnProcessListSelected(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	processSelectedActionHandler(ComboProcessList.GetCurSel());
-	//processSelectedActionHandler(SendMessage(GetDlgItem(hWndDlg, IDC_CBO_PROCESSLIST),CB_GETCURSEL,0,0));
 }
 
 void MainGui::OnPickDLL(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -220,10 +219,12 @@ void MainGui::OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void MainGui::setIconAndDialogCaption()
 {
-	HICON hicon = LoadIcon(GetModuleHandle(0), MAKEINTRESOURCE(IDI_ICON_SCYLLA1));
-
-	SetIcon(hicon, TRUE);
-	SetIcon(hicon, FALSE);
+	CIconHandle hicon; // Resource leak!
+	if(hicon.LoadIcon(IDI_ICON_SCYLLA1))
+	{
+		SetIcon(hicon, TRUE);
+		SetIcon(hicon, FALSE);
+	}
 
 	SetWindowText(TEXT(APPNAME)TEXT(" ")TEXT(ARCHITECTURE)TEXT(" ")TEXT(APPVERSION));
 }
@@ -296,7 +297,6 @@ void MainGui::processSelectedActionHandler(int index)
 	selectedProcess->entryPoint = ProcessAccessHelp::getEntryPointFromFile(selectedProcess->fullPath);
 
 	swprintf_s(stringBuffer, _countof(stringBuffer),TEXT(PRINTF_DWORD_PTR_FULL),selectedProcess->entryPoint + selectedProcess->imageBase);
-	//SetDlgItemText(hWndMainDlg, IDC_EDIT_OEPADDRESS, stringBuffer);
 
 	EditOEPAddress.SetWindowText(stringBuffer);
 }
@@ -320,10 +320,6 @@ void MainGui::addTextToOutputLog(const WCHAR * text)
 {
 	if (m_hWnd)
 	{
-		//HWND hList = GetDlgItem(hWndMainDlg,IDC_LIST_LOG);
-
-		//ListBox_SetCurSel(hList, ListBox_AddString(hList,text));
-
 		ListLog.SetCurSel(ListLog.AddString(text));
 	}
 }
@@ -333,7 +329,6 @@ void MainGui::clearOutputLog()
 	if (m_hWnd)
 	{
 		ListLog.ResetContent();
-		//SendDlgItemMessage(hWndMainDlg, IDC_LIST_LOG, LB_RESETCONTENT, 0, 0);
 	}
 }
 
@@ -354,10 +349,7 @@ void MainGui::iatAutosearchActionHandler()
 	DWORD sizeIAT = 0;
 	IATSearch iatSearch;
 
-	EditOEPAddress.GetWindowText(stringBuffer, _countof(stringBuffer));
-	//GetDlgItemText(hWndMainDlg, IDC_EDIT_OEPADDRESS, stringBuffer, _countof(stringBuffer));
-
-	if (wcslen(stringBuffer) > 1)
+	if(EditOEPAddress.GetWindowText(stringBuffer, _countof(stringBuffer)) > 1)
 	{
 		searchAddress = stringToDwordPtr(stringBuffer);
 		if (searchAddress)
@@ -368,22 +360,18 @@ void MainGui::iatAutosearchActionHandler()
 
 				swprintf_s(stringBuffer, _countof(stringBuffer),TEXT(PRINTF_DWORD_PTR_FULL),addressIAT);
 				EditIATAddress.SetWindowText(stringBuffer);
-				//SetDlgItemText(hWndMainDlg,IDC_EDIT_IATADDRESS,stringBuffer);
 
 				swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("%08X"),sizeIAT);
 				EditIATSize.SetWindowText(stringBuffer);
-				//SetDlgItemText(hWndMainDlg,IDC_EDIT_IATSIZE,stringBuffer);
 
 				swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("IAT found! Start Address ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size 0x%04X (%d) "),addressIAT,sizeIAT,sizeIAT);
-				MessageBox(stringBuffer, TEXT("IAT found"));
-				
+				MessageBox(stringBuffer, L"IAT found", MB_ICONINFORMATION);
 			}
 			else
 			{
 				Logger::printfDialog(TEXT("IAT not found at OEP ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("!"),searchAddress);
 			}
 		}
-		
 	}
 }
 
@@ -392,13 +380,15 @@ void MainGui::getImportsActionHandler()
 	DWORD_PTR addressIAT = 0;
 	DWORD sizeIAT = 0;
 
-	EditIATAddress.GetWindowText(stringBuffer, _countof(stringBuffer));
-	//GetDlgItemText(hWndMainDlg, IDC_EDIT_IATADDRESS, stringBuffer, sizeof(stringBuffer));
-	addressIAT = stringToDwordPtr(stringBuffer);
+	if (EditIATAddress.GetWindowText(stringBuffer, _countof(stringBuffer)) > 0)
+	{
+		addressIAT = stringToDwordPtr(stringBuffer);
+	}
 
-	EditIATSize.GetWindowText(stringBuffer, _countof(stringBuffer));
-	//GetDlgItemText(hWndMainDlg, IDC_EDIT_IATSIZE, stringBuffer, sizeof(stringBuffer));
-	sizeIAT = wcstoul(stringBuffer, NULL, 16);
+	if (EditIATSize.GetWindowText(stringBuffer, _countof(stringBuffer)) > 0)
+	{
+		sizeIAT = wcstoul(stringBuffer, NULL, 16);
+	}
 
 	if (addressIAT && sizeIAT)
 	{
@@ -406,7 +396,6 @@ void MainGui::getImportsActionHandler()
 		importsHandling.displayAllImports();
 	}
 }
-
 
 DWORD_PTR MainGui::stringToDwordPtr(WCHAR * hexString)
 {
@@ -431,32 +420,31 @@ DWORD_PTR MainGui::stringToDwordPtr(WCHAR * hexString)
 	}
 }
 
-void MainGui::DisplayContextMenuImports(HWND hwnd, POINT pt)
+void MainGui::DisplayContextMenuImports(CWindow hwnd, POINT pt)
 {
 	BOOL menuItem = 0;
 	HTREEITEM selectedTreeNode = 0;
 	std::vector<Plugin> &pluginList = PluginLoader::getScyllaPluginList();
-	HMENU hmenuTrackPopup = getCorrectSubMenu(IDR_MENU_IMPORTS, 0);
-
-	appendPluginListToMenu(hmenuTrackPopup);
+	CMenuHandle hmenuTrackPopup = getCorrectSubMenu(IDR_MENU_IMPORTS, 0);
 
 	if (hmenuTrackPopup)
 	{
-		menuItem = TrackPopupMenu(hmenuTrackPopup, TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, 0, hwnd, 0);
+		appendPluginListToMenu(hmenuTrackPopup);
+
+		menuItem = hmenuTrackPopup.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
+		hmenuTrackPopup.DestroyMenu();
 		if (menuItem)
 		{
-
 			if ((menuItem >= PLUGIN_MENU_BASE_ID) && (menuItem <= (int)(PluginLoader::getScyllaPluginList().size() + PluginLoader::getImprecPluginList().size() + PLUGIN_MENU_BASE_ID)))
 			{
 				//wsprintf(stringBuffer, L"%d %s\n",menuItem,pluginList[menuItem - PLUGIN_MENU_BASE_ID].pluginName);
-				//MessageBox(0,stringBuffer,L"plugin selection",0);
+				//MessageBox(stringBuffer, L"plugin selection");
 
 				pluginActionHandler(menuItem);
 				return;
 			}
 
-			selectedTreeNode = TreeImports.GetNextItem(selectedTreeNode, TVGN_CARET);
-			//selectedTreeNode = (HTREEITEM)SendDlgItemMessage(hWndMainDlg,IDC_TREE_IMPORTS,TVM_GETNEXTITEM,TVGN_CARET,(LPARAM)selectedTreeNode);
+			selectedTreeNode = TreeImports.GetSelectedItem(); //TreeImports.GetNextItem(selectedTreeNode, TVGN_CARET);
 
 			switch (menuItem)
 			{
@@ -498,95 +486,82 @@ void MainGui::DisplayContextMenuImports(HWND hwnd, POINT pt)
 	}
 }
 
-HMENU MainGui::getCorrectSubMenu(int menuItem, int subMenuItem)
+CMenuHandle MainGui::getCorrectSubMenu(int menuItem, int subMenuItem)
 {
-	HMENU hmenu;            // top-level menu 
-	HMENU hmenuTrackPopup;  // shortcut menu 
+	CMenuHandle hmenu;            // top-level menu 
+
 	// Load the menu resource. 
-	if ((hmenu = LoadMenu(hInstance, MAKEINTRESOURCE(menuItem))) == NULL) 
-		return 0; 
+	if (!hmenu.LoadMenu(menuItem)) 
+		return NULL; 
 
-	hmenuTrackPopup = GetSubMenu(hmenu, subMenuItem);
-
-	if (hmenuTrackPopup)
-	{
-		return hmenuTrackPopup;
-	}
-	else
-	{
-		return 0;
-	}
+	return hmenu.GetSubMenu(subMenuItem);
 }
 
-void MainGui::DisplayContextMenu(HWND hwnd, POINT pt) 
+void MainGui::DisplayContextMenu(CWindow hwnd, POINT pt) 
 { 
-	HMENU hmenu;            // top-level menu 
-	HMENU hmenuTrackPopup;  // shortcut menu 
+	CMenu hmenu;            // top-level menu 
+	CMenuHandle hmenuTrackPopup;  // shortcut menu 
 	int menuItem;			// selected menu item
 
 	// Load the menu resource. 
-	if ((hmenu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU_IMPORTS))) == NULL) 
+	if (!hmenu.LoadMenu(IDR_MENU_IMPORTS)) 
 		return; 
 
 	// TrackPopupMenu cannot display the menu bar so get 
 	// a handle to the first shortcut menu. 
 
-	hmenuTrackPopup = GetSubMenu(hmenu, 0); 
+	hmenuTrackPopup = hmenu.GetSubMenu(0);
 
 	// Display the shortcut menu. Track the right mouse 
 	// button. 
 	if (!hmenuTrackPopup)
 	{
-		MessageBoxA(0,"hmenuTrackPopup == null","hmenuTrackPopup",0);
+		MessageBox(L"hmenuTrackPopup == null", L"hmenuTrackPopup");
 	}
 
-	menuItem = TrackPopupMenu(hmenuTrackPopup, TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, 0, hwnd, NULL);
+	menuItem = hmenuTrackPopup.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
 
 	if (menuItem)
 	{
 		/*if (menuItem == ID_LISTCONTROL_SHOWEXPORTS)
 		{
-			MessageBox(0,"exports","dshhhhh",0);
+			MessageBox(L"exports",L"dshhhhh");
 		}*/
 	}
-
-	// Destroy the menu. 
-
-	DestroyMenu(hmenu); 
 }
 
-void MainGui::appendPluginListToMenu(HMENU hMenuTrackPopup)
+void MainGui::appendPluginListToMenu(CMenuHandle hMenuTrackPopup)
 {
-	CMenu newMenu = CreatePopupMenu(); //HMENU newMenu = CreatePopupMenu();
-	
 	std::vector<Plugin> &scyllaPluginList = PluginLoader::getScyllaPluginList();
 	std::vector<Plugin> &imprecPluginList = PluginLoader::getImprecPluginList();
 
 	if (scyllaPluginList.size() > 0)
 	{
+		CMenuHandle newMenu;
+		newMenu.CreatePopupMenu();
+
 		for (size_t i = 0; i < scyllaPluginList.size(); i++)
 		{
-
-			AppendMenu(newMenu, MF_STRING, i + PLUGIN_MENU_BASE_ID, scyllaPluginList[i].pluginName);
+			newMenu.AppendMenu(MF_STRING, i + PLUGIN_MENU_BASE_ID, scyllaPluginList[i].pluginName);
 		}
 
-		AppendMenu(hMenuTrackPopup,MF_MENUBARBREAK,0,0);
-		AppendMenu(hMenuTrackPopup,MF_POPUP,(UINT_PTR)(HMENU)newMenu,TEXT("Scylla Plugins"));
+		hMenuTrackPopup.AppendMenu(MF_MENUBARBREAK);
+		hMenuTrackPopup.AppendMenu(MF_POPUP, newMenu, L"Scylla Plugins");
 	}
-
-	newMenu = CreatePopupMenu();
 
 	if (imprecPluginList.size() > 0)
 	{
+		CMenuHandle newMenu;
+		newMenu.CreatePopupMenu();
+
 		for (size_t i = 0; i < imprecPluginList.size(); i++)
 		{
-			AppendMenu(newMenu, MF_STRING, scyllaPluginList.size() + i + PLUGIN_MENU_BASE_ID, imprecPluginList[i].pluginName);
+			newMenu.AppendMenu(MF_STRING, scyllaPluginList.size() + i + PLUGIN_MENU_BASE_ID, imprecPluginList[i].pluginName);
 		}
 
-		AppendMenu(hMenuTrackPopup,MF_MENUBARBREAK,0,0);
-		AppendMenu(hMenuTrackPopup,MF_POPUP,(UINT_PTR)(HMENU)newMenu,TEXT("ImpREC Plugins"));
+		hMenuTrackPopup.AppendMenu(MF_MENUBARBREAK);
+		hMenuTrackPopup.AppendMenu(MF_POPUP, newMenu, L"ImpREC Plugins");
 	}
-
 }
 
 void MainGui::dumpActionHandler()
@@ -629,12 +604,12 @@ void MainGui::dumpActionHandler()
 		if (peDump.dumpCompleteProcessToDisk(targetFile))
 		{
 			Logger::printfDialog(TEXT("Dump success %s"),targetFile);
-			//MessageBox(hWndMainDlg,TEXT("Image dumped successfully."),TEXT("Success"),MB_OK);
+			//MessageBox(L"Image dumped successfully.", L"Success");
 		}
 		else
 		{
 			Logger::printfDialog(TEXT("Error: Cannot dump image."));
-			MessageBox(TEXT("Cannot dump image."),TEXT("Failure"));
+			MessageBox(L"Cannot dump image.", L"Failure", MB_ICONERROR);
 		}
 
 		delete [] targetFile;
@@ -643,7 +618,6 @@ void MainGui::dumpActionHandler()
 
 DWORD_PTR MainGui::getOEPFromGui()
 {
-	//if (GetDlgItemText(hWndMainDlg, IDC_EDIT_OEPADDRESS, stringBuffer, _countof(stringBuffer)))
 	if (EditOEPAddress.GetWindowText(stringBuffer, _countof(stringBuffer)) > 0)
 	{
 		return stringToDwordPtr(stringBuffer);
@@ -681,7 +655,7 @@ void MainGui::peRebuildActionHandler()
 		if (newSize < 10)
 		{
 			Logger::printfDialog(TEXT("Rebuild failed %s"), targetFile);
-			MessageBox(TEXT("Rebuild failed."),TEXT("Failure"));
+			MessageBox(L"Rebuild failed.", L"Failure", MB_ICONERROR);
 		}
 		else
 		{
@@ -689,9 +663,8 @@ void MainGui::peRebuildActionHandler()
 
 			Logger::printfDialog(TEXT("Rebuild success %s"), targetFile);
 			Logger::printfDialog(TEXT("-> Old file size 0x%08X new file size 0x%08X (%d %%)"), (DWORD)fileSize, newSize, (DWORD)((newSize * 100) / (DWORD)fileSize) );
-			//MessageBox(hWndMainDlg,TEXT("Image rebuilded successfully."),TEXT("Success"),MB_OK);
+			//MessageBox(L"Image rebuilded successfully.", L"Success", MB_ICONINFORMATION);
 		}
-
 
 		delete [] targetFile;
 	}
@@ -703,7 +676,6 @@ void MainGui::dumpFixActionHandler()
 	WCHAR newFilePath[MAX_PATH];
 	ImportRebuild importRebuild;
 
-	//if (TreeView_GetCount(GetDlgItem(hWndMainDlg, IDC_TREE_IMPORTS)) < 2)
 	if (TreeImports.GetCount() < 2)
 	{
 		Logger::printfDialog(TEXT("Nothing to rebuild"));
@@ -723,13 +695,10 @@ void MainGui::dumpFixActionHandler()
 	{
 		wcscpy_s(newFilePath,MAX_PATH,targetFile);
 
-		for (size_t i = wcslen(newFilePath) - 1; i >= 0; i--)
+		WCHAR* dot = wcsrchr(newFilePath, L'.');
+		if (dot)
 		{
-			if (newFilePath[i] == L'.')
-			{
-				newFilePath[i] = 0;
-				break;
-			}
+			*dot = L'\0';
 		}
 
 		if (processAccessHelp.selectedModule)
@@ -744,14 +713,14 @@ void MainGui::dumpFixActionHandler()
 
 		if (importRebuild.rebuildImportTable(targetFile,newFilePath,importsHandling.moduleList))
 		{
-			//MessageBox(hWndMainDlg,L"Imports rebuilding successful",L"Success",MB_OK);
+			//MessageBox(L"Imports rebuilding successful", L"Success", MB_ICONINFORMATION);
 
 			Logger::printfDialog(TEXT("Import Rebuild success %s"), newFilePath);
 		}
 		else
 		{
 			Logger::printfDialog(TEXT("Import Rebuild failed, target %s"), targetFile);
-			MessageBox(L"Imports rebuilding failed",L"Failure");
+			MessageBox(L"Imports rebuilding failed", L"Failure", MB_ICONERROR);
 		}
 
 		delete [] targetFile;
@@ -849,8 +818,6 @@ void MainGui::pluginActionHandler( int menuItem )
 
 #endif
 	}
-
-
 
 	importsHandling.scanAndFixModuleList();
 	importsHandling.displayAllImports();

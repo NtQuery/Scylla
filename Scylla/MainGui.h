@@ -145,16 +145,16 @@ private:
 	//static bool displayModuleList(HWND hWndDlg, HWND hList, LRESULT index);
 
 	// POPUP MENU Prototypes
-	void DisplayContextMenu(HWND, POINT);
-	void DisplayContextMenuImports(HWND, POINT);
-	HMENU getCorrectSubMenu(int, int);
+	void DisplayContextMenu(CWindow, POINT);
+	void DisplayContextMenuImports(CWindow, POINT);
+	CMenuHandle getCorrectSubMenu(int, int);
 	
 	void clearOutputLog();//Output Window
 	void showInvalidImportsActionHandler();
 	void showSuspectImportsActionHandler();
 	void iatAutosearchActionHandler();
 	void getImportsActionHandler();
-	void appendPluginListToMenu( HMENU hMenuTrackPopup );
+	void appendPluginListToMenu(CMenuHandle hMenuTrackPopup);
 	void dumpActionHandler();
 	DWORD_PTR getOEPFromGui();
 	void peRebuildActionHandler();

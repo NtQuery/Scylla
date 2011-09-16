@@ -108,9 +108,6 @@ void ImportsHandling::displayAllImports()
 	ImportThunk * importThunk;
 	HTREEITEM module;
 	HTREEITEM apiFunction;
-	//HWND idTreeView = GetDlgItem(hWndMainDlg, IDC_TREE_IMPORTS);
-
-	//TreeView_DeleteAllItems(idTreeView);
 
 	TreeImports.DeleteAllItems();
 
@@ -120,7 +117,7 @@ void ImportsHandling::displayAllImports()
 	 {
 		 moduleThunk = &(iterator1->second);
 
-		 module = addDllToTreeView(TreeImports/*idTreeView*/,moduleThunk->moduleName,moduleThunk->firstThunk,moduleThunk->thunkList.size(),moduleThunk->isValid());
+		 module = addDllToTreeView(TreeImports,moduleThunk->moduleName,moduleThunk->firstThunk,moduleThunk->thunkList.size(),moduleThunk->isValid());
 		
 		 moduleThunk->hTreeItem = module;
 
@@ -129,7 +126,7 @@ void ImportsHandling::displayAllImports()
 		 while (iterator2 != moduleThunk->thunkList.end())
 		 {
 			 importThunk = &(iterator2->second);
-			 apiFunction = addApiToTreeView(TreeImports/*idTreeView*/,module,importThunk);
+			 apiFunction = addApiToTreeView(TreeImports,module,importThunk);
 			 importThunk->hTreeItem = apiFunction;
 			 iterator2++;
 		 }
@@ -154,12 +151,14 @@ HTREEITEM ImportsHandling::addDllToTreeView(CTreeViewCtrl& idTreeView, const WCH
 
 	swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("%s FThunk: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" NbThunk: %02X (dec: %02d) valid: %s"),dllName,firstThunk,numberOfFunctions,numberOfFunctions,validString);
 	
+	/*
 	tvInsert.hParent = NULL;
 	tvInsert.hInsertAfter = TVI_ROOT;
 	tvInsert.item.mask = TVIF_TEXT|TVIF_IMAGE|TVIF_SELECTEDIMAGE;
 	tvInsert.item.pszText = stringBuffer;
-	//return TreeView_InsertItem(idTreeView, &tvInsert);
-	return idTreeView.InsertItem(&tvInsert);
+	return TreeView_InsertItem(idTreeView, &tvInsert);
+	*/
+	return idTreeView.InsertItem(stringBuffer, NULL, TVI_ROOT);
 }
 
 HTREEITEM ImportsHandling::addApiToTreeView(CTreeViewCtrl& idTreeView, HTREEITEM parentDll, ImportThunk * importThunk)
@@ -182,13 +181,14 @@ HTREEITEM ImportsHandling::addApiToTreeView(CTreeViewCtrl& idTreeView, HTREEITEM
 		swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("va: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" rva: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" ptr: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(""),importThunk->va,importThunk->rva,importThunk->apiAddressVA);
 	}
 
-
+	/*
 	tvInsert.hParent = parentDll;
 	tvInsert.hInsertAfter = TVI_LAST;
 	tvInsert.item.mask = TVIF_TEXT|TVIF_IMAGE|TVIF_SELECTEDIMAGE;
 	tvInsert.item.pszText = stringBuffer;
-	//return TreeView_InsertItem(idTreeView, &tvInsert);
-	return idTreeView.InsertItem(&tvInsert);
+	return TreeView_InsertItem(idTreeView, &tvInsert);
+	*/
+	return idTreeView.InsertItem(stringBuffer, parentDll, TVI_LAST);
 }
 
 void ImportsHandling::showImports(bool invalid, bool suspect)
@@ -197,11 +197,6 @@ void ImportsHandling::showImports(bool invalid, bool suspect)
 	std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
 	ImportModuleThunk * moduleThunk;
 	ImportThunk * importThunk;
-
-	//HWND idTreeView = GetDlgItem(hWndMainDlg, IDC_TREE_IMPORTS);
-
-	//SetFocus(idTreeView);
-	//TreeView_SelectItem(idTreeView,0); //remove selection
 
 	TreeImports.SetFocus();
 	TreeImports.SelectItem(NULL); //remove selection
@@ -242,15 +237,7 @@ void ImportsHandling::showImports(bool invalid, bool suspect)
 
 bool ImportsHandling::isItemSelected(CTreeViewCtrl& hwndTV, HTREEITEM hItem)
 {
-	TV_ITEM tvi;
-	tvi.mask = TVIF_STATE | TVIF_HANDLE;
-	tvi.stateMask = TVIS_SELECTED;
-	tvi.hItem = hItem;
-
-	//TreeView_GetItem(hwndTV, &tvi);
-	hwndTV.GetItem(&tvi);
-
-	return (tvi.state & TVIS_SELECTED) != 0;
+	return (hwndTV.GetItemState(hItem, TVIS_SELECTED) & TVIS_SELECTED) != 0;
 }
 
 void ImportsHandling::unselectItem(CTreeViewCtrl& hwndTV, HTREEITEM htItem)
@@ -260,26 +247,13 @@ void ImportsHandling::unselectItem(CTreeViewCtrl& hwndTV, HTREEITEM htItem)
 
 bool ImportsHandling::selectItem(CTreeViewCtrl& hwndTV, HTREEITEM hItem, bool select)
 {
-	TV_ITEM tvi;
-	tvi.mask = TVIF_STATE | TVIF_HANDLE;
-	tvi.stateMask = TVIS_SELECTED;
-	tvi.state = select ? TVIS_SELECTED : 0;
-	tvi.hItem = hItem;
-
-
-	//*if ( TreeView_SetItem(hwndTV, &tvi) == -1 )
-	if ( hwndTV.SetItem(&tvi) == -1 )
-	{
-		return false;
-	}
-
-	return true;
+	return FALSE != hwndTV.SetItemState(hItem, (select ? TVIS_SELECTED : 0), TVIS_SELECTED);
 }
 
 void ImportsHandling::setFocus(CTreeViewCtrl& hwndTV, HTREEITEM htItem)
 {
 	// the current focus
-	HTREEITEM htFocus = hwndTV.GetSelectedItem(); //(HTREEITEM)TreeView_GetSelection(hwndTV);
+	HTREEITEM htFocus = hwndTV.GetSelectedItem();
 
 	if ( htItem )
 	{
@@ -294,11 +268,11 @@ void ImportsHandling::setFocus(CTreeViewCtrl& hwndTV, HTREEITEM htItem)
 				// prevent the tree from unselecting the old focus which it
 				// would do by default (TreeView_SelectItem unselects the
 				// focused item)
-				hwndTV.SelectItem(NULL); //TreeView_SelectItem(hwndTV, 0);
+				hwndTV.SelectItem(NULL);
 				selectItem(hwndTV, htFocus);
 			}
 
-			hwndTV.SelectItem(htItem); //TreeView_SelectItem(hwndTV, htItem);
+			hwndTV.SelectItem(htItem);
 
 			if ( !wasSelected )
 			{
@@ -317,7 +291,7 @@ void ImportsHandling::setFocus(CTreeViewCtrl& hwndTV, HTREEITEM htItem)
 			bool wasFocusSelected = isItemSelected(hwndTV, htFocus);
 
 			// just clear the focus
-			hwndTV.SelectItem(NULL); //TreeView_SelectItem(hwndTV, 0);
+			hwndTV.SelectItem(NULL);
 
 			if ( wasFocusSelected )
 			{
@@ -376,9 +350,6 @@ bool ImportsHandling::invalidateFunction( HTREEITEM selectedTreeNode )
 
 void ImportsHandling::updateImportInTreeView(ImportThunk * importThunk)
 {
-	TV_ITEM tvi = {0};
-	//HWND treeControl = GetDlgItem(hWndMainDlg, IDC_TREE_IMPORTS);
-
 	if (importThunk->ordinal != 0)
 	{
 		if (importThunk->name[0] != 0x00)
@@ -397,18 +368,11 @@ void ImportsHandling::updateImportInTreeView(ImportThunk * importThunk)
 		swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("va: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" rva: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" prt: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(""),importThunk->va,importThunk->rva,importThunk->apiAddressVA);
 	}
 
-	tvi.pszText = stringBuffer;
-	tvi.cchTextMax = 260;
-	tvi.hItem = importThunk->hTreeItem;
-	tvi.mask = TVIF_TEXT;
-	TreeImports.SetItem(&tvi); //TreeView_SetItem(treeControl,&tvi);
+	TreeImports.SetItemText(importThunk->hTreeItem, stringBuffer);
 }
 
 void ImportsHandling::updateModuleInTreeView(ImportModuleThunk * importThunk)
 {
-	TV_ITEM tvi = {0};
-	//HWND treeControl = GetDlgItem(hWndMainDlg,IDC_TREE_IMPORTS);
-
 	WCHAR validString[4];
 
 	if (importThunk->isValid())
@@ -422,12 +386,7 @@ void ImportsHandling::updateModuleInTreeView(ImportModuleThunk * importThunk)
 
 	swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("%s FThunk: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" NbThunk: %02X (dec: %02d) valid: %s"),importThunk->moduleName,importThunk->firstThunk,importThunk->thunkList.size(),importThunk->thunkList.size(),validString);
 
-
-	tvi.pszText = stringBuffer;
-	tvi.cchTextMax = 260;
-	tvi.hItem = importThunk->hTreeItem;
-	tvi.mask = TVIF_TEXT;
-	TreeImports.SetItem(&tvi); //TreeView_SetItem(treeControl,&tvi);
+	TreeImports.SetItemText(importThunk->hTreeItem, stringBuffer);
 }
 
 bool ImportsHandling::cutThunk( HTREEITEM selectedTreeNode )
@@ -436,9 +395,6 @@ bool ImportsHandling::cutThunk( HTREEITEM selectedTreeNode )
 	std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
 	ImportModuleThunk * moduleThunk;
 	ImportThunk * importThunk;
-
-	TV_ITEM tvi = {0};
-	//HWND treeControl = GetDlgItem(hWndMainDlg,IDC_TREE_IMPORTS);
 
 	iterator1 = moduleList.begin();
 
@@ -455,12 +411,12 @@ bool ImportsHandling::cutThunk( HTREEITEM selectedTreeNode )
 			if (importThunk->hTreeItem == selectedTreeNode)
 			{
 
-				TreeImports.DeleteItem(importThunk->hTreeItem); //TreeView_DeleteItem(treeControl,importThunk->hTreeItem);
+				TreeImports.DeleteItem(importThunk->hTreeItem);
 				moduleThunk->thunkList.erase(iterator2);
 
 				if (moduleThunk->thunkList.empty())
 				{
-					TreeImports.DeleteItem(moduleThunk->hTreeItem); //TreeView_DeleteItem(treeControl,moduleThunk->hTreeItem);
+					TreeImports.DeleteItem(moduleThunk->hTreeItem);
 					moduleList.erase(iterator1);
 				}
 				else
@@ -486,20 +442,15 @@ bool ImportsHandling::deleteTreeNode( HTREEITEM selectedTreeNode )
 	ImportModuleThunk * moduleThunk;
 	ImportThunk * importThunk;
 
-	TV_ITEM tvi = {0};
-	//HWND treeControl = GetDlgItem(hWndMainDlg,IDC_TREE_IMPORTS);
-
 	iterator1 = moduleList.begin();
 
 	while (iterator1 != moduleList.end())
 	{
 		moduleThunk = &(iterator1->second);
 
-		
-
 		if (moduleThunk->hTreeItem == selectedTreeNode)
 		{
-			TreeImports.DeleteItem(moduleThunk->hTreeItem); //TreeView_DeleteItem(treeControl,moduleThunk->hTreeItem);
+			TreeImports.DeleteItem(moduleThunk->hTreeItem);
 			moduleThunk->thunkList.clear();
 			moduleList.erase(iterator1);
 			return true;
@@ -514,7 +465,7 @@ bool ImportsHandling::deleteTreeNode( HTREEITEM selectedTreeNode )
 
 				if (importThunk->hTreeItem == selectedTreeNode)
 				{
-					TreeImports.DeleteItem(moduleThunk->hTreeItem); //TreeView_DeleteItem(treeControl,moduleThunk->hTreeItem);
+					TreeImports.DeleteItem(moduleThunk->hTreeItem);
 					moduleThunk->thunkList.clear();
 					moduleList.erase(iterator1);
 					return true;
@@ -523,8 +474,6 @@ bool ImportsHandling::deleteTreeNode( HTREEITEM selectedTreeNode )
 				iterator2++;
 			}
 		}
-
-
 
 		iterator1++;
 	}
@@ -538,7 +487,6 @@ DWORD_PTR ImportsHandling::getApiAddressByNode( HTREEITEM selectedTreeNode )
 	std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
 	ImportModuleThunk * moduleThunk;
 	ImportThunk * importThunk;
-
 
 	iterator1 = moduleList.begin();
 
@@ -819,15 +767,13 @@ void ImportsHandling::changeExpandStateOfTreeNodes(UINT flag)
 	std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
 	ImportModuleThunk * moduleThunk;
 
-	//HWND treeControl = GetDlgItem(hWndMainDlg,IDC_TREE_IMPORTS);
-
 	iterator1 = moduleList.begin();
 
 	while (iterator1 != moduleList.end())
 	{
 		moduleThunk = &(iterator1->second);
 
-		TreeImports.Expand(moduleThunk->hTreeItem, flag); //TreeView_Expand(treeControl, moduleThunk->hTreeItem, flag);
+		TreeImports.Expand(moduleThunk->hTreeItem, flag);
 
 		iterator1++;
 	}
