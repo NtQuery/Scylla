@@ -159,7 +159,7 @@ private:
 	DWORD_PTR getOEPFromGui();
 	void peRebuildActionHandler();
 
-	void startDisassemblerGui(HTREEITEM selectedTreeNode);
+	void startDisassemblerGui(CTreeItem selectedTreeNode);
 	void dumpFixActionHandler();
 	void enableDialogButtons( BOOL value );
 	void showAboutDialog();

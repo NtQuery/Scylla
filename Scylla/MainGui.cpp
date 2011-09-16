@@ -244,7 +244,7 @@ void MainGui::pickDllActionHandler()
 	}
 }
 
-void MainGui::startDisassemblerGui(HTREEITEM selectedTreeNode)
+void MainGui::startDisassemblerGui(CTreeItem selectedTreeNode)
 {
 	DWORD_PTR address = importsHandling.getApiAddressByNode(selectedTreeNode);
 	if (address)
@@ -423,7 +423,7 @@ DWORD_PTR MainGui::stringToDwordPtr(WCHAR * hexString)
 void MainGui::DisplayContextMenuImports(CWindow hwnd, POINT pt)
 {
 	BOOL menuItem = 0;
-	HTREEITEM selectedTreeNode = 0;
+	CTreeItem selectedTreeNode = 0;
 	std::vector<Plugin> &pluginList = PluginLoader::getScyllaPluginList();
 	CMenuHandle hmenuTrackPopup = getCorrectSubMenu(IDR_MENU_IMPORTS, 0);
 
@@ -443,8 +443,8 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, POINT pt)
 				pluginActionHandler(menuItem);
 				return;
 			}
-
-			selectedTreeNode = TreeImports.GetSelectedItem(); //TreeImports.GetNextItem(selectedTreeNode, TVGN_CARET);
+			
+			selectedTreeNode = TreeImports.GetSelectedItem();
 
 			switch (menuItem)
 			{

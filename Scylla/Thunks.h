@@ -4,6 +4,10 @@
 #include <Commctrl.h>
 #include <map>
 
+#include <atlbase.h>
+#include <atlapp.h>
+#include <atlctrls.h>
+
 class ImportModuleThunk;
 class ImportThunk;
 
@@ -19,7 +23,7 @@ public:
 	bool valid;
 	bool suspect;
 
-	HTREEITEM hTreeItem;
+	CTreeItem hTreeItem;
 };
 
 
@@ -30,7 +34,7 @@ public:
 
 	DWORD_PTR firstThunk;
 
-	HTREEITEM hTreeItem;
+	CTreeItem hTreeItem;
 
 	DWORD_PTR getFirstThunk();
 	bool isValid();

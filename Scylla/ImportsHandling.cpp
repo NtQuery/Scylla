@@ -106,8 +106,8 @@ void ImportsHandling::displayAllImports()
 	std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
 	ImportModuleThunk * moduleThunk;
 	ImportThunk * importThunk;
-	HTREEITEM module;
-	HTREEITEM apiFunction;
+	CTreeItem module;
+	CTreeItem apiFunction;
 
 	TreeImports.DeleteAllItems();
 
@@ -136,7 +136,7 @@ void ImportsHandling::displayAllImports()
 
 }
 
-HTREEITEM ImportsHandling::addDllToTreeView(CTreeViewCtrl& idTreeView, const WCHAR * dllName, DWORD_PTR firstThunk, size_t numberOfFunctions, bool valid)
+CTreeItem ImportsHandling::addDllToTreeView(CTreeViewCtrl& idTreeView, const WCHAR * dllName, DWORD_PTR firstThunk, size_t numberOfFunctions, bool valid)
 {
 	WCHAR validString[4];
 
@@ -151,17 +151,10 @@ HTREEITEM ImportsHandling::addDllToTreeView(CTreeViewCtrl& idTreeView, const WCH
 
 	swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("%s FThunk: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" NbThunk: %02X (dec: %02d) valid: %s"),dllName,firstThunk,numberOfFunctions,numberOfFunctions,validString);
 	
-	/*
-	tvInsert.hParent = NULL;
-	tvInsert.hInsertAfter = TVI_ROOT;
-	tvInsert.item.mask = TVIF_TEXT|TVIF_IMAGE|TVIF_SELECTEDIMAGE;
-	tvInsert.item.pszText = stringBuffer;
-	return TreeView_InsertItem(idTreeView, &tvInsert);
-	*/
 	return idTreeView.InsertItem(stringBuffer, NULL, TVI_ROOT);
 }
 
-HTREEITEM ImportsHandling::addApiToTreeView(CTreeViewCtrl& idTreeView, HTREEITEM parentDll, ImportThunk * importThunk)
+CTreeItem ImportsHandling::addApiToTreeView(CTreeViewCtrl& idTreeView, CTreeItem parentDll, ImportThunk * importThunk)
 {
 	if (importThunk->ordinal != 0)
 	{
@@ -181,13 +174,6 @@ HTREEITEM ImportsHandling::addApiToTreeView(CTreeViewCtrl& idTreeView, HTREEITEM
 		swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("va: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" rva: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" ptr: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(""),importThunk->va,importThunk->rva,importThunk->apiAddressVA);
 	}
 
-	/*
-	tvInsert.hParent = parentDll;
-	tvInsert.hInsertAfter = TVI_LAST;
-	tvInsert.item.mask = TVIF_TEXT|TVIF_IMAGE|TVIF_SELECTEDIMAGE;
-	tvInsert.item.pszText = stringBuffer;
-	return TreeView_InsertItem(idTreeView, &tvInsert);
-	*/
 	return idTreeView.InsertItem(stringBuffer, parentDll, TVI_LAST);
 }
 
@@ -235,25 +221,27 @@ void ImportsHandling::showImports(bool invalid, bool suspect)
 	}
 }
 
-bool ImportsHandling::isItemSelected(CTreeViewCtrl& hwndTV, HTREEITEM hItem)
+bool ImportsHandling::isItemSelected(CTreeViewCtrl& hwndTV, CTreeItem hItem)
 {
-	return (hwndTV.GetItemState(hItem, TVIS_SELECTED) & TVIS_SELECTED) != 0;
+	const UINT state = TVIS_SELECTED;
+	return ((hwndTV.GetItemState(hItem, state) & state) == state);
 }
 
-void ImportsHandling::unselectItem(CTreeViewCtrl& hwndTV, HTREEITEM htItem)
+void ImportsHandling::unselectItem(CTreeViewCtrl& hwndTV, CTreeItem htItem)
 {
 	selectItem(hwndTV, htItem, false);
 }
 
-bool ImportsHandling::selectItem(CTreeViewCtrl& hwndTV, HTREEITEM hItem, bool select)
+bool ImportsHandling::selectItem(CTreeViewCtrl& hwndTV, CTreeItem hItem, bool select)
 {
-	return FALSE != hwndTV.SetItemState(hItem, (select ? TVIS_SELECTED : 0), TVIS_SELECTED);
+	const UINT state = TVIS_SELECTED;
+	return FALSE != hwndTV.SetItemState(hItem, (select ? state : 0), state);
 }
 
-void ImportsHandling::setFocus(CTreeViewCtrl& hwndTV, HTREEITEM htItem)
+void ImportsHandling::setFocus(CTreeViewCtrl& hwndTV, CTreeItem htItem)
 {
 	// the current focus
-	HTREEITEM htFocus = hwndTV.GetSelectedItem();
+	CTreeItem htFocus = hwndTV.GetSelectedItem();
 
 	if ( htItem )
 	{
@@ -303,15 +291,13 @@ void ImportsHandling::setFocus(CTreeViewCtrl& hwndTV, HTREEITEM htItem)
 	}
 }
 
-bool ImportsHandling::invalidateFunction( HTREEITEM selectedTreeNode )
+bool ImportsHandling::invalidateFunction( CTreeItem selectedTreeNode )
 {
 	std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
 	std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
 	ImportModuleThunk * moduleThunk;
 	ImportThunk * importThunk;
 
-	TV_ITEM tvi = {0};
-	
 
 	iterator1 = moduleList.begin();
 
@@ -389,7 +375,7 @@ void ImportsHandling::updateModuleInTreeView(ImportModuleThunk * importThunk)
 	TreeImports.SetItemText(importThunk->hTreeItem, stringBuffer);
 }
 
-bool ImportsHandling::cutThunk( HTREEITEM selectedTreeNode )
+bool ImportsHandling::cutThunk( CTreeItem selectedTreeNode )
 {
 	std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
 	std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
@@ -410,7 +396,6 @@ bool ImportsHandling::cutThunk( HTREEITEM selectedTreeNode )
 
 			if (importThunk->hTreeItem == selectedTreeNode)
 			{
-
 				TreeImports.DeleteItem(importThunk->hTreeItem);
 				moduleThunk->thunkList.erase(iterator2);
 
@@ -435,7 +420,7 @@ bool ImportsHandling::cutThunk( HTREEITEM selectedTreeNode )
 	return false;
 }
 
-bool ImportsHandling::deleteTreeNode( HTREEITEM selectedTreeNode )
+bool ImportsHandling::deleteTreeNode( CTreeItem selectedTreeNode )
 {
 	std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
 	std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
@@ -451,6 +436,7 @@ bool ImportsHandling::deleteTreeNode( HTREEITEM selectedTreeNode )
 		if (moduleThunk->hTreeItem == selectedTreeNode)
 		{
 			TreeImports.DeleteItem(moduleThunk->hTreeItem);
+
 			moduleThunk->thunkList.clear();
 			moduleList.erase(iterator1);
 			return true;
@@ -481,7 +467,7 @@ bool ImportsHandling::deleteTreeNode( HTREEITEM selectedTreeNode )
 	return false;
 }
 
-DWORD_PTR ImportsHandling::getApiAddressByNode( HTREEITEM selectedTreeNode )
+DWORD_PTR ImportsHandling::getApiAddressByNode( CTreeItem selectedTreeNode )
 {
 	std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
 	std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
@@ -602,7 +588,7 @@ void ImportsHandling::addUnknownModuleToModuleList(DWORD_PTR firstThunk)
 	ImportModuleThunk module;
 
 	module.firstThunk = firstThunk;
-	wcscpy_s(module.moduleName, MAX_PATH, TEXT("?"));
+	wcscpy_s(module.moduleName, MAX_PATH, L"?");
 
 	moduleListNew.insert(std::pair<DWORD_PTR,ImportModuleThunk>(firstThunk,module));
 }
@@ -677,7 +663,7 @@ bool ImportsHandling::addNotFoundApiToModuleList(ImportThunk * apiNotFound)
 	import.apiAddressVA = apiNotFound->apiAddressVA;
 	import.ordinal = 0;
 
-	wcscpy_s(import.moduleName, MAX_PATH, TEXT("?"));
+	wcscpy_s(import.moduleName, MAX_PATH, L"?");
 	strcpy_s(import.name, MAX_PATH, "?");
 
 	module->thunkList.insert(std::pair<DWORD_PTR,ImportThunk>(import.rva, import));
