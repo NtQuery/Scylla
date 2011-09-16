@@ -1,5 +1,5 @@
 #include "MainGui.h"
-#include "ImportsHandling.h"
+
 #include "definitions.h"
 #include "PluginLoader.h"
 #include "ConfigurationHolder.h"
@@ -13,203 +13,228 @@
 #include "AboutGui.h"
 #include "OptionsGui.h"
 
-HINSTANCE MainGui::hInstance = 0;
-HWND MainGui::hWndParent = 0;
-HWND MainGui::hWndMainDlg = 0;
-Process * MainGui::selectedProcess = 0;
-
-WCHAR MainGui::stringBuffer[600] = {0};
-
-ProcessLister MainGui::processLister;
-ImportsHandling MainGui::importsHandling;
-ProcessAccessHelp MainGui::processAccessHelp;
-ApiReader MainGui::apiReader;
-
-void MainGui::initDialog(HINSTANCE hInstance)
+MainGui::MainGui(HINSTANCE hInstance) : selectedProcess(0), importsHandling(TreeImports)
 {
-	hInstance = hInstance;
+	this->hInstance = hInstance;
+
 	Logger::getDebugLogFilePath();
 	ConfigurationHolder::loadConfiguration();
 	PluginLoader::findAllPlugins();
 	NativeWinApi::initialize();
 	SystemInformation::getSystemInformation();
-
-
-	if (SystemInformation::currenOS == UNKNOWN_OS)
-	{
-		MessageBox(0, TEXT("Operating System is not supported"), TEXT("Error Operating System"),MB_OK);
-		return;
-	}
-
-	
-	processAccessHelp.getProcessModules(GetCurrentProcessId(), processAccessHelp.ownModuleList);
-
-	//Register controls, required for Windows XP
-	InitCommonControls();
-
-	DialogBox(hInstance, MAKEINTRESOURCE(IDD_DLG_MAIN),hWndParent, (DLGPROC)mainDlgProc);
-
-	//ConfigurationHolder::saveConfiguration();
 }
 
-LRESULT CALLBACK MainGui::mainDlgProc(HWND hWndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
-	hWndMainDlg = hWndDlg;
-	HTREEITEM selectedTreeNode = 0;
-	switch(uMsg)
+	if (SystemInformation::currenOS == UNKNOWN_OS)
 	{
-	case WM_INITDIALOG:
-		//init dialog elements
-		dialogInitActionHandler();
+		::MessageBox(0, TEXT("Operating System is not supported"), TEXT("Error Operating System"), MB_OK);
+		EndDialog(0);
 		return TRUE;
-
-	case WM_NOTIFY:
-		switch(LOWORD(wParam))
-		{
-		case IDC_TREE_IMPORTS:
-			{
-				if(((LPNMHDR)lParam)->code == NM_CLICK)
-				{
-					//Logger::printfDialog(L"NM_CLICK");
-				}
-				if(((LPNMHDR)lParam)->code == NM_DBLCLK)
-				{
-					//Logger::printfDialog(L"NM_DBLCLK");
-				}
-				if(((LPNMHDR)lParam)->code == NM_RCLICK)
-				{
-					//Logger::printfDialog(L"NM_RCLICK");
-
-					selectedTreeNode=(HTREEITEM)SendDlgItemMessage (hWndMainDlg,IDC_TREE_IMPORTS,TVM_GETNEXTITEM,TVGN_DROPHILITE,0);
-					if(selectedTreeNode != NULL)
-					{
-						SendDlgItemMessage(hWndMainDlg,IDC_TREE_IMPORTS,TVM_SELECTITEM,TVGN_CARET,(LPARAM)selectedTreeNode);
-					}
-				}
-				if(((LPNMHDR)lParam)->code == NM_RDBLCLK)
-				{
-					//Logger::printfDialog(L"NM_RDBLCLK");
-				}
-			}
-			break;
-			/*case IDC_MODULELIST:
-				LPNMLISTVIEW pnmv = (LPNMLISTVIEW)lParam;
-				if (pnmv->uChanged & LVIF_STATE)
-				{
-					if ((pnmv->uNewState & LVIS_SELECTED) && (!(pnmv->uOldState & LVIS_SELECTED)) && (pnmv->hdr.code == LVN_ITEMCHANGED))
-					{
-
-						//sprintf(stringBuffer,"%X",i);
-						//MessageBox(hWndDlg, text,"Display Notification", MB_OK);
-						break;
-					}
-				}*/
-		}
-		return TRUE;
-	case WM_COMMAND:
-		switch(LOWORD(wParam))
-		{
-		case IDC_CBO_PROCESSLIST:
-			switch(HIWORD(wParam))
-			{
-			case CBN_DROPDOWN: //list is about to display
-				fillProcessListComboBox(GetDlgItem(hWndDlg, IDC_CBO_PROCESSLIST));
-				break;
-			case CBN_SELENDOK: //item selected
-				processSelectedActionHandler(SendMessage(GetDlgItem(hWndDlg, IDC_CBO_PROCESSLIST),CB_GETCURSEL,0,0));
-				break;
-			}
-
-			return TRUE;
-
-		case IDC_BTN_PICKDLL:
-			pickDllActionHandler();
-			return TRUE;
-		case IDC_BTN_OPTIONS:
-			optionsActionHandler();
-			return TRUE;
-		case IDC_BTN_DUMP:
-			dumpActionHandler();
-			return TRUE;
-		case IDC_BTN_FIXDUMP:
-			dumpFixActionHandler();
-			return TRUE;
-		case IDC_BTN_PEREBUILD:
-			peRebuildActionHandler();
-			return TRUE;
-		case IDC_BTN_DLLINJECT:
-			dllInjectActionHandler();
-			return TRUE;
-		case ID_MISC_DLLINJECTION:
-			dllInjectActionHandler();
-			return TRUE;
-		case ID_MISC_PREFERENCES:
-			optionsActionHandler();
-			return TRUE;
-		case IDC_BTN_IATAUTOSEARCH:
-			iatAutosearchActionHandler();
-			return TRUE;
-		case IDC_BTN_GETIMPORTS:
-			getImportsActionHandler();
-			return TRUE;
-		case IDC_BTN_INVALIDIMPORTS:
-			showInvalidImportsActionHandler();
-			return TRUE;
-		case IDC_BTN_SUSPECTIMPORTS:
-			showSuspectImportsActionHandler();
-			return TRUE;
-		case IDC_BTN_CLEARIMPORTS:
-			TreeView_DeleteAllItems(GetDlgItem(hWndDlg, IDC_TREE_IMPORTS));
-			importsHandling.moduleList.clear();
-			return TRUE;
-		case IDC_BTN_CLEARLOG:
-			clearOutputLog();
-			return TRUE;
-		/*case IDC_BTN_ABOUT:
-			showAboutDialog();
-			return TRUE;*/
-		case ID_HELP_ABOUT:
-			showAboutDialog();
-			return TRUE;
-		/*case IDC_BTN_EXIT:
-			PostQuitMessage(0);
-			EndDialog(hWndDlg, 0);
-			return TRUE;*/
-		case ID_FILE_EXIT:
-			PostQuitMessage(0);
-			EndDialog(hWndDlg, 0);
-			return TRUE;
-		case IDCANCEL:
-			PostQuitMessage(0);
-			EndDialog(hWndDlg, 0);
-			return TRUE;
-		}
-		return TRUE;
-
-	case WM_LBUTTONDOWN:
-		//leftButtonDownActionHandler();
-		//return TRUE;
-
-	case WM_CONTEXTMENU:
-		return OnContextMenu(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-	default:
-		return FALSE;
 	}
+
+	if(ConfigurationHolder::getConfigObject(DEBUG_PRIVILEGE)->isTrue())
+	{
+		processLister.setDebugPrivileges();
+	}
+
+	processAccessHelp.getProcessModules(GetCurrentProcessId(), processAccessHelp.ownModuleList);
+
+	TreeImports.Attach(GetDlgItem(IDC_TREE_IMPORTS));
+	ComboProcessList.Attach(GetDlgItem(IDC_CBO_PROCESSLIST));
+	ListLog.Attach(GetDlgItem(IDC_LIST_LOG));
+
+	EditOEPAddress.Attach(GetDlgItem(IDC_EDIT_OEPADDRESS));
+	EditIATAddress.Attach(GetDlgItem(IDC_EDIT_IATADDRESS));
+	EditIATSize.Attach(GetDlgItem(IDC_EDIT_IATSIZE));
+
+	EditOEPAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
+	EditOEPAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
+	EditOEPAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
+
+	enableDialogButtons(FALSE);
+
+	setIconAndDialogCaption();
+
+	return TRUE;
+}
+
+void MainGui::OnLButtonDown(UINT nFlags, CPoint point)
+{
+
+}
+
+void MainGui::OnContextMenu(CWindow wnd, CPoint point)
+{ 
+	HWND hwnd = 0; 
+	//POINT pt = { x, y };        // location of mouse click 
+	//TV_ITEM tvi;
+	//WCHAR ttt[260] = {0};
+	//HTREEITEM selectedTreeNode = 0;
+
+	if ((hwnd = mouseInDialogItem(IDC_TREE_IMPORTS, point)) != NULL)
+	{
+		if(TreeImports.GetCount()) //module list should not be empty
+		{
+			/*selectedTreeNode = (HTREEITEM)SendDlgItemMessage(hWndMainDlg,IDC_TREE_IMPORTS,TVM_GETNEXTITEM,TVGN_CARET,(LPARAM)selectedTreeNode);
+			tvi.mask=TVIF_TEXT;   // item text attrivute
+
+			tvi.pszText=ttt;     // Text is the pointer to the text 
+
+			tvi.cchTextMax=260;   // size of text to retrieve.
+
+			tvi.hItem=selectedTreeNode;   // the selected item
+
+			SendDlgItemMessage(hWndMainDlg,IDC_TREE_IMPORTS,TVM_GETITEM,TVGN_CARET,(LPARAM)&tvi);
+			Logger::printfDialog(L"selected %s",tvi.pszText);*/
+			DisplayContextMenuImports(hwnd, point);
+		}
+		//return true;
+	}
+	//if (PtInRect(&rc, pt)) 
+	//{ 
+	//	ClientToScreen(hwnd, &pt); 
+	//	DisplayContextMenu(hwnd, pt); 
+	//	return TRUE; 
+	//} 
+
+	// Return FALSE if no menu is displayed. 
+
+	//return false; 
+}
+
+LRESULT MainGui::OnTreeImportsClick(const NMHDR* pnmh)
+{
+	//Logger::printfDialog(L"NM_CLICK");
+	return FALSE;
+}
+
+LRESULT MainGui::OnTreeImportsDoubleClick(const NMHDR* pnmh)
+{
+	//Logger::printfDialog(L"NM_DBLCLK");
+	return FALSE;
+}
+
+LRESULT MainGui::OnTreeImportsRightClick(const NMHDR* pnmh)
+{
+	//Logger::printfDialog(L"NM_RCLICK");
+
+	HTREEITEM selectedTreeNode = TreeImports.GetNextItem(NULL, TVGN_DROPHILITE);
+	if(selectedTreeNode != NULL)
+	{
+		TreeImports.Select(selectedTreeNode, TVGN_CARET);
+	}
+	return TRUE;
+}
+
+LRESULT MainGui::OnTreeImportsRightDoubleClick(const NMHDR* pnmh)
+{
+	//Logger::printfDialog(L"NM_RDBLCLK");
+	return FALSE;
+}
+
+void MainGui::OnProcessListDrop(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	fillProcessListComboBox(ComboProcessList);
+}
+
+void MainGui::OnProcessListSelected(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	processSelectedActionHandler(ComboProcessList.GetCurSel());
+	//processSelectedActionHandler(SendMessage(GetDlgItem(hWndDlg, IDC_CBO_PROCESSLIST),CB_GETCURSEL,0,0));
+}
+
+void MainGui::OnPickDLL(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	pickDllActionHandler();
+}
+
+void MainGui::OnOptions(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	optionsActionHandler();
+}
+
+void MainGui::OnDump(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	dumpActionHandler();
+}
+
+void MainGui::OnFixDump(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	dumpFixActionHandler();
+}
+
+void MainGui::OnPERebuild(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	peRebuildActionHandler();
+}
+
+void MainGui::OnDLLInject(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	dllInjectActionHandler();
+}
+
+void MainGui::OnIATAutoSearch(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	iatAutosearchActionHandler();
+}
+
+void MainGui::OnGetImports(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	getImportsActionHandler();
+}
+
+void MainGui::OnInvalidImports(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	showInvalidImportsActionHandler();
+}
+
+void MainGui::OnSuspectImports(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	showSuspectImportsActionHandler();
+}
+
+void MainGui::OnClearImports(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	TreeImports.DeleteAllItems();
+	//TreeView_DeleteAllItems(GetDlgItem(hWndDlg, IDC_TREE_IMPORTS));
+	importsHandling.moduleList.clear();
+}
+
+void MainGui::OnClearLog(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	clearOutputLog();
+}
+
+void MainGui::OnExit(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	//PostQuitMessage(0);
+
+	EndDialog(0);
+	//EndDialog(hWndDlg, 0);
+}
+
+void MainGui::OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	showAboutDialog();
 }
 
 void MainGui::setIconAndDialogCaption()
 {
-	if (hWndMainDlg)
+	if (m_hWnd)//if (hWndMainDlg)
 	{
-		HICON hicon = LoadIcon(GetModuleHandle(0),MAKEINTRESOURCE(IDI_ICON_SCYLLA1));
-		SendMessage(hWndMainDlg, WM_SETICON, ICON_BIG, (LPARAM)hicon);
-		SendMessage(hWndMainDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
+		HICON hicon = LoadIcon(GetModuleHandle(0), MAKEINTRESOURCE(IDI_ICON_SCYLLA1));
+		//SendMessage(hWndMainDlg, WM_SETICON, ICON_BIG, (LPARAM)hicon);
+		//SendMessage(hWndMainDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
+
+		SetIcon(hicon, TRUE);
+		SetIcon(hicon, FALSE);
 		
 		swprintf_s(stringBuffer, _countof(stringBuffer),TEXT(APPNAME)TEXT(" ")TEXT(ARCHITECTURE)TEXT(" ")TEXT(APPVERSION)TEXT(" "));
-		SetWindowText(hWndMainDlg,stringBuffer);
+		//SetWindowText(hWndMainDlg,stringBuffer);
+		SetWindowText(stringBuffer);
 	}
 }
-
 
 void MainGui::leftButtonDownActionHandler(WPARAM wParam, LPARAM lParam)
 {
@@ -227,26 +252,9 @@ void MainGui::leftButtonDownActionHandler(WPARAM wParam, LPARAM lParam)
 	}
 }
 
-void MainGui::dialogInitActionHandler()
-{
-		setIconAndDialogCaption();
-
-		if (ConfigurationHolder::getConfigObject(DEBUG_PRIVILEGE)->isTrue())
-		{
-			processLister.setDebugPrivileges();
-		}
-		
-
-		enableDialogButtons(FALSE);
-
-		Edit_LimitText(GetDlgItem(hWndMainDlg,IDC_EDIT_OEPADDRESS), MAX_HEX_VALUE_EDIT_LENGTH);
-		Edit_LimitText(GetDlgItem(hWndMainDlg,IDC_EDIT_IATADDRESS), MAX_HEX_VALUE_EDIT_LENGTH);
-		Edit_LimitText(GetDlgItem(hWndMainDlg,IDC_EDIT_IATSIZE), MAX_HEX_VALUE_EDIT_LENGTH);
-}
-
 void MainGui::pickDllActionHandler()
 {
-	if (PickDllGui::initDialog(hInstance,hWndMainDlg, processAccessHelp.moduleList))
+	if (PickDllGui::initDialog(hInstance,m_hWnd, processAccessHelp.moduleList))
 	{
 		//get selected module
 		processAccessHelp.selectedModule = PickDllGui::selectedModule;
@@ -264,7 +272,7 @@ void MainGui::startDisassemblerGui(HTREEITEM selectedTreeNode)
 	DWORD_PTR address = importsHandling.getApiAddressByNode(selectedTreeNode);
 	if (address)
 	{
-		DisassemblerGui::initDialog(hInstance,hWndMainDlg,address);
+		DisassemblerGui::initDialog(hInstance,m_hWnd,address);
 	}
 	
 }
@@ -312,42 +320,44 @@ void MainGui::processSelectedActionHandler(LRESULT index)
 	selectedProcess->entryPoint = ProcessAccessHelp::getEntryPointFromFile(selectedProcess->fullPath);
 
 	swprintf_s(stringBuffer, _countof(stringBuffer),TEXT(PRINTF_DWORD_PTR_FULL),selectedProcess->entryPoint + selectedProcess->imageBase);
-	SetDlgItemText(hWndMainDlg, IDC_EDIT_OEPADDRESS, stringBuffer);
+	//SetDlgItemText(hWndMainDlg, IDC_EDIT_OEPADDRESS, stringBuffer);
+
+	EditOEPAddress.SetWindowText(stringBuffer);
 }
 
 
 
-void MainGui::fillProcessListComboBox(HWND hCombo)
+void MainGui::fillProcessListComboBox(CComboBox& hCombo)
 {
-	if (hCombo) 
+	hCombo.ResetContent();
+
+	std::vector<Process>& processList = processLister.getProcessListSnapshot();
+
+	for (size_t i = 0; i < processList.size(); i++)
 	{
-		SendMessage(hCombo,CB_RESETCONTENT,0,0);
-
-		std::vector<Process>& processList = processLister.getProcessListSnapshot();
-
-		for (size_t i = 0; i < processList.size(); i++)
-		{
-			swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("0x%04X - %s - %s"),processList[i].PID,processList[i].filename,processList[i].fullPath);
-			SendMessage(hCombo,CB_ADDSTRING,0,(LPARAM)stringBuffer);
-		}
+		swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("0x%04X - %s - %s"),processList[i].PID,processList[i].filename,processList[i].fullPath);
+		hCombo.AddString(stringBuffer);
 	}
 }
 
 void MainGui::addTextToOutputLog(const WCHAR * text)
 {
-	if (hWndMainDlg)
+	if (m_hWnd)
 	{
-		HWND hList = GetDlgItem(hWndMainDlg,IDC_LIST_LOG);
+		//HWND hList = GetDlgItem(hWndMainDlg,IDC_LIST_LOG);
 
-		ListBox_SetCurSel(hList, ListBox_AddString(hList,text));
+		//ListBox_SetCurSel(hList, ListBox_AddString(hList,text));
+
+		ListLog.SetCurSel(ListLog.AddString(text));
 	}
 }
 
 void MainGui::clearOutputLog()
 {
-	if (hWndMainDlg)
+	if (m_hWnd)
 	{
-		SendDlgItemMessage(hWndMainDlg, IDC_LIST_LOG, LB_RESETCONTENT, 0, 0);
+		ListLog.ResetContent();
+		//SendDlgItemMessage(hWndMainDlg, IDC_LIST_LOG, LB_RESETCONTENT, 0, 0);
 	}
 }
 
@@ -368,7 +378,8 @@ void MainGui::iatAutosearchActionHandler()
 	DWORD sizeIAT = 0;
 	IATSearch iatSearch;
 
-	GetDlgItemText(hWndMainDlg, IDC_EDIT_OEPADDRESS, stringBuffer, _countof(stringBuffer));
+	EditOEPAddress.GetWindowText(stringBuffer, _countof(stringBuffer));
+	//GetDlgItemText(hWndMainDlg, IDC_EDIT_OEPADDRESS, stringBuffer, _countof(stringBuffer));
 
 	if (wcslen(stringBuffer) > 1)
 	{
@@ -380,13 +391,15 @@ void MainGui::iatAutosearchActionHandler()
 				Logger::printfDialog(TEXT("IAT found at VA ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" RVA ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size 0x%04X (%d)"),addressIAT, addressIAT - processAccessHelp.targetImageBase,sizeIAT,sizeIAT);
 
 				swprintf_s(stringBuffer, _countof(stringBuffer),TEXT(PRINTF_DWORD_PTR_FULL),addressIAT);
-				SetDlgItemText(hWndMainDlg,IDC_EDIT_IATADDRESS,stringBuffer);
+				EditIATAddress.SetWindowText(stringBuffer);
+				//SetDlgItemText(hWndMainDlg,IDC_EDIT_IATADDRESS,stringBuffer);
 
 				swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("%08X"),sizeIAT);
-				SetDlgItemText(hWndMainDlg,IDC_EDIT_IATSIZE,stringBuffer);
+				EditIATSize.SetWindowText(stringBuffer);
+				//SetDlgItemText(hWndMainDlg,IDC_EDIT_IATSIZE,stringBuffer);
 
 				swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("IAT found! Start Address ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size 0x%04X (%d) "),addressIAT,sizeIAT,sizeIAT);
-				MessageBox(hWndMainDlg,stringBuffer, TEXT("IAT found"), MB_OK);
+				MessageBox(stringBuffer, TEXT("IAT found"));
 				
 			}
 			else
@@ -403,10 +416,12 @@ void MainGui::getImportsActionHandler()
 	DWORD_PTR addressIAT = 0;
 	DWORD sizeIAT = 0;
 
-	GetDlgItemText(hWndMainDlg, IDC_EDIT_IATADDRESS, stringBuffer, sizeof(stringBuffer));
+	EditIATAddress.GetWindowText(stringBuffer, _countof(stringBuffer));
+	//GetDlgItemText(hWndMainDlg, IDC_EDIT_IATADDRESS, stringBuffer, sizeof(stringBuffer));
 	addressIAT = stringToDwordPtr(stringBuffer);
 
-	GetDlgItemText(hWndMainDlg, IDC_EDIT_IATSIZE, stringBuffer, sizeof(stringBuffer));
+	EditIATSize.GetWindowText(stringBuffer, _countof(stringBuffer));
+	//GetDlgItemText(hWndMainDlg, IDC_EDIT_IATSIZE, stringBuffer, sizeof(stringBuffer));
 	sizeIAT = wcstoul(stringBuffer, NULL, 16);
 
 	if (addressIAT && sizeIAT)
@@ -440,45 +455,6 @@ DWORD_PTR MainGui::stringToDwordPtr(WCHAR * hexString)
 	}
 }
 
-bool MainGui::OnContextMenu(int x, int y) 
-{ 
-	HWND hwnd = 0; 
-	POINT pt = { x, y };        // location of mouse click 
-	//TV_ITEM tvi;
-	//WCHAR ttt[260] = {0};
-	//HTREEITEM selectedTreeNode = 0;
-
-	if ((hwnd = mouseInDialogItem(IDC_TREE_IMPORTS, pt)) != NULL)
-	{
-		if (TreeView_GetCount(hwnd)) //module list should not be empty
-		{
-			/*selectedTreeNode = (HTREEITEM)SendDlgItemMessage(hWndMainDlg,IDC_TREE_IMPORTS,TVM_GETNEXTITEM,TVGN_CARET,(LPARAM)selectedTreeNode);
-			tvi.mask=TVIF_TEXT;   // item text attrivute
-
-			tvi.pszText=ttt;     // Text is the pointer to the text 
-
-			tvi.cchTextMax=260;   // size of text to retrieve.
-
-			tvi.hItem=selectedTreeNode;   // the selected item
-
-			SendDlgItemMessage(hWndMainDlg,IDC_TREE_IMPORTS,TVM_GETITEM,TVGN_CARET,(LPARAM)&tvi);
-			Logger::printfDialog(L"selected %s",tvi.pszText);*/
-			DisplayContextMenuImports(hwnd, pt);
-		}
-		return true;
-	}
-	//if (PtInRect(&rc, pt)) 
-	//{ 
-	//	ClientToScreen(hwnd, &pt); 
-	//	DisplayContextMenu(hwnd, pt); 
-	//	return TRUE; 
-	//} 
-
-	// Return FALSE if no menu is displayed. 
-
-	return false; 
-}
-
 void MainGui::DisplayContextMenuImports(HWND hwnd, POINT pt)
 {
 	BOOL menuItem = 0;
@@ -503,7 +479,8 @@ void MainGui::DisplayContextMenuImports(HWND hwnd, POINT pt)
 				return;
 			}
 
-			selectedTreeNode = (HTREEITEM)SendDlgItemMessage(hWndMainDlg,IDC_TREE_IMPORTS,TVM_GETNEXTITEM,TVGN_CARET,(LPARAM)selectedTreeNode);
+			selectedTreeNode = TreeImports.GetNextItem(selectedTreeNode, TVGN_CARET);
+			//selectedTreeNode = (HTREEITEM)SendDlgItemMessage(hWndMainDlg,IDC_TREE_IMPORTS,TVM_GETNEXTITEM,TVGN_CARET,(LPARAM)selectedTreeNode);
 
 			switch (menuItem)
 			{
@@ -548,18 +525,18 @@ void MainGui::DisplayContextMenuImports(HWND hwnd, POINT pt)
 HWND MainGui::mouseInDialogItem(int dlgItem, POINT pt)
 {
 	RECT rc;
-	HWND hwnd = GetDlgItem(hWndMainDlg, dlgItem);
+	HWND hwnd = GetDlgItem(dlgItem);//GetDlgItem(hWndMainDlg, dlgItem);
 	if (hwnd)
 	{
 		// Get the bounding rectangle of the client area. 
-		GetClientRect(hwnd, &rc); 
+		GetClientRect(&rc); //GetClientRect(hwnd, &rc);
 
 		// Convert the mouse position to client coordinates. 
-		ScreenToClient(hwnd, &pt); 
+		ScreenToClient(&pt); //ScreenToClient(hwnd, &pt); 
 
 		// If the position is in the client area, display a  
 		// shortcut menu.
-		if (PtInRect(&rc, pt))
+		if(PtInRect(&rc, pt))
 		{
 			return hwnd;
 		}
@@ -633,7 +610,7 @@ void MainGui::DisplayContextMenu(HWND hwnd, POINT pt)
 
 void MainGui::appendPluginListToMenu(HMENU hMenuTrackPopup)
 {
-	HMENU newMenu = CreatePopupMenu();
+	CMenu newMenu = CreatePopupMenu(); //HMENU newMenu = CreatePopupMenu();
 	
 	std::vector<Plugin> &scyllaPluginList = PluginLoader::getScyllaPluginList();
 	std::vector<Plugin> &imprecPluginList = PluginLoader::getImprecPluginList();
@@ -642,11 +619,12 @@ void MainGui::appendPluginListToMenu(HMENU hMenuTrackPopup)
 	{
 		for (size_t i = 0; i < scyllaPluginList.size(); i++)
 		{
+
 			AppendMenu(newMenu, MF_STRING, i + PLUGIN_MENU_BASE_ID, scyllaPluginList[i].pluginName);
 		}
 
 		AppendMenu(hMenuTrackPopup,MF_MENUBARBREAK,0,0);
-		AppendMenu(hMenuTrackPopup,MF_POPUP,(UINT_PTR)newMenu,TEXT("Scylla Plugins"));
+		AppendMenu(hMenuTrackPopup,MF_POPUP,(UINT_PTR)(HMENU)newMenu,TEXT("Scylla Plugins"));
 	}
 
 	newMenu = CreatePopupMenu();
@@ -659,7 +637,7 @@ void MainGui::appendPluginListToMenu(HMENU hMenuTrackPopup)
 		}
 
 		AppendMenu(hMenuTrackPopup,MF_MENUBARBREAK,0,0);
-		AppendMenu(hMenuTrackPopup,MF_POPUP,(UINT_PTR)newMenu,TEXT("ImpREC Plugins"));
+		AppendMenu(hMenuTrackPopup,MF_POPUP,(UINT_PTR)(HMENU)newMenu,TEXT("ImpREC Plugins"));
 	}
 
 }
@@ -709,7 +687,7 @@ void MainGui::dumpActionHandler()
 		else
 		{
 			Logger::printfDialog(TEXT("Error: Cannot dump image."));
-			MessageBox(hWndMainDlg,TEXT("Cannot dump image."),TEXT("Failure"),MB_OK);
+			MessageBox(TEXT("Cannot dump image."),TEXT("Failure"));
 		}
 
 		delete [] targetFile;
@@ -718,7 +696,8 @@ void MainGui::dumpActionHandler()
 
 DWORD_PTR MainGui::getOEPFromGui()
 {
-	if (GetDlgItemText(hWndMainDlg, IDC_EDIT_OEPADDRESS, stringBuffer, _countof(stringBuffer)))
+	//if (GetDlgItemText(hWndMainDlg, IDC_EDIT_OEPADDRESS, stringBuffer, _countof(stringBuffer)))
+	if (EditOEPAddress.GetWindowText(stringBuffer, _countof(stringBuffer)) > 0)
 	{
 		return stringToDwordPtr(stringBuffer);
 	}
@@ -755,7 +734,7 @@ void MainGui::peRebuildActionHandler()
 		if (newSize < 10)
 		{
 			Logger::printfDialog(TEXT("Rebuild failed %s"), targetFile);
-			MessageBox(hWndMainDlg,TEXT("Rebuild failed."),TEXT("Failure"),MB_OK);
+			MessageBox(TEXT("Rebuild failed."),TEXT("Failure"));
 		}
 		else
 		{
@@ -777,7 +756,8 @@ void MainGui::dumpFixActionHandler()
 	WCHAR newFilePath[MAX_PATH];
 	ImportRebuild importRebuild;
 
-	if (TreeView_GetCount(GetDlgItem(hWndMainDlg, IDC_TREE_IMPORTS)) < 2)
+	//if (TreeView_GetCount(GetDlgItem(hWndMainDlg, IDC_TREE_IMPORTS)) < 2)
+	if (TreeImports.GetCount() < 2)
 	{
 		Logger::printfDialog(TEXT("Nothing to rebuild"));
 		return;
@@ -824,7 +804,7 @@ void MainGui::dumpFixActionHandler()
 		else
 		{
 			Logger::printfDialog(TEXT("Import Rebuild failed, target %s"), targetFile);
-			MessageBox(hWndMainDlg,L"Imports rebuilding failed",L"Failure",MB_OK);
+			MessageBox(L"Imports rebuilding failed",L"Failure");
 		}
 
 		delete [] targetFile;
@@ -834,27 +814,28 @@ void MainGui::dumpFixActionHandler()
 
 void MainGui::enableDialogButtons(BOOL value)
 {
-	EnableWindow(GetDlgItem(hWndMainDlg, IDC_BTN_PICKDLL), value);
-	EnableWindow(GetDlgItem(hWndMainDlg, IDC_BTN_DUMP), value);
-	EnableWindow(GetDlgItem(hWndMainDlg, IDC_BTN_DLLINJECT), value);
-	EnableWindow(GetDlgItem(hWndMainDlg, IDC_BTN_FIXDUMP), value);
-	EnableWindow(GetDlgItem(hWndMainDlg, IDC_BTN_IATAUTOSEARCH), value);
-	EnableWindow(GetDlgItem(hWndMainDlg, IDC_BTN_GETIMPORTS), value);
-	EnableWindow(GetDlgItem(hWndMainDlg, IDC_BTN_SUSPECTIMPORTS), value);
-	EnableWindow(GetDlgItem(hWndMainDlg, IDC_BTN_INVALIDIMPORTS), value);
-	EnableWindow(GetDlgItem(hWndMainDlg, IDC_BTN_CLEARIMPORTS), value);
-	EnableWindow(GetDlgItem(hWndMainDlg, IDC_BTN_OPTIONS), TRUE);
+	GetDlgItem(IDC_BTN_PICKDLL).EnableWindow(value);
+	GetDlgItem(IDC_BTN_DUMP).EnableWindow(value);
+	GetDlgItem(IDC_BTN_DLLINJECT).EnableWindow(value);
+	GetDlgItem(IDC_BTN_FIXDUMP).EnableWindow(value);
+	GetDlgItem(IDC_BTN_IATAUTOSEARCH).EnableWindow(value);
+	GetDlgItem(IDC_BTN_GETIMPORTS).EnableWindow(value);
+	GetDlgItem(IDC_BTN_SUSPECTIMPORTS).EnableWindow(value);
+	GetDlgItem(IDC_BTN_INVALIDIMPORTS).EnableWindow(value);
+	GetDlgItem(IDC_BTN_CLEARIMPORTS).EnableWindow(value);
+
+	GetDlgItem(IDC_BTN_OPTIONS).EnableWindow(TRUE);
 
 	//not yet implemented
-	EnableWindow(GetDlgItem(hWndMainDlg, IDC_BTN_AUTOTRACE), FALSE);
-	EnableWindow(GetDlgItem(hWndMainDlg, IDC_BTN_SAVETREE), FALSE);
-	EnableWindow(GetDlgItem(hWndMainDlg, IDC_BTN_LOADTREE), FALSE);
+	GetDlgItem(IDC_BTN_AUTOTRACE).EnableWindow(FALSE);
+	GetDlgItem(IDC_BTN_SAVETREE).EnableWindow(FALSE);
+	GetDlgItem(IDC_BTN_LOADTREE).EnableWindow(FALSE);
 	
 }
 
 void MainGui::showAboutDialog()
 {
-	AboutGui::initDialog(hInstance,hWndMainDlg);
+	AboutGui::initDialog(hInstance, m_hWnd);
 }
 
 void MainGui::dllInjectActionHandler()
@@ -892,7 +873,7 @@ void MainGui::dllInjectActionHandler()
 
 void MainGui::optionsActionHandler()
 {
-	OptionsGui::initOptionsDialog(hInstance, hWndMainDlg);
+	OptionsGui::initOptionsDialog(hInstance, m_hWnd);
 }
 
 void MainGui::pluginActionHandler( int menuItem )

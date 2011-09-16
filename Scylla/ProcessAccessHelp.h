@@ -12,11 +12,13 @@
 /************************************************************************/
 #include "distorm.h"
 
+/*
 #ifdef _WIN64
 #pragma comment(lib, "distorm_x64.lib")
 #else
 #pragma comment(lib, "distorm_x86.lib")
 #endif
+*/
 
 // The number of the array of instructions the decoder function will use to return the disassembled instructions.
 // Play with this value for performance...

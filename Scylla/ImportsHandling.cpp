@@ -108,9 +108,11 @@ void ImportsHandling::displayAllImports()
 	ImportThunk * importThunk;
 	HTREEITEM module;
 	HTREEITEM apiFunction;
-	HWND idTreeView = GetDlgItem(hWndMainDlg, IDC_TREE_IMPORTS);
+	//HWND idTreeView = GetDlgItem(hWndMainDlg, IDC_TREE_IMPORTS);
 
-	TreeView_DeleteAllItems(idTreeView);
+	//TreeView_DeleteAllItems(idTreeView);
+
+	TreeImports.DeleteAllItems();
 
 	 iterator1 = moduleList.begin();
 
@@ -118,7 +120,7 @@ void ImportsHandling::displayAllImports()
 	 {
 		 moduleThunk = &(iterator1->second);
 
-		 module = addDllToTreeView(idTreeView,moduleThunk->moduleName,moduleThunk->firstThunk,moduleThunk->thunkList.size(),moduleThunk->isValid());
+		 module = addDllToTreeView(TreeImports/*idTreeView*/,moduleThunk->moduleName,moduleThunk->firstThunk,moduleThunk->thunkList.size(),moduleThunk->isValid());
 		
 		 moduleThunk->hTreeItem = module;
 
@@ -127,7 +129,7 @@ void ImportsHandling::displayAllImports()
 		 while (iterator2 != moduleThunk->thunkList.end())
 		 {
 			 importThunk = &(iterator2->second);
-			 apiFunction = addApiToTreeView(idTreeView,module,importThunk);
+			 apiFunction = addApiToTreeView(TreeImports/*idTreeView*/,module,importThunk);
 			 importThunk->hTreeItem = apiFunction;
 			 iterator2++;
 		 }
@@ -137,7 +139,7 @@ void ImportsHandling::displayAllImports()
 
 }
 
-HTREEITEM ImportsHandling::addDllToTreeView(HWND idTreeView, const WCHAR * dllName, DWORD_PTR firstThunk, size_t numberOfFunctions, bool valid)
+HTREEITEM ImportsHandling::addDllToTreeView(CTreeViewCtrl& idTreeView, const WCHAR * dllName, DWORD_PTR firstThunk, size_t numberOfFunctions, bool valid)
 {
 	WCHAR validString[4];
 
@@ -156,10 +158,11 @@ HTREEITEM ImportsHandling::addDllToTreeView(HWND idTreeView, const WCHAR * dllNa
 	tvInsert.hInsertAfter = TVI_ROOT;
 	tvInsert.item.mask = TVIF_TEXT|TVIF_IMAGE|TVIF_SELECTEDIMAGE;
 	tvInsert.item.pszText = stringBuffer;
-	return TreeView_InsertItem(idTreeView, &tvInsert);
+	//return TreeView_InsertItem(idTreeView, &tvInsert);
+	return idTreeView.InsertItem(&tvInsert);
 }
 
-HTREEITEM ImportsHandling::addApiToTreeView(HWND idTreeView, HTREEITEM parentDll, ImportThunk * importThunk)
+HTREEITEM ImportsHandling::addApiToTreeView(CTreeViewCtrl& idTreeView, HTREEITEM parentDll, ImportThunk * importThunk)
 {
 	if (importThunk->ordinal != 0)
 	{
@@ -184,7 +187,8 @@ HTREEITEM ImportsHandling::addApiToTreeView(HWND idTreeView, HTREEITEM parentDll
 	tvInsert.hInsertAfter = TVI_LAST;
 	tvInsert.item.mask = TVIF_TEXT|TVIF_IMAGE|TVIF_SELECTEDIMAGE;
 	tvInsert.item.pszText = stringBuffer;
-	return TreeView_InsertItem(idTreeView, &tvInsert);
+	//return TreeView_InsertItem(idTreeView, &tvInsert);
+	return idTreeView.InsertItem(&tvInsert);
 }
 
 void ImportsHandling::showImports(bool invalid, bool suspect)
@@ -194,10 +198,13 @@ void ImportsHandling::showImports(bool invalid, bool suspect)
 	ImportModuleThunk * moduleThunk;
 	ImportThunk * importThunk;
 
-	HWND idTreeView = GetDlgItem(hWndMainDlg, IDC_TREE_IMPORTS);
+	//HWND idTreeView = GetDlgItem(hWndMainDlg, IDC_TREE_IMPORTS);
 
-	SetFocus(idTreeView);
-	TreeView_SelectItem(idTreeView,0); //remove selection
+	//SetFocus(idTreeView);
+	//TreeView_SelectItem(idTreeView,0); //remove selection
+
+	TreeImports.SetFocus();
+	TreeImports.SelectItem(NULL); //remove selection
 
 	iterator1 = moduleList.begin();
 
@@ -213,17 +220,17 @@ void ImportsHandling::showImports(bool invalid, bool suspect)
 
 			if (invalid && !importThunk->valid)
 			{
-				selectItem(idTreeView, importThunk->hTreeItem);
-				setFocus(idTreeView,importThunk->hTreeItem);
+				selectItem(TreeImports, importThunk->hTreeItem);
+				setFocus(TreeImports, importThunk->hTreeItem);
 			}
 			else if (suspect && importThunk->suspect)
 			{
-				selectItem(idTreeView, importThunk->hTreeItem);
-				setFocus(idTreeView,importThunk->hTreeItem);
+				selectItem(TreeImports, importThunk->hTreeItem);
+				setFocus(TreeImports, importThunk->hTreeItem);
 			}
 			else
 			{
-				unselectItem(idTreeView, importThunk->hTreeItem);
+				unselectItem(TreeImports, importThunk->hTreeItem);
 			}
 
 			iterator2++;
@@ -233,24 +240,25 @@ void ImportsHandling::showImports(bool invalid, bool suspect)
 	}
 }
 
-bool ImportsHandling::isItemSelected(HWND hwndTV, HTREEITEM hItem)
+bool ImportsHandling::isItemSelected(CTreeViewCtrl& hwndTV, HTREEITEM hItem)
 {
 	TV_ITEM tvi;
 	tvi.mask = TVIF_STATE | TVIF_HANDLE;
 	tvi.stateMask = TVIS_SELECTED;
 	tvi.hItem = hItem;
 
-	TreeView_GetItem(hwndTV, &tvi);
+	//TreeView_GetItem(hwndTV, &tvi);
+	hwndTV.GetItem(&tvi);
 
 	return (tvi.state & TVIS_SELECTED) != 0;
 }
 
-void ImportsHandling::unselectItem(HWND hwndTV, HTREEITEM htItem)
+void ImportsHandling::unselectItem(CTreeViewCtrl& hwndTV, HTREEITEM htItem)
 {
 	selectItem(hwndTV, htItem, false);
 }
 
-bool ImportsHandling::selectItem(HWND hwndTV, HTREEITEM hItem, bool select)
+bool ImportsHandling::selectItem(CTreeViewCtrl& hwndTV, HTREEITEM hItem, bool select)
 {
 	TV_ITEM tvi;
 	tvi.mask = TVIF_STATE | TVIF_HANDLE;
@@ -259,7 +267,8 @@ bool ImportsHandling::selectItem(HWND hwndTV, HTREEITEM hItem, bool select)
 	tvi.hItem = hItem;
 
 
-	if ( TreeView_SetItem(hwndTV, &tvi) == -1 )
+	//*if ( TreeView_SetItem(hwndTV, &tvi) == -1 )
+	if ( hwndTV.SetItem(&tvi) == -1 )
 	{
 		return false;
 	}
@@ -267,10 +276,10 @@ bool ImportsHandling::selectItem(HWND hwndTV, HTREEITEM hItem, bool select)
 	return true;
 }
 
-void ImportsHandling::setFocus(HWND hwndTV, HTREEITEM htItem)
+void ImportsHandling::setFocus(CTreeViewCtrl& hwndTV, HTREEITEM htItem)
 {
 	// the current focus
-	HTREEITEM htFocus = (HTREEITEM)TreeView_GetSelection(hwndTV);
+	HTREEITEM htFocus = hwndTV.GetSelectedItem(); //(HTREEITEM)TreeView_GetSelection(hwndTV);
 
 	if ( htItem )
 	{
@@ -285,11 +294,11 @@ void ImportsHandling::setFocus(HWND hwndTV, HTREEITEM htItem)
 				// prevent the tree from unselecting the old focus which it
 				// would do by default (TreeView_SelectItem unselects the
 				// focused item)
-				TreeView_SelectItem(hwndTV, 0);
+				hwndTV.SelectItem(NULL); //TreeView_SelectItem(hwndTV, 0);
 				selectItem(hwndTV, htFocus);
 			}
 
-			TreeView_SelectItem(hwndTV, htItem);
+			hwndTV.SelectItem(htItem); //TreeView_SelectItem(hwndTV, htItem);
 
 			if ( !wasSelected )
 			{
@@ -308,7 +317,7 @@ void ImportsHandling::setFocus(HWND hwndTV, HTREEITEM htItem)
 			bool wasFocusSelected = isItemSelected(hwndTV, htFocus);
 
 			// just clear the focus
-			TreeView_SelectItem(hwndTV, 0);
+			hwndTV.SelectItem(NULL); //TreeView_SelectItem(hwndTV, 0);
 
 			if ( wasFocusSelected )
 			{
@@ -368,7 +377,7 @@ bool ImportsHandling::invalidateFunction( HTREEITEM selectedTreeNode )
 void ImportsHandling::updateImportInTreeView(ImportThunk * importThunk)
 {
 	TV_ITEM tvi = {0};
-	HWND treeControl = GetDlgItem(hWndMainDlg,IDC_TREE_IMPORTS);
+	//HWND treeControl = GetDlgItem(hWndMainDlg, IDC_TREE_IMPORTS);
 
 	if (importThunk->ordinal != 0)
 	{
@@ -392,13 +401,13 @@ void ImportsHandling::updateImportInTreeView(ImportThunk * importThunk)
 	tvi.cchTextMax = 260;
 	tvi.hItem = importThunk->hTreeItem;
 	tvi.mask = TVIF_TEXT;
-	TreeView_SetItem(treeControl,&tvi);
+	TreeImports.SetItem(&tvi); //TreeView_SetItem(treeControl,&tvi);
 }
 
 void ImportsHandling::updateModuleInTreeView(ImportModuleThunk * importThunk)
 {
 	TV_ITEM tvi = {0};
-	HWND treeControl = GetDlgItem(hWndMainDlg,IDC_TREE_IMPORTS);
+	//HWND treeControl = GetDlgItem(hWndMainDlg,IDC_TREE_IMPORTS);
 
 	WCHAR validString[4];
 
@@ -418,7 +427,7 @@ void ImportsHandling::updateModuleInTreeView(ImportModuleThunk * importThunk)
 	tvi.cchTextMax = 260;
 	tvi.hItem = importThunk->hTreeItem;
 	tvi.mask = TVIF_TEXT;
-	TreeView_SetItem(treeControl,&tvi);
+	TreeImports.SetItem(&tvi); //TreeView_SetItem(treeControl,&tvi);
 }
 
 bool ImportsHandling::cutThunk( HTREEITEM selectedTreeNode )
@@ -429,7 +438,7 @@ bool ImportsHandling::cutThunk( HTREEITEM selectedTreeNode )
 	ImportThunk * importThunk;
 
 	TV_ITEM tvi = {0};
-	HWND treeControl = GetDlgItem(hWndMainDlg,IDC_TREE_IMPORTS);
+	//HWND treeControl = GetDlgItem(hWndMainDlg,IDC_TREE_IMPORTS);
 
 	iterator1 = moduleList.begin();
 
@@ -446,12 +455,12 @@ bool ImportsHandling::cutThunk( HTREEITEM selectedTreeNode )
 			if (importThunk->hTreeItem == selectedTreeNode)
 			{
 
-				TreeView_DeleteItem(treeControl,importThunk->hTreeItem);
+				TreeImports.DeleteItem(importThunk->hTreeItem); //TreeView_DeleteItem(treeControl,importThunk->hTreeItem);
 				moduleThunk->thunkList.erase(iterator2);
 
 				if (moduleThunk->thunkList.empty())
 				{
-					TreeView_DeleteItem(treeControl,moduleThunk->hTreeItem);
+					TreeImports.DeleteItem(moduleThunk->hTreeItem); //TreeView_DeleteItem(treeControl,moduleThunk->hTreeItem);
 					moduleList.erase(iterator1);
 				}
 				else
@@ -478,7 +487,7 @@ bool ImportsHandling::deleteTreeNode( HTREEITEM selectedTreeNode )
 	ImportThunk * importThunk;
 
 	TV_ITEM tvi = {0};
-	HWND treeControl = GetDlgItem(hWndMainDlg,IDC_TREE_IMPORTS);
+	//HWND treeControl = GetDlgItem(hWndMainDlg,IDC_TREE_IMPORTS);
 
 	iterator1 = moduleList.begin();
 
@@ -490,7 +499,7 @@ bool ImportsHandling::deleteTreeNode( HTREEITEM selectedTreeNode )
 
 		if (moduleThunk->hTreeItem == selectedTreeNode)
 		{
-			TreeView_DeleteItem(treeControl,moduleThunk->hTreeItem);
+			TreeImports.DeleteItem(moduleThunk->hTreeItem); //TreeView_DeleteItem(treeControl,moduleThunk->hTreeItem);
 			moduleThunk->thunkList.clear();
 			moduleList.erase(iterator1);
 			return true;
@@ -505,7 +514,7 @@ bool ImportsHandling::deleteTreeNode( HTREEITEM selectedTreeNode )
 
 				if (importThunk->hTreeItem == selectedTreeNode)
 				{
-					TreeView_DeleteItem(treeControl,moduleThunk->hTreeItem);
+					TreeImports.DeleteItem(moduleThunk->hTreeItem); //TreeView_DeleteItem(treeControl,moduleThunk->hTreeItem);
 					moduleThunk->thunkList.clear();
 					moduleList.erase(iterator1);
 					return true;
@@ -810,7 +819,7 @@ void ImportsHandling::changeExpandStateOfTreeNodes(UINT flag)
 	std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
 	ImportModuleThunk * moduleThunk;
 
-	HWND treeControl = GetDlgItem(hWndMainDlg,IDC_TREE_IMPORTS);
+	//HWND treeControl = GetDlgItem(hWndMainDlg,IDC_TREE_IMPORTS);
 
 	iterator1 = moduleList.begin();
 
@@ -818,7 +827,7 @@ void ImportsHandling::changeExpandStateOfTreeNodes(UINT flag)
 	{
 		moduleThunk = &(iterator1->second);
 
-		TreeView_Expand(treeControl, moduleThunk->hTreeItem, flag);
+		TreeImports.Expand(moduleThunk->hTreeItem, flag); //TreeView_Expand(treeControl, moduleThunk->hTreeItem, flag);
 
 		iterator1++;
 	}

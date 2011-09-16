@@ -2,6 +2,8 @@
 
 #include "MainGui.h"
 
+extern MainGui* pMainGui;
+
 WCHAR Logger::debugLogFile[MAX_PATH];
 WCHAR Logger::logbuf[300];
 char  Logger::logbufChar[300];
@@ -85,6 +87,6 @@ void Logger::printfDialog(const WCHAR * format, ...)
 	va_end (va_alist);
 
 	
-	MainGui::addTextToOutputLog(logbuf);
-	UpdateWindow(MainGui::hWndMainDlg);
+	pMainGui->addTextToOutputLog(logbuf);
+	UpdateWindow(pMainGui->m_hWnd);
 }
