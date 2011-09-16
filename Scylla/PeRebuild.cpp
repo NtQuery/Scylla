@@ -75,6 +75,9 @@ DWORD PeRebuild::validAlignmentNew(DWORD badAddress)
 
 bool PeRebuild::isRoundedTo(DWORD_PTR dwTarNum, DWORD_PTR dwRoundNum)
 {
+	return (dwTarNum % dwRoundNum) == 0;
+// WTF:
+/*
 #ifdef _WIN64
 	lldiv_t d;
 
@@ -86,6 +89,7 @@ bool PeRebuild::isRoundedTo(DWORD_PTR dwTarNum, DWORD_PTR dwRoundNum)
 #endif
 
 	return (d.rem == 0);
+*/
 }
 
 void PeRebuild::cleanSectionPointer()
