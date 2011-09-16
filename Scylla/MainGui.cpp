@@ -66,13 +66,11 @@ void MainGui::OnLButtonDown(UINT nFlags, CPoint point)
 
 void MainGui::OnContextMenu(CWindow wnd, CPoint point)
 { 
-	HWND hwnd = 0; 
-	//POINT pt = { x, y };        // location of mouse click 
 	//TV_ITEM tvi;
 	//WCHAR ttt[260] = {0};
 	//HTREEITEM selectedTreeNode = 0;
 
-	if ((hwnd = mouseInDialogItem(IDC_TREE_IMPORTS, point)) != NULL)
+	if(wnd.GetDlgCtrlID() == IDC_TREE_IMPORTS)
 	{
 		if(TreeImports.GetCount()) //module list should not be empty
 		{
@@ -87,20 +85,23 @@ void MainGui::OnContextMenu(CWindow wnd, CPoint point)
 
 			SendDlgItemMessage(hWndMainDlg,IDC_TREE_IMPORTS,TVM_GETITEM,TVGN_CARET,(LPARAM)&tvi);
 			Logger::printfDialog(L"selected %s",tvi.pszText);*/
-			DisplayContextMenuImports(hwnd, point);
+
+			//CPoint pt = GetMessagePos();
+			//UINT flags = 0;
+			//if(TreeImports.HitTest(pt, &flags))
+			//{
+				DisplayContextMenuImports(wnd, point);
+			//}
 		}
-		//return true;
+		return;
 	}
+
 	//if (PtInRect(&rc, pt)) 
 	//{ 
 	//	ClientToScreen(hwnd, &pt); 
 	//	DisplayContextMenu(hwnd, pt); 
 	//	return TRUE; 
 	//} 
-
-	// Return FALSE if no menu is displayed. 
-
-	//return false; 
 }
 
 LRESULT MainGui::OnTreeImportsClick(const NMHDR* pnmh)
@@ -119,12 +120,14 @@ LRESULT MainGui::OnTreeImportsRightClick(const NMHDR* pnmh)
 {
 	//Logger::printfDialog(L"NM_RCLICK");
 
+	/*
 	HTREEITEM selectedTreeNode = TreeImports.GetNextItem(NULL, TVGN_DROPHILITE);
 	if(selectedTreeNode != NULL)
 	{
 		TreeImports.Select(selectedTreeNode, TVGN_CARET);
 	}
-	return TRUE;
+	*/
+	return FALSE;
 }
 
 LRESULT MainGui::OnTreeImportsRightDoubleClick(const NMHDR* pnmh)
@@ -197,7 +200,6 @@ void MainGui::OnSuspectImports(UINT uNotifyCode, int nID, CWindow wndCtl)
 void MainGui::OnClearImports(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	TreeImports.DeleteAllItems();
-	//TreeView_DeleteAllItems(GetDlgItem(hWndDlg, IDC_TREE_IMPORTS));
 	importsHandling.moduleList.clear();
 }
 
@@ -208,10 +210,7 @@ void MainGui::OnClearLog(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void MainGui::OnExit(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	//PostQuitMessage(0);
-
 	EndDialog(0);
-	//EndDialog(hWndDlg, 0);
 }
 
 void MainGui::OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -221,35 +220,12 @@ void MainGui::OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void MainGui::setIconAndDialogCaption()
 {
-	if (m_hWnd)//if (hWndMainDlg)
-	{
-		HICON hicon = LoadIcon(GetModuleHandle(0), MAKEINTRESOURCE(IDI_ICON_SCYLLA1));
-		//SendMessage(hWndMainDlg, WM_SETICON, ICON_BIG, (LPARAM)hicon);
-		//SendMessage(hWndMainDlg, WM_SETICON, ICON_SMALL, (LPARAM)hicon);
+	HICON hicon = LoadIcon(GetModuleHandle(0), MAKEINTRESOURCE(IDI_ICON_SCYLLA1));
 
-		SetIcon(hicon, TRUE);
-		SetIcon(hicon, FALSE);
-		
-		swprintf_s(stringBuffer, _countof(stringBuffer),TEXT(APPNAME)TEXT(" ")TEXT(ARCHITECTURE)TEXT(" ")TEXT(APPVERSION)TEXT(" "));
-		//SetWindowText(hWndMainDlg,stringBuffer);
-		SetWindowText(stringBuffer);
-	}
-}
+	SetIcon(hicon, TRUE);
+	SetIcon(hicon, FALSE);
 
-void MainGui::leftButtonDownActionHandler(WPARAM wParam, LPARAM lParam)
-{
-	if(wParam & MK_CONTROL)
-	{
-
-	}
-	else if(wParam & MK_SHIFT)
-	{
-
-	}
-	else
-	{
-
-	}
+	SetWindowText(TEXT(APPNAME)TEXT(" ")TEXT(ARCHITECTURE)TEXT(" ")TEXT(APPVERSION));
 }
 
 void MainGui::pickDllActionHandler()
@@ -277,7 +253,7 @@ void MainGui::startDisassemblerGui(HTREEITEM selectedTreeNode)
 	
 }
 
-void MainGui::processSelectedActionHandler(LRESULT index)
+void MainGui::processSelectedActionHandler(int index)
 {
 	std::vector<Process>& processList = processLister.getProcessList();
 	Process &process = processList.at(index);
@@ -519,35 +495,6 @@ void MainGui::DisplayContextMenuImports(HWND hwnd, POINT pt)
 
 
 		}
-	}
-}
-
-HWND MainGui::mouseInDialogItem(int dlgItem, POINT pt)
-{
-	RECT rc;
-	HWND hwnd = GetDlgItem(dlgItem);//GetDlgItem(hWndMainDlg, dlgItem);
-	if (hwnd)
-	{
-		// Get the bounding rectangle of the client area. 
-		GetClientRect(&rc); //GetClientRect(hwnd, &rc);
-
-		// Convert the mouse position to client coordinates. 
-		ScreenToClient(&pt); //ScreenToClient(hwnd, &pt); 
-
-		// If the position is in the client area, display a  
-		// shortcut menu.
-		if(PtInRect(&rc, pt))
-		{
-			return hwnd;
-		}
-		else
-		{
-			return 0;
-		}
-	}
-	else
-	{
-		return 0;
 	}
 }
 
@@ -830,7 +777,6 @@ void MainGui::enableDialogButtons(BOOL value)
 	GetDlgItem(IDC_BTN_AUTOTRACE).EnableWindow(FALSE);
 	GetDlgItem(IDC_BTN_SAVETREE).EnableWindow(FALSE);
 	GetDlgItem(IDC_BTN_LOADTREE).EnableWindow(FALSE);
-	
 }
 
 void MainGui::showAboutDialog()

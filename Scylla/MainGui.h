@@ -139,20 +139,15 @@ private:
 	void fillProcessListComboBox(CComboBox& hCombo);
 	void getModuleListItem(int column, int iItem, char * buffer);
 
-	void leftButtonDownActionHandler(WPARAM wParam, LPARAM lParam);
-	void dialogInitActionHandler();
 	void pickDllActionHandler();
-	void processSelectedActionHandler(LRESULT index);
+	void processSelectedActionHandler(int index);
 
 	//static bool displayModuleList(HWND hWndDlg, HWND hList, LRESULT index);
 
 	// POPUP MENU Prototypes
-	//bool OnContextMenu(int, int);
 	void DisplayContextMenu(HWND, POINT);
-	HWND mouseInDialogItem(int, POINT);
 	void DisplayContextMenuImports(HWND, POINT);
 	HMENU getCorrectSubMenu(int, int);
-
 	
 	void clearOutputLog();//Output Window
 	void showInvalidImportsActionHandler();
