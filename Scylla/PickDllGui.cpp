@@ -1,5 +1,7 @@
 #include "PickDllGui.h"
 
+#include "WindowDeferrer.h"
+
 BOOL PickDllGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
 	ListDLLSelect.Attach(GetDlgItem(IDC_LIST_DLLSELECT));
@@ -9,15 +11,15 @@ BOOL PickDllGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	CenterWindow();
 
-	GetClientRect(&MinSize);
+	GetWindowRect(&MinSize);
 
 	return TRUE;
 }
 
 void PickDllGui::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 {
-	lpMMI->ptMinTrackSize.x = MinSize.right;
-	lpMMI->ptMinTrackSize.y = MinSize.bottom;
+	lpMMI->ptMinTrackSize.x = MinSize.right - MinSize.left;
+	lpMMI->ptMinTrackSize.y = MinSize.bottom - MinSize.top;
 }
 
 void PickDllGui::OnSizing(UINT fwSide, RECT* pRect)
@@ -25,37 +27,21 @@ void PickDllGui::OnSizing(UINT fwSide, RECT* pRect)
 	int toResize[] = {IDC_LIST_DLLSELECT};
 	int toMove[] = {IDC_BTN_PICKDLL_OK, IDC_BTN_PICKDLL_CANCEL};
 
+	WindowDeferrer::Deferrable controls[] =
+	{
+		{IDC_LIST_DLLSELECT, false, false, true, true},
+		{IDC_BTN_PICKDLL_OK, true, true, false, false},
+		{IDC_BTN_PICKDLL_CANCEL, true, true, false, false},
+	};
+
 	// Get size difference
 	RECT rectOld;
 	GetWindowRect(&rectOld);
 	long deltaX = (pRect->right  - pRect->left) - (rectOld.right  - rectOld.left);
 	long deltaY = (pRect->bottom - pRect->top)  - (rectOld.bottom - rectOld.top);
 
-	HDWP hdwp = BeginDeferWindowPos(_countof(toResize) + _countof(toMove));
-
-	for(int i = 0; i < _countof(toResize); i++)
-	{
-		RECT rectControl;
-		CWindow control(GetDlgItem(toResize[i]));
-
-		control.GetWindowRect(&rectControl); // Why doesn't GetClientRect work?
-		// calculate new width and height
-		int cx = rectControl.right - rectControl.left + deltaX;
-		int cy = rectControl.bottom - rectControl.top + deltaY;
-
-		control.DeferWindowPos(hdwp, NULL, 0, 0, cx, cy, SWP_NOMOVE | SWP_NOOWNERZORDER);
-	}
-
-	for(int i = 0; i < _countof(toMove); i++)
-	{
-		RECT rectControl;
-		CWindow control(GetDlgItem(toMove[i]));
-		control.GetClientRect(&rectControl);
-		control.MapWindowPoints(m_hWnd, &rectControl);
-		control.DeferWindowPos(hdwp, NULL, rectControl.left + deltaX, rectControl.top + deltaY, 0, 0, SWP_NOSIZE | SWP_NOOWNERZORDER);
-	}
-
-	EndDeferWindowPos(hdwp);
+	WindowDeferrer deferrer(m_hWnd, controls, _countof(controls));
+	deferrer.defer(deltaX, deltaY);
 }
 
 void PickDllGui::OnOK(UINT uNotifyCode, int nID, CWindow wndCtl)

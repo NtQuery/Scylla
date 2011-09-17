@@ -12,6 +12,7 @@
 #include "SystemInformation.h"
 #include "AboutGui.h"
 #include "OptionsGui.h"
+#include "WindowDeferrer.h"
 
 MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports)
 {
@@ -54,7 +55,65 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	setIconAndDialogCaption();
 
+	GetWindowRect(&MinSize);
+
 	return TRUE;
+}
+
+void MainGui::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
+{
+	lpMMI->ptMinTrackSize.x = MinSize.right - MinSize.left;
+	lpMMI->ptMinTrackSize.y = MinSize.bottom - MinSize.top;
+}
+
+void MainGui::OnSizing(UINT fwSide, RECT* pRect)
+{
+	WindowDeferrer::Deferrable controls[] =
+	{
+		{IDC_GROUP_ATTACH,    false, false, true, false},
+		{IDC_CBO_PROCESSLIST, false, false, true, false},
+		{IDC_BTN_PICKDLL,     true, false, false, false},
+
+		{IDC_GROUP_IMPORTS, false, false, true, true},
+		{IDC_TREE_IMPORTS,  false, false, true, true},
+
+		{IDC_GROUP_IATINFO,     false, true, false, false},
+		{IDC_STATIC_OEPADDRESS, false, true, false, false},
+		{IDC_STATIC_IATADDRESS, false, true, false, false},
+		{IDC_STATIC_IATSIZE,    false, true, false, false},
+		{IDC_EDIT_OEPADDRESS,   false, true, false, false},
+		{IDC_EDIT_IATADDRESS,   false, true, false, false},
+		{IDC_EDIT_IATSIZE,      false, true, false, false},
+		{IDC_BTN_IATAUTOSEARCH, false, true, false, false},
+		{IDC_BTN_GETIMPORTS,    false, true, false, false},
+
+		{IDC_GROUP_IMPORTSOPTIONS, true, true, false, false},
+		{IDC_BTN_INVALIDIMPORTS,   true, true, false, false},
+		{IDC_BTN_SUSPECTIMPORTS,   true, true, false, false},
+		{IDC_BTN_CLEARIMPORTS,     true, true, false, false},
+		{IDC_BTN_AUTOTRACE,        true, true, false, false},
+		{IDC_BTN_SAVETREE,         true, true, false, false},
+		{IDC_BTN_LOADTREE,         true, true, false, false},
+
+		{IDC_GROUP_LOG, false, true, true, false},
+		{IDC_LIST_LOG,  false, true, true, false},
+
+		{IDC_GROUP_MISC,    true, false, false, true},
+		{IDC_BTN_DUMP,      true, false, false, false},
+		{IDC_BTN_PEREBUILD, true, false, false, false},
+		{IDC_BTN_DLLINJECT, true, false, false, false},
+		{IDC_BTN_FIXDUMP,   true, false, false, false},
+		{IDC_BTN_CLEARLOG,  true, false, false, false}
+	};
+
+	// Get size difference
+	RECT rectOld;
+	GetWindowRect(&rectOld);
+	long deltaX = (pRect->right  - pRect->left) - (rectOld.right  - rectOld.left);
+	long deltaY = (pRect->bottom - pRect->top)  - (rectOld.bottom - rectOld.top);
+
+	WindowDeferrer deferrer(m_hWnd, controls, _countof(controls));
+	deferrer.defer(deltaX, deltaY);
 }
 
 void MainGui::OnLButtonDown(UINT nFlags, CPoint point)
@@ -207,6 +266,8 @@ void MainGui::OnClearLog(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void MainGui::OnExit(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
+	if(hIcon)
+		hIcon.DestroyIcon();
 	EndDialog(0);
 }
 
@@ -217,11 +278,10 @@ void MainGui::OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void MainGui::setIconAndDialogCaption()
 {
-	CIconHandle hicon; // Resource leak!
-	if(hicon.LoadIcon(IDI_ICON_SCYLLA1))
+	if(hIcon.LoadIcon(IDI_ICON_SCYLLA1))
 	{
-		SetIcon(hicon, TRUE);
-		SetIcon(hicon, FALSE);
+		SetIcon(hIcon, TRUE);
+		SetIcon(hIcon, FALSE);
 	}
 
 	SetWindowText(TEXT(APPNAME)TEXT(" ")TEXT(ARCHITECTURE)TEXT(" ")TEXT(APPVERSION));
@@ -397,7 +457,7 @@ void MainGui::getImportsActionHandler()
 	}
 }
 
-DWORD_PTR MainGui::stringToDwordPtr(WCHAR * hexString)
+DWORD_PTR MainGui::stringToDwordPtr(const WCHAR * hexString)
 {
 	DWORD_PTR address = 0;
 
@@ -571,11 +631,11 @@ void MainGui::dumpActionHandler()
 
 	if (processAccessHelp.selectedModule)
 	{
-		targetFile = ProcessAccessHelp::selectFileToSave(0, 0);
+		targetFile = ProcessAccessHelp::selectFile(ProcessAccessHelp::fileDll, true);
 	}
 	else
 	{
-		targetFile = ProcessAccessHelp::selectFileToSave(0, 1);
+		targetFile = ProcessAccessHelp::selectFile(ProcessAccessHelp::fileExe, true);
 	}
 	
 	
@@ -634,7 +694,7 @@ void MainGui::peRebuildActionHandler()
 	WCHAR * targetFile = 0;
 	PeRebuild peRebuild;
 
-	targetFile = ProcessAccessHelp::selectFileToSave(OFN_FILEMUSTEXIST, 2);
+	targetFile = ProcessAccessHelp::selectFile(ProcessAccessHelp::fileExeDll, false);
 
 	if (targetFile)
 	{
@@ -684,11 +744,11 @@ void MainGui::dumpFixActionHandler()
 
 	if (processAccessHelp.selectedModule)
 	{
-		targetFile = ProcessAccessHelp::selectFileToSave(OFN_FILEMUSTEXIST, 0);
+		targetFile = ProcessAccessHelp::selectFile(ProcessAccessHelp::fileDll, false);
 	}
 	else
 	{
-		targetFile = ProcessAccessHelp::selectFileToSave(OFN_FILEMUSTEXIST, 1);
+		targetFile = ProcessAccessHelp::selectFile(ProcessAccessHelp::fileExe, false);
 	}
 
 	if (targetFile)
@@ -760,7 +820,7 @@ void MainGui::dllInjectActionHandler()
 	HMODULE hMod = 0;
 	DllInjection dllInjection;
 
-	targetFile = ProcessAccessHelp::selectFileToSave(OFN_FILEMUSTEXIST, 0);
+	targetFile = ProcessAccessHelp::selectFile(ProcessAccessHelp::fileDll, false);
 
 	if (targetFile)
 	{

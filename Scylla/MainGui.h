@@ -30,8 +30,13 @@ public:
 
 	BEGIN_MSG_MAP(MainGui)
 		MSG_WM_INITDIALOG(OnInitDialog)
+		MSG_WM_GETMINMAXINFO(OnGetMinMaxInfo)
+		MSG_WM_SIZING(OnSizing)
 		MSG_WM_CONTEXTMENU(OnContextMenu)
 		MSG_WM_LBUTTONDOWN(OnLButtonDown)
+
+		//MSG_WM_ENTERSIZEMOVE(OnEnterSizeMove)
+		//MSG_WM_EXITSIZEMOVE(OnExitSizeMove)
 
 		NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_CLICK, OnTreeImportsClick)
 		NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_DBLCLK, OnTreeImportsDoubleClick)
@@ -54,6 +59,9 @@ public:
 		COMMAND_ID_HANDLER_EX(IDC_BTN_CLEARIMPORTS, OnClearImports)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_CLEARLOG, OnClearLog)
 
+		COMMAND_ID_HANDLER_EX(ID_FILE_DUMP, OnDump)
+		COMMAND_ID_HANDLER_EX(ID_FILE_PEREBUILD, OnPERebuild)
+		COMMAND_ID_HANDLER_EX(ID_FILE_FIXDUMP, OnFixDump)
 		COMMAND_ID_HANDLER_EX(ID_FILE_EXIT, OnExit)
 		COMMAND_ID_HANDLER_EX(ID_MISC_DLLINJECTION, OnDLLInject)
 		COMMAND_ID_HANDLER_EX(ID_MISC_PREFERENCES, OnOptions)
@@ -89,11 +97,21 @@ protected:
 	CEdit EditIATSize;
 	CListBox ListLog;
 
+	RECT MinSize;
+
+	// Handles
+
+	CIconHandle hIcon;
+
 protected:
 
 	// Message handlers
 
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
+	void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
+	void OnSizing(UINT fwSide, RECT* pRect);
+	//void OnEnterSizeMove();
+	//void OnExitSizeMove();
 	void OnLButtonDown(UINT nFlags, CPoint point);
 	void OnContextMenu(CWindow wnd, CPoint point);
 
@@ -127,7 +145,6 @@ protected:
 	void setIconAndDialogCaption();
 
 	void fillProcessListComboBox(CComboBox& hCombo);
-	void getModuleListItem(int column, int iItem, char * buffer);
 
 	//static bool displayModuleList(HWND hWndDlg, HWND hList, LRESULT index);
 
@@ -161,5 +178,5 @@ protected:
 	
 	void clearOutputLog();//Output Window
 
-	static DWORD_PTR stringToDwordPtr(WCHAR * hexString);
+	static DWORD_PTR stringToDwordPtr(const WCHAR * hexString);
 };
