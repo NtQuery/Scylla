@@ -11,6 +11,12 @@ BOOL PickDllGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	CenterWindow();
 
+	if(hIcon.LoadIcon(IDI_ICON_SCYLLA1))
+	{
+		SetIcon(hIcon, TRUE);
+		SetIcon(hIcon, FALSE);
+	}
+
 	GetWindowRect(&MinSize);
 
 	return TRUE;

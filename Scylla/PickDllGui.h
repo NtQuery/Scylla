@@ -53,6 +53,10 @@ protected:
 
 	RECT MinSize;
 
+	// Handles
+
+	CIcon hIcon;
+
 protected:
 
 	// Message handlers

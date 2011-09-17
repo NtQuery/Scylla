@@ -36,7 +36,7 @@ bool WindowDeferrer::defer(int deltaX, int deltaY, HWND after)
 		if(deferrables[i].resizeY)
 			cy += deltaY;
 
-		hdwp = DeferWindowPos(hdwp, control, after, x, y, cx, cy, (after ? 0 : SWP_NOOWNERZORDER) | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+		hdwp = DeferWindowPos(hdwp, control, after, x, y, cx, cy, (after ? 0 : SWP_NOZORDER) | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
 	}
 	return true;
 }

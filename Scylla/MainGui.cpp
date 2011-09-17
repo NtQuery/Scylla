@@ -102,8 +102,7 @@ void MainGui::OnSizing(UINT fwSide, RECT* pRect)
 		{IDC_BTN_DUMP,      true, false, false, false},
 		{IDC_BTN_PEREBUILD, true, false, false, false},
 		{IDC_BTN_DLLINJECT, true, false, false, false},
-		{IDC_BTN_FIXDUMP,   true, false, false, false},
-		{IDC_BTN_CLEARLOG,  true, false, false, false}
+		{IDC_BTN_FIXDUMP,   true, false, false, false}
 	};
 
 	// Get size difference
@@ -127,8 +126,9 @@ void MainGui::OnContextMenu(CWindow wnd, CPoint point)
 	//WCHAR ttt[260] = {0};
 	//HTREEITEM selectedTreeNode = 0;
 
-	if(wnd.GetDlgCtrlID() == IDC_TREE_IMPORTS)
+	switch(wnd.GetDlgCtrlID())
 	{
+	case IDC_TREE_IMPORTS:
 		if(TreeImports.GetCount()) //module list should not be empty
 		{
 			/*selectedTreeNode = (HTREEITEM)SendDlgItemMessage(hWndMainDlg,IDC_TREE_IMPORTS,TVM_GETNEXTITEM,TVGN_CARET,(LPARAM)selectedTreeNode);
@@ -143,22 +143,16 @@ void MainGui::OnContextMenu(CWindow wnd, CPoint point)
 			SendDlgItemMessage(hWndMainDlg,IDC_TREE_IMPORTS,TVM_GETITEM,TVGN_CARET,(LPARAM)&tvi);
 			Logger::printfDialog(L"selected %s",tvi.pszText);*/
 
-			//CPoint pt = GetMessagePos();
-			//UINT flags = 0;
-			//if(TreeImports.HitTest(pt, &flags))
-			//{
-				DisplayContextMenuImports(wnd, point);
-			//}
+			DisplayContextMenuImports(wnd, point);
 		}
-		return;
+		break;
+	case IDC_LIST_LOG:
+		DisplayContextMenuLog(wnd, point);
+		break;
+	//default:
+	//	DisplayContextMenu(wnd, point); 
+	//	break;
 	}
-
-	//if (PtInRect(&rc, pt)) 
-	//{ 
-	//	ClientToScreen(hwnd, &pt); 
-	//	DisplayContextMenu(hwnd, pt); 
-	//	return TRUE; 
-	//} 
 }
 
 LRESULT MainGui::OnTreeImportsClick(const NMHDR* pnmh)
@@ -266,8 +260,6 @@ void MainGui::OnClearLog(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void MainGui::OnExit(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	if(hIcon)
-		hIcon.DestroyIcon();
 	EndDialog(0);
 }
 
@@ -540,8 +532,27 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 				}
 				break;
 			}
+		}
+	}
+}
 
+void MainGui::DisplayContextMenuLog(CWindow hwnd, CPoint pt)
+{
+	BOOL menuItem = 0;
+	CMenuHandle hmenuTrackPopup = getCorrectSubMenu(IDR_MENU_LOG, 0);
 
+	if (hmenuTrackPopup)
+	{
+		menuItem = hmenuTrackPopup.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
+		hmenuTrackPopup.DestroyMenu();
+		if (menuItem)
+		{
+			switch (menuItem)
+			{
+			case ID__CLEAR:
+				clearOutputLog();
+				break;
+			}
 		}
 	}
 }
@@ -557,6 +568,7 @@ CMenuHandle MainGui::getCorrectSubMenu(int menuItem, int subMenuItem)
 	return hmenu.GetSubMenu(subMenuItem);
 }
 
+/*
 void MainGui::DisplayContextMenu(CWindow hwnd, CPoint pt) 
 { 
 	CMenu hmenu;            // top-level menu 
@@ -583,12 +595,13 @@ void MainGui::DisplayContextMenu(CWindow hwnd, CPoint pt)
 
 	if (menuItem)
 	{
-		/*if (menuItem == ID_LISTCONTROL_SHOWEXPORTS)
+		if (menuItem == ID_LISTCONTROL_SHOWEXPORTS)
 		{
-			MessageBox(L"exports",L"dshhhhh");
-		}*/
+			//MessageBox(L"exports",L"dshhhhh");
+		}
 	}
 }
+*/
 
 void MainGui::appendPluginListToMenu(CMenuHandle hMenuTrackPopup)
 {
@@ -799,8 +812,6 @@ void MainGui::enableDialogButtons(BOOL value)
 	GetDlgItem(IDC_BTN_SUSPECTIMPORTS).EnableWindow(value);
 	GetDlgItem(IDC_BTN_INVALIDIMPORTS).EnableWindow(value);
 	GetDlgItem(IDC_BTN_CLEARIMPORTS).EnableWindow(value);
-
-	GetDlgItem(IDC_BTN_OPTIONS).EnableWindow(TRUE);
 
 	//not yet implemented
 	GetDlgItem(IDC_BTN_AUTOTRACE).EnableWindow(FALSE);

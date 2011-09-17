@@ -57,7 +57,6 @@ public:
 		COMMAND_ID_HANDLER_EX(IDC_BTN_INVALIDIMPORTS, OnInvalidImports)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_SUSPECTIMPORTS, OnSuspectImports)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_CLEARIMPORTS, OnClearImports)
-		COMMAND_ID_HANDLER_EX(IDC_BTN_CLEARLOG, OnClearLog)
 
 		COMMAND_ID_HANDLER_EX(ID_FILE_DUMP, OnDump)
 		COMMAND_ID_HANDLER_EX(ID_FILE_PEREBUILD, OnPERebuild)
@@ -101,7 +100,7 @@ protected:
 
 	// Handles
 
-	CIconHandle hIcon;
+	CIcon hIcon;
 
 protected:
 
@@ -170,8 +169,9 @@ protected:
 
 	// Popup menu functions
 
-	void DisplayContextMenu(CWindow, CPoint);
+	//void DisplayContextMenu(CWindow, CPoint);
 	void DisplayContextMenuImports(CWindow, CPoint);
+	void DisplayContextMenuLog(CWindow, CPoint);
 	CMenuHandle getCorrectSubMenu(int, int);
 
 	// Misc

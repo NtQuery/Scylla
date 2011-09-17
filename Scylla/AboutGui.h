@@ -18,7 +18,6 @@ public:
 	BEGIN_MSG_MAP(AboutGui)
 		MSG_WM_INITDIALOG(OnInitDialog)
 
-		COMMAND_ID_HANDLER_EX(IDC_BTN_ABOUT_OK, OnOK)
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnCancel)
 	END_MSG_MAP()
 
@@ -26,13 +25,17 @@ protected:
 
 	// Controls
 
+	CStatic StaticTitle;
 	CStatic StaticAbout;
+
+	// Handles
+
+	CFont FontBold;
 
 protected:
 
 	// Message handlers
 
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
-	void OnOK(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl);
 };
