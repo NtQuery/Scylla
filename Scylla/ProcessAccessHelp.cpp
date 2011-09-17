@@ -1,6 +1,11 @@
 
 #include "ProcessAccessHelp.h"
 
+#include <atlbase.h>       // base ATL classes
+#include <atlapp.h>        // base WTL classes
+#include <atlwin.h>        // ATL GUI classes
+#include <atldlgs.h>       // WTL common dialogs
+
 #include "Logger.h"
 #include "NativeWinApi.h"
 
@@ -668,35 +673,58 @@ SIZE_T ProcessAccessHelp::getSizeOfImageProcess(HANDLE processHandle, DWORD_PTR 
 }
 
 //OFN_FILEMUSTEXIST
-WCHAR * ProcessAccessHelp::selectFileToSave(DWORD flags, int type)
+WCHAR * ProcessAccessHelp::selectFile(fileFilter type, BOOL save, DWORD flags, HWND parent)
 {
+	DWORD dwFlags = flags | OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING;
+	if(!save)
+		dwFlags |= OFN_FILEMUSTEXIST;
+
+	const WCHAR* filter;
+	const WCHAR* defExt;
+
+	switch (type)
+	{
+	case fileDll:
+		filter = TEXT("Dynamic Link Library (*.dll)\0*.dll\00");
+		defExt = TEXT(".dll");
+		break;
+	case fileExe:
+		filter	= TEXT("Executable (*.exe)\0*.exe\00");
+		defExt	= TEXT(".exe");
+		break;
+	case fileExeDll:
+		filter = TEXT("Executable (*.exe)\0*.exe\0Dynamic Link Library (*.dll)\0*.dll\00");
+		defExt = 0;
+		break;
+	default:
+		filter = 0;
+		defExt = 0;
+		break;
+	}
+
+	CFileDialog dlgFile(!save, defExt, NULL, dwFlags, filter, parent);
+	if(dlgFile.DoModal() == IDOK)
+	{
+		Logger::printfDialog(TEXT("Selected %s"), dlgFile.m_szFileName);
+		WCHAR * targetFile = new WCHAR[MAX_PATH];
+		wcscpy_s(targetFile, MAX_PATH, dlgFile.m_szFileName);
+		return targetFile;
+	}
+	else
+	{
+#ifdef DEBUG_COMMENTS
+		Logger::debugLog(TEXT("selectFileToSave :: CommDlgExtendedError 0x%X\r\n"), CommDlgExtendedError());
+#endif
+		return 0;
+	}
+
+	/*
 	OPENFILENAME ofn = {0};
 	WCHAR * targetFile = new WCHAR[MAX_PATH];
 	targetFile[0] = 0;
 
 	ofn.lStructSize			= sizeof(OPENFILENAME);
 	ofn.hwndOwner			= 0;
-
-	switch (type)
-	{
-	case 0:
-		{
-			ofn.lpstrFilter			= TEXT("Dynamic Link Library (*.dll)\0*.dll\00");
-			ofn.lpstrDefExt			= TEXT(".dll");
-		}
-		break;
-	case 1:
-		{
-			ofn.lpstrFilter			= TEXT("Executable (*.exe)\0*.exe\00");
-			ofn.lpstrDefExt			= TEXT(".exe");
-		}
-		break;
-	default:
-		{
-			ofn.lpstrFilter			= TEXT("Executable (*.exe)\0*.exe\0Dynamic Link Library (*.dll)\0*.dll\00");
-			ofn.lpstrDefExt			= 0;
-		}
-	}
 
 	ofn.lpstrCustomFilter	= 0;
 	ofn.nFilterIndex		= 1;
@@ -719,6 +747,7 @@ WCHAR * ProcessAccessHelp::selectFileToSave(DWORD flags, int type)
 #endif
 		return 0;
 	}
+	*/
 }
 
 DWORD ProcessAccessHelp::getEntryPointFromFile(const WCHAR * filePath)
@@ -747,29 +776,23 @@ DWORD ProcessAccessHelp::getEntryPointFromFile(const WCHAR * filePath)
 
 bool ProcessAccessHelp::createBackupFile(const WCHAR * filePath)
 {
-	size_t fileNameLength = wcslen(filePath) + (5 * sizeof(WCHAR)); //.bak + null
+	size_t fileNameLength = wcslen(filePath) + 5; //.bak + null
 	BOOL retValue = 0;
+
 	WCHAR * backupFile = new WCHAR[fileNameLength];
 
-	if (backupFile)
-	{
-		wcscpy_s(backupFile, fileNameLength, filePath);
-		wcscat_s(backupFile, fileNameLength, TEXT(".bak"));
-		retValue = CopyFile(filePath, backupFile, FALSE);
+	wcscpy_s(backupFile, fileNameLength, filePath);
+	wcscat_s(backupFile, fileNameLength, TEXT(".bak"));
+	retValue = CopyFile(filePath, backupFile, FALSE);
 
-		if (!retValue)
-		{
+	if (!retValue)
+	{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog(TEXT("createBackupFile :: CopyFile failed with error 0x%X\r\n"), GetLastError());
+		Logger::debugLog(TEXT("createBackupFile :: CopyFile failed with error 0x%X\r\n"), GetLastError());
 #endif
-		}
-
-		delete [] backupFile;
-
-		return retValue != 0;
 	}
-	else
-	{
-		return false;
-	}
+
+	delete [] backupFile;
+
+	return retValue != 0;
 }

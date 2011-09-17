@@ -116,6 +116,13 @@ public:
 	static const _DecodeType dt = Decode32Bits;
 #endif
 
+	// for selectFile
+	enum fileFilter {
+		fileExe,
+		fileDll,
+		fileExeDll
+	};
+
 	/*
 	 * Open a new process handle
 	 */
@@ -206,7 +213,8 @@ public:
 	static LONGLONG getFileSize(HANDLE hFile);
 	static LONGLONG getFileSize(const WCHAR * filePath);
 
-	static WCHAR * selectFileToSave(DWORD flags, int type);
+	static WCHAR * selectFile(fileFilter type, BOOL save, DWORD flags = 0, HWND parent = NULL);
+
 
 	static DWORD getEntryPointFromFile(const WCHAR * filePath);
 
