@@ -9,6 +9,8 @@ BOOL OptionsGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	loadOptions();
 
+	CenterWindow();
+
 	return TRUE;
 }
 

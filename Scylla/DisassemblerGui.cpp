@@ -9,6 +9,8 @@ BOOL DisassemblerGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	addColumnsToDisassembler(ListDisassembler);
 	displayDisassembly(ListDisassembler);
 
+	CenterWindow();
+
 	return TRUE;
 }
 

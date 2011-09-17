@@ -7,6 +7,8 @@ BOOL PickDllGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	addColumnsToModuleList(ListDLLSelect);
 	displayModuleList(ListDLLSelect);
 
+	CenterWindow();
+
 	return TRUE;
 }
 
