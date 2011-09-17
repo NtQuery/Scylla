@@ -1,28 +1,64 @@
 #pragma once
 
-#include "MainGui.h"
+#include <windows.h>
+#include "resource.h"
 
-static const enum ListColumns {
-	COL_PATH,
-	COL_NAME,
-	COL_IMAGEBASE,
-	COL_IMAGESIZE
-};
+// WTL
+#include <atlbase.h>       // base ATL classes
+#include <atlapp.h>        // base WTL classes
+#include <atlwin.h>        // ATL GUI classes
+#include <atlmisc.h>       // WTL utility classes like CString
+#include <atlcrack.h>      // WTL enhanced msg map macros
+#include <atlctrls.h>      // WTL controls
 
-class PickDllGui {
+#include <vector>
+#include "ProcessAccessHelp.h"
+
+class PickDllGui : public CDialogImpl<PickDllGui>
+{
 public:
-	static HWND hWndDlg;
+	enum { IDD = IDD_DLG_PICKDLL };
 
-	static std::vector<ModuleInfo> * moduleList;
+	BEGIN_MSG_MAP(PickDllGui)
+		MSG_WM_INITDIALOG(OnInitDialog)
 
-	static ModuleInfo * selectedModule;
+		COMMAND_ID_HANDLER_EX(IDC_BTN_PICKDLL_OK, OnOK)
+		COMMAND_ID_HANDLER_EX(IDC_BTN_PICKDLL_CANCEL, OnCancel)
+		COMMAND_ID_HANDLER_EX(IDCANCEL, OnCancel)
+	END_MSG_MAP()
 
-	static LRESULT CALLBACK pickDllDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static INT_PTR initDialog(HINSTANCE hInstance, HWND hWndParent, std::vector<ModuleInfo> &moduleList);
+	PickDllGui(std::vector<ModuleInfo> &moduleList) : moduleList(moduleList), selectedModule(0) { }
 
-	static void addColumnsToModuleList(HWND hList);
+	ModuleInfo* getSelectedModule() const { return selectedModule; }
 
-	static void getModuleListItem(int column, int iItem, WCHAR * buffer);
+protected:
 
-	static bool displayModuleList();
+	// Variables
+
+	std::vector<ModuleInfo> &moduleList;
+	ModuleInfo* selectedModule;
+
+	// Controls
+
+	CListViewCtrl ListDLLSelect;
+
+	enum ListColumns {
+		COL_PATH,
+		COL_NAME,
+		COL_IMAGEBASE,
+		COL_IMAGESIZE
+	};
+
+protected:
+
+	// Message handlers
+
+	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
+	void OnOK(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl);
+
+	// GUI functions
+
+	void addColumnsToModuleList(CListViewCtrl& list);
+	void displayModuleList(CListViewCtrl& list);
 };

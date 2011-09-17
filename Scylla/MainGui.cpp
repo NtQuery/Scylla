@@ -13,10 +13,8 @@
 #include "AboutGui.h"
 #include "OptionsGui.h"
 
-MainGui::MainGui(HINSTANCE hInstance) : selectedProcess(0), importsHandling(TreeImports)
+MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports)
 {
-	this->hInstance = hInstance;
-
 	Logger::getDebugLogFilePath();
 	ConfigurationHolder::loadConfiguration();
 	PluginLoader::findAllPlugins();
@@ -49,8 +47,8 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	EditIATSize.Attach(GetDlgItem(IDC_EDIT_IATSIZE));
 
 	EditOEPAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
-	EditOEPAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
-	EditOEPAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
+	EditIATAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
+	EditIATSize.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
 
 	enableDialogButtons(FALSE);
 
@@ -231,12 +229,14 @@ void MainGui::setIconAndDialogCaption()
 
 void MainGui::pickDllActionHandler()
 {
-	if (PickDllGui::initDialog(hInstance,m_hWnd, processAccessHelp.moduleList))
+	PickDllGui dlgPickDll(processAccessHelp.moduleList);
+	if(dlgPickDll.DoModal())
 	{
 		//get selected module
-		processAccessHelp.selectedModule = PickDllGui::selectedModule;
+		processAccessHelp.selectedModule = dlgPickDll.getSelectedModule();
 		Logger::printfDialog(TEXT("->>> Module %s selected."), processAccessHelp.selectedModule->getFilename());
 		Logger::printfDialog(TEXT("Imagebase: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size: %08X"),processAccessHelp.selectedModule->modBaseAddr,processAccessHelp.selectedModule->modBaseSize);
+
 	}
 	else
 	{
@@ -249,9 +249,9 @@ void MainGui::startDisassemblerGui(CTreeItem selectedTreeNode)
 	DWORD_PTR address = importsHandling.getApiAddressByNode(selectedTreeNode);
 	if (address)
 	{
-		DisassemblerGui::initDialog(hInstance,m_hWnd,address);
+		DisassemblerGui dlgDisassembler(address);
+		dlgDisassembler.DoModal();
 	}
-	
 }
 
 void MainGui::processSelectedActionHandler(int index)
@@ -420,7 +420,7 @@ DWORD_PTR MainGui::stringToDwordPtr(WCHAR * hexString)
 	}
 }
 
-void MainGui::DisplayContextMenuImports(CWindow hwnd, POINT pt)
+void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 {
 	BOOL menuItem = 0;
 	CTreeItem selectedTreeNode = 0;
@@ -488,7 +488,7 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, POINT pt)
 
 CMenuHandle MainGui::getCorrectSubMenu(int menuItem, int subMenuItem)
 {
-	CMenuHandle hmenu;            // top-level menu 
+	CMenuHandle hmenu; // top-level menu 
 
 	// Load the menu resource. 
 	if (!hmenu.LoadMenu(menuItem)) 
@@ -497,7 +497,7 @@ CMenuHandle MainGui::getCorrectSubMenu(int menuItem, int subMenuItem)
 	return hmenu.GetSubMenu(subMenuItem);
 }
 
-void MainGui::DisplayContextMenu(CWindow hwnd, POINT pt) 
+void MainGui::DisplayContextMenu(CWindow hwnd, CPoint pt) 
 { 
 	CMenu hmenu;            // top-level menu 
 	CMenuHandle hmenuTrackPopup;  // shortcut menu 
@@ -750,7 +750,8 @@ void MainGui::enableDialogButtons(BOOL value)
 
 void MainGui::showAboutDialog()
 {
-	AboutGui::initDialog(hInstance, m_hWnd);
+	AboutGui dlgAbout;
+	dlgAbout.DoModal();
 }
 
 void MainGui::dllInjectActionHandler()
@@ -788,7 +789,8 @@ void MainGui::dllInjectActionHandler()
 
 void MainGui::optionsActionHandler()
 {
-	OptionsGui::initOptionsDialog(hInstance, m_hWnd);
+	OptionsGui dlgOptions;
+	dlgOptions.DoModal();
 }
 
 void MainGui::pluginActionHandler( int menuItem )

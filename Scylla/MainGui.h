@@ -1,37 +1,27 @@
 #pragma once
 
-//#define _CRTDBG_MAP_ALLOC
-//#include <stdlib.h>
-//#include <crtdbg.h>
-
 #include <windows.h>
-#include <Commctrl.h>
-#include <stdio.h>
-#include <map>
-#include <Windowsx.h>
+#include "resource.h"
 
 // WTL
-
 #include <atlbase.h>       // base ATL classes
 #include <atlapp.h>        // base WTL classes
 #include <atlwin.h>        // ATL GUI classes
-#include <atlframe.h>      // WTL frame window classes
 #include <atlmisc.h>       // WTL utility classes like CString
 #include <atlcrack.h>      // WTL enhanced msg map macros
+#include <atlctrls.h>      // WTL controls
 
-#include <atlctrls.h>
+//#define _CRTDBG_MAP_ALLOC
+//#include <cstdlib>
+//#include <crtdbg.h>
 
-#include "resource.h"
+#include <cstdio>
+
 #include "Logger.h"
 #include "ProcessLister.h"
 #include "IATSearch.h"
 #include "PickDllGui.h"
-
 #include "ImportsHandling.h"
-
-//#pragma comment(lib, "comctl32.lib")
-
-class ImportsHandling;
 
 class MainGui : public CDialogImpl<MainGui>
 {
@@ -72,25 +62,14 @@ public:
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnExit)
 	END_MSG_MAP()
 
-	MainGui(HINSTANCE hInstance);
-
-	Process * selectedProcess;
+	MainGui();
 
 	//Output Window
 	void addTextToOutputLog(const WCHAR * text);
 
-	static DWORD_PTR stringToDwordPtr(WCHAR * hexString);
-
 protected:
-	HINSTANCE hInstance;
 
-	// Controls
-	CTreeViewCtrl TreeImports;
-	CComboBox ComboProcessList;
-	CEdit EditOEPAddress;
-	CEdit EditIATAddress;
-	CEdit EditIATSize;
-	CListBox ListLog;
+	// Variables
 
 	ProcessLister processLister;
 	WCHAR stringBuffer[600];
@@ -99,9 +78,20 @@ protected:
 	ProcessAccessHelp processAccessHelp;
 	ApiReader apiReader;
 
-private:
+	Process * selectedProcess;
 
-	//Message handlers
+	// Controls
+
+	CTreeViewCtrl TreeImports;
+	CComboBox ComboProcessList;
+	CEdit EditOEPAddress;
+	CEdit EditIATAddress;
+	CEdit EditIATSize;
+	CListBox ListLog;
+
+protected:
+
+	// Message handlers
 
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
 	void OnLButtonDown(UINT nFlags, CPoint point);
@@ -132,24 +122,19 @@ private:
 	void OnExit(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl);
 
-	// ---
+	// GUI functions
 
 	void setIconAndDialogCaption();
 
 	void fillProcessListComboBox(CComboBox& hCombo);
 	void getModuleListItem(int column, int iItem, char * buffer);
 
-	void pickDllActionHandler();
-	void processSelectedActionHandler(int index);
-
 	//static bool displayModuleList(HWND hWndDlg, HWND hList, LRESULT index);
 
-	// POPUP MENU Prototypes
-	void DisplayContextMenu(CWindow, POINT);
-	void DisplayContextMenuImports(CWindow, POINT);
-	CMenuHandle getCorrectSubMenu(int, int);
-	
-	void clearOutputLog();//Output Window
+	// Actions
+
+	void pickDllActionHandler();
+	void processSelectedActionHandler(int index);
 	void showInvalidImportsActionHandler();
 	void showSuspectImportsActionHandler();
 	void iatAutosearchActionHandler();
@@ -158,12 +143,23 @@ private:
 	void dumpActionHandler();
 	DWORD_PTR getOEPFromGui();
 	void peRebuildActionHandler();
-
 	void startDisassemblerGui(CTreeItem selectedTreeNode);
 	void dumpFixActionHandler();
-	void enableDialogButtons( BOOL value );
+	void enableDialogButtons(BOOL value);
 	void showAboutDialog();
 	void dllInjectActionHandler();
 	void optionsActionHandler();
-	void pluginActionHandler( int menuItem );
+	void pluginActionHandler(int menuItem);
+
+	// Popup menu functions
+
+	void DisplayContextMenu(CWindow, CPoint);
+	void DisplayContextMenuImports(CWindow, CPoint);
+	CMenuHandle getCorrectSubMenu(int, int);
+
+	// Misc
+	
+	void clearOutputLog();//Output Window
+
+	static DWORD_PTR stringToDwordPtr(WCHAR * hexString);
 };

@@ -1,23 +1,47 @@
 #pragma once
 
-#include "MainGui.h"
+#include <windows.h>
+#include "resource.h"
+
+// WTL
+#include <atlbase.h>       // base ATL classes
+#include <atlapp.h>        // base WTL classes
+#include <atlwin.h>        // ATL GUI classes
+#include <atlcrack.h>      // WTL enhanced msg map macros
+#include <atlctrls.h>      // WTL controls
 
 class ConfigObject;
 
-class OptionsGui {
+class OptionsGui : public CDialogImpl<OptionsGui>
+{
 public:
-	static HWND hWndDlg;
-	static INT_PTR initOptionsDialog(HINSTANCE hInstance, HWND hWndParent);
-private:
-	static LRESULT CALLBACK optionsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	static void saveOptions();
-	static void loadOptions();
-	static void setCheckBox( int nIDDlgItem, bool bValue );
-	static void displayConfigInDlg( ConfigObject & config );
-	static void setEditControl( int nIDDlgItem, const WCHAR * valueString );
-	static void getConfigOptionsFromDlg( ConfigObject & config );
+	enum { IDD = IDD_DLG_OPTIONS };
 
-	static bool getEditControl( int nIDDlgItem, WCHAR * valueString );
-	static void getCheckBox( int dialogItemValue, DWORD_PTR * valueNumeric );
-	static void getEditControlNumeric( int nIDDlgItem, DWORD_PTR * valueNumeric, int nBase );
+	BEGIN_MSG_MAP(OptionsGui)
+		MSG_WM_INITDIALOG(OnInitDialog)
+
+		COMMAND_ID_HANDLER_EX(IDC_BTN_OPTIONS_OK, OnOK)
+		COMMAND_ID_HANDLER_EX(IDC_BTN_OPTIONS_CANCEL, OnCancel)
+		COMMAND_ID_HANDLER_EX(IDCANCEL, OnCancel)
+	END_MSG_MAP()
+
+private:
+
+	CEdit EditSectionName;
+
+	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
+
+	void OnOK(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl);
+
+	void saveOptions();
+	void loadOptions();
+	void setCheckBox( int nIDDlgItem, bool bValue );
+	void displayConfigInDlg( ConfigObject & config );
+	void setEditControl( int nIDDlgItem, const WCHAR * valueString );
+	void getConfigOptionsFromDlg( ConfigObject & config );
+
+	bool getEditControl( int nIDDlgItem, WCHAR * valueString );
+	void getCheckBox( int dialogItemValue, DWORD_PTR * valueNumeric );
+	void getEditControlNumeric( int nIDDlgItem, DWORD_PTR * valueNumeric, int nBase );
 };

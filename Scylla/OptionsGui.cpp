@@ -1,42 +1,28 @@
 #include "OptionsGui.h"
+
 #include "ConfigurationHolder.h"
 
-HWND OptionsGui::hWndDlg = 0;
-
-INT_PTR OptionsGui::initOptionsDialog(HINSTANCE hInstance, HWND hWndParent)
+BOOL OptionsGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
-	return DialogBox(hInstance, MAKEINTRESOURCE(IDD_DLG_OPTIONS),hWndParent, (DLGPROC)optionsDlgProc);
+	EditSectionName.Attach(GetDlgItem(IDC_OPTIONS_SECTIONNAME));
+	EditSectionName.LimitText(IMAGE_SIZEOF_SHORT_NAME);
+
+	loadOptions();
+
+	return TRUE;
 }
 
-LRESULT CALLBACK OptionsGui::optionsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+void OptionsGui::OnOK(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	hWndDlg = hWnd;
+	saveOptions();
+	ConfigurationHolder::saveConfiguration();
 
-	switch (uMsg)
-	{
-	case WM_INITDIALOG:
-		Edit_LimitText(GetDlgItem(hWndDlg,IDC_OPTIONS_SECTIONNAME), IMAGE_SIZEOF_SHORT_NAME);
-		loadOptions();
-		break;
-	case WM_COMMAND:
-		switch(LOWORD(wParam))
-		{
-		case IDC_BTN_OPTIONS_OK:
-			{
-				saveOptions();
-				ConfigurationHolder::saveConfiguration();
-				EndDialog(hWnd, 0);
-			}
-			return TRUE;
-		case IDC_BTN_OPTIONS_CANCEL:
-			EndDialog(hWnd, 0);
-			return TRUE;
-		case IDCANCEL:
-			EndDialog(hWnd, 0);
-			return TRUE;
-		}
-	}
-	return FALSE;
+	EndDialog(0);
+}
+
+void OptionsGui::OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	EndDialog(0);
 }
 
 void OptionsGui::saveOptions()
@@ -61,14 +47,8 @@ void OptionsGui::loadOptions()
 
 void OptionsGui::setCheckBox( int nIDDlgItem, bool bValue )
 {
-	if (bValue)
-	{
-		Button_SetCheck(GetDlgItem(hWndDlg, nIDDlgItem),BST_CHECKED);
-	}
-	else
-	{
-		Button_SetCheck(GetDlgItem(hWndDlg, nIDDlgItem),BST_UNCHECKED);
-	}
+	CButton Button(GetDlgItem(nIDDlgItem));
+	Button.SetCheck(bValue ? BST_CHECKED : BST_UNCHECKED);
 }
 
 void OptionsGui::displayConfigInDlg( ConfigObject & config )
@@ -110,7 +90,8 @@ void OptionsGui::displayConfigInDlg( ConfigObject & config )
 
 void OptionsGui::setEditControl( int nIDDlgItem, const WCHAR * valueString )
 {
-	SetDlgItemText(hWndDlg,nIDDlgItem,valueString);
+	CEdit Edit(GetDlgItem(nIDDlgItem));
+	Edit.SetWindowText(valueString);
 }
 
 void OptionsGui::getConfigOptionsFromDlg( ConfigObject & config )
@@ -142,19 +123,14 @@ void OptionsGui::getConfigOptionsFromDlg( ConfigObject & config )
 
 bool OptionsGui::getEditControl( int nIDDlgItem, WCHAR * valueString )
 {
-	if (GetDlgItemText(hWndDlg, nIDDlgItem, valueString, CONFIG_OPTIONS_STRING_LENGTH))
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	CEdit Edit(GetDlgItem(nIDDlgItem));
+	return (Edit.GetWindowText(valueString, CONFIG_OPTIONS_STRING_LENGTH) > 0);
 }
 
 void OptionsGui::getCheckBox( int nIDDlgItem, DWORD_PTR * valueNumeric )
 {
-	switch (Button_GetCheck(GetDlgItem(hWndDlg, nIDDlgItem)))
+	CButton Button(GetDlgItem(nIDDlgItem));
+	switch (Button.GetCheck())
 	{
 	case BST_CHECKED:
 		*valueNumeric = 1;

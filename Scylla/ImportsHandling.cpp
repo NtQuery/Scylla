@@ -1,5 +1,6 @@
-
 #include "ImportsHandling.h"
+
+#include "Thunks.h"
 #include "definitions.h"
 
 //#define DEBUG_COMMENTS
@@ -154,7 +155,7 @@ CTreeItem ImportsHandling::addDllToTreeView(CTreeViewCtrl& idTreeView, const WCH
 	return idTreeView.InsertItem(stringBuffer, NULL, TVI_ROOT);
 }
 
-CTreeItem ImportsHandling::addApiToTreeView(CTreeViewCtrl& idTreeView, CTreeItem parentDll, ImportThunk * importThunk)
+CTreeItem ImportsHandling::addApiToTreeView(CTreeViewCtrl& idTreeView, CTreeItem parentDll, const ImportThunk * importThunk)
 {
 	if (importThunk->ordinal != 0)
 	{
@@ -221,7 +222,7 @@ void ImportsHandling::showImports(bool invalid, bool suspect)
 	}
 }
 
-bool ImportsHandling::isItemSelected(CTreeViewCtrl& hwndTV, CTreeItem hItem)
+bool ImportsHandling::isItemSelected(const CTreeViewCtrl& hwndTV, CTreeItem hItem)
 {
 	const UINT state = TVIS_SELECTED;
 	return ((hwndTV.GetItemState(hItem, state) & state) == state);
@@ -291,7 +292,7 @@ void ImportsHandling::setFocus(CTreeViewCtrl& hwndTV, CTreeItem htItem)
 	}
 }
 
-bool ImportsHandling::invalidateFunction( CTreeItem selectedTreeNode )
+bool ImportsHandling::invalidateFunction(CTreeItem selectedTreeNode)
 {
 	std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
 	std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
@@ -375,7 +376,7 @@ void ImportsHandling::updateModuleInTreeView(ImportModuleThunk * importThunk)
 	TreeImports.SetItemText(importThunk->hTreeItem, stringBuffer);
 }
 
-bool ImportsHandling::cutThunk( CTreeItem selectedTreeNode )
+bool ImportsHandling::cutThunk(CTreeItem selectedTreeNode)
 {
 	std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
 	std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
@@ -420,7 +421,7 @@ bool ImportsHandling::cutThunk( CTreeItem selectedTreeNode )
 	return false;
 }
 
-bool ImportsHandling::deleteTreeNode( CTreeItem selectedTreeNode )
+bool ImportsHandling::deleteTreeNode(CTreeItem selectedTreeNode)
 {
 	std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
 	std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
@@ -467,7 +468,7 @@ bool ImportsHandling::deleteTreeNode( CTreeItem selectedTreeNode )
 	return false;
 }
 
-DWORD_PTR ImportsHandling::getApiAddressByNode( CTreeItem selectedTreeNode )
+DWORD_PTR ImportsHandling::getApiAddressByNode(CTreeItem selectedTreeNode)
 {
 	std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
 	std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
@@ -547,7 +548,7 @@ void ImportsHandling::scanAndFixModuleList()
 	moduleListNew.clear();
 }
 
-bool ImportsHandling::findNewModules( std::map<DWORD_PTR, ImportThunk> & thunkList )
+bool ImportsHandling::findNewModules(std::map<DWORD_PTR, ImportThunk> & thunkList)
 {
 	throw std::exception("The method or operation is not implemented.");
 }
@@ -593,7 +594,7 @@ void ImportsHandling::addUnknownModuleToModuleList(DWORD_PTR firstThunk)
 	moduleListNew.insert(std::pair<DWORD_PTR,ImportModuleThunk>(firstThunk,module));
 }
 
-bool ImportsHandling::addNotFoundApiToModuleList(ImportThunk * apiNotFound)
+bool ImportsHandling::addNotFoundApiToModuleList(const ImportThunk * apiNotFound)
 {
 	ImportThunk import;
 	ImportModuleThunk  * module = 0;
@@ -671,7 +672,7 @@ bool ImportsHandling::addNotFoundApiToModuleList(ImportThunk * apiNotFound)
 	return true;
 }
 
-bool ImportsHandling::addFunctionToModuleList(ImportThunk * apiFound)
+bool ImportsHandling::addFunctionToModuleList(const ImportThunk * apiFound)
 {
 	ImportThunk import;
 	ImportModuleThunk  * module = 0;

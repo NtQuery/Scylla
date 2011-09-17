@@ -4,12 +4,10 @@
 #include <Commctrl.h>
 #include <map>
 
+// WTL
 #include <atlbase.h>
 #include <atlapp.h>
-#include <atlctrls.h>
-
-class ImportModuleThunk;
-class ImportThunk;
+#include <atlctrls.h> //CTreeItem
 
 class ImportThunk {
 public:
@@ -26,7 +24,6 @@ public:
 	CTreeItem hTreeItem;
 };
 
-
 class ImportModuleThunk {
 public:
 	WCHAR moduleName[MAX_PATH];
@@ -38,13 +35,4 @@ public:
 
 	DWORD_PTR getFirstThunk();
 	bool isValid();
-
-	~ImportModuleThunk()
-	{
-		if (!thunkList.empty())
-		{
-			thunkList.clear();
-		}
-	}
-
 };

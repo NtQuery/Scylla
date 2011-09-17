@@ -62,14 +62,12 @@ public:
 		parsing = false;
 	}
 
-	WCHAR * getFilename()
+	const WCHAR * getFilename() const
 	{
-		for (size_t i = wcslen(fullPath) - 1; i >= 0; i--)
+		const WCHAR* slash = wcsrchr(fullPath, L'\\');
+		if(slash)
 		{
-			if (fullPath[i] == L'\\')
-			{
-				return (&fullPath[i] + 1);
-			}
+			return slash+1;
 		}
 		return fullPath;
 	}

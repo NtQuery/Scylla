@@ -601,7 +601,7 @@ bool ApiReader::findApiInExportTable(ModuleInfo *module, PIMAGE_EXPORT_DIRECTORY
 
 void ApiReader::setModulePriority(ModuleInfo * module)
 {
-	WCHAR *moduleFileName = module->getFilename();
+	const WCHAR *moduleFileName = module->getFilename();
 
 	if (!_wcsicmp(moduleFileName, TEXT("kernelbase.dll")))
 	{

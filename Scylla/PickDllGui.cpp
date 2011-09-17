@@ -1,131 +1,59 @@
 #include "PickDllGui.h"
 
-
-HWND PickDllGui::hWndDlg;
-std::vector<ModuleInfo> * PickDllGui::moduleList = 0;
-ModuleInfo * PickDllGui::selectedModule = 0;
-
-INT_PTR PickDllGui::initDialog(HINSTANCE hInstance, HWND hWndParent, std::vector<ModuleInfo> &moduleListNew)
+BOOL PickDllGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
-	moduleList = &moduleListNew;
-	return DialogBox(hInstance, MAKEINTRESOURCE(IDD_DLG_PICKDLL),hWndParent, (DLGPROC)pickDllDlgProc);
+	ListDLLSelect.Attach(GetDlgItem(IDC_LIST_DLLSELECT));
+
+	addColumnsToModuleList(ListDLLSelect);
+	displayModuleList(ListDLLSelect);
+
+	return TRUE;
 }
 
-LRESULT CALLBACK PickDllGui::pickDllDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+void PickDllGui::OnOK(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	int index;
-	hWndDlg = hWnd;
-	switch (uMsg)
+	int index = ListDLLSelect.GetSelectionMark();
+	if (index != -1)
 	{
-	case WM_INITDIALOG:
-		addColumnsToModuleList(GetDlgItem(hWnd, IDC_LIST_DLLSELECT));
-		displayModuleList();
-		break;
-
-	case WM_COMMAND:
-		switch(LOWORD(wParam))
-		{
-		case IDC_BTN_PICKDLL_OK:
-			index = ListView_GetSelectionMark(GetDlgItem(hWnd, IDC_LIST_DLLSELECT));
-			if (index != -1)
-			{
-				selectedModule = &(*moduleList).at(index);
-				EndDialog(hWnd, 1);
-			}
-
-			return TRUE;
-		case IDC_BTN_PICKDLL_CANCEL:
-			EndDialog(hWnd, 0);
-			return TRUE;
-		case IDCANCEL:
-			EndDialog(hWnd, 0);
-			return TRUE;
-		}
-	}
-	return FALSE;
-}
-
-void PickDllGui::addColumnsToModuleList(HWND hList)
-{
-	if (hList)
-	{
-		LVCOLUMN * lvc = (LVCOLUMN*)malloc(sizeof(LVCOLUMN));
-
-		ListView_SetExtendedListViewStyleEx(hList,LVS_EX_FULLROWSELECT,LVS_EX_FULLROWSELECT);
-
-		lvc->mask = LVCF_TEXT | LVCF_WIDTH;
-		lvc->cx = 210;
-		lvc->pszText = L"Path";
-		ListView_InsertColumn(hList, COL_PATH, lvc);
-
-		lvc->mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
-		lvc->fmt = LVCFMT_CENTER;
-		lvc->cx = 130;
-		lvc->pszText = L"Name";
-		ListView_InsertColumn(hList, COL_NAME, lvc);
-
-		lvc->mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
-		lvc->fmt = LVCFMT_CENTER;
-		lvc->cx = 70;
-		lvc->pszText = L"ImageBase";
-		ListView_InsertColumn(hList, COL_IMAGEBASE, lvc);
-
-		lvc->mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
-		lvc->fmt = LVCFMT_CENTER;
-		lvc->cx = 70;
-		lvc->pszText = L"ImageSize";
-		ListView_InsertColumn(hList, COL_IMAGESIZE, lvc);
-
-		free(lvc);
+		selectedModule = &moduleList[index];
+		EndDialog(1);
 	}
 }
 
-void PickDllGui::getModuleListItem(int column, int iItem, WCHAR * buffer)
+void PickDllGui::OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	LVITEM pitem = {0};
-	pitem.iItem = iItem;
-	pitem.iSubItem = column;
-	pitem.mask = LVIF_TEXT;
-	pitem.cchTextMax = 256;
-	pitem.pszText = buffer;
-	ListView_GetItem(GetDlgItem(hWndDlg, IDC_LIST_DLLSELECT),&pitem);
+	EndDialog(0);
 }
 
-bool PickDllGui::displayModuleList()
+void PickDllGui::addColumnsToModuleList(CListViewCtrl& list)
 {
-	LVITEM item;
+	list.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
+
+	list.InsertColumn(COL_PATH, L"Path", LVCFMT_LEFT, 210);
+	list.InsertColumn(COL_NAME, L"Name", LVCFMT_CENTER, 130);
+	list.InsertColumn(COL_IMAGEBASE, L"ImageBase", LVCFMT_CENTER, 70);
+	list.InsertColumn(COL_IMAGESIZE, L"ImageSize", LVCFMT_CENTER, 70);
+}
+
+void PickDllGui::displayModuleList(CListViewCtrl& list)
+{
 	WCHAR temp[20];
-	HWND hList = GetDlgItem(hWndDlg, IDC_LIST_DLLSELECT);
 
-	ListView_DeleteAllItems(hList);
+	list.DeleteAllItems();
 
-	item.mask = LVIF_TEXT;
-
-
-
-	std::vector<ModuleInfo>::iterator iter;
+	std::vector<ModuleInfo>::const_iterator iter;
 	int count = 0;
 
-	for( iter = (*moduleList).begin(); iter != (*moduleList).end(); iter++ , count++) {
-		item.iItem = count;
-		item.iSubItem = COL_PATH;
-		item.pszText = iter->fullPath;
-		item.iItem = ListView_InsertItem(hList, &item);
+	for( iter = moduleList.begin(); iter != moduleList.end(); iter++ , count++)
+	{
+		list.InsertItem(count, iter->fullPath);
 
-		item.iSubItem = COL_NAME;
-		item.pszText = iter->getFilename();
-		ListView_SetItem(hList, &item);
+		list.SetItemText(count, COL_NAME, iter->getFilename());
 
-		item.iSubItem = COL_IMAGEBASE;
 		swprintf_s(temp,_countof(temp),L"%08X",iter->modBaseAddr);
-		item.pszText = temp;
-		ListView_SetItem(hList, &item);
+		list.SetItemText(count, COL_IMAGEBASE, temp);
 
-		item.iSubItem = COL_IMAGESIZE;
 		swprintf_s(temp,_countof(temp),L"%08X",iter->modBaseSize);
-		item.pszText = temp;
-		ListView_SetItem(hList, &item);		
+		list.SetItemText(count, COL_IMAGESIZE, temp);
 	}
-
-	return true;
 }
