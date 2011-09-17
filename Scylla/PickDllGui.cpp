@@ -2,6 +2,12 @@
 
 #include "WindowDeferrer.h"
 
+PickDllGui::PickDllGui(std::vector<ModuleInfo> &moduleList) : moduleList(moduleList)
+{
+	selectedModule = 0;
+	hIcon.LoadIcon(IDI_ICON_SCYLLA1);
+}
+
 BOOL PickDllGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
 	ListDLLSelect.Attach(GetDlgItem(IDC_LIST_DLLSELECT));
@@ -11,7 +17,7 @@ BOOL PickDllGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	CenterWindow();
 
-	if(hIcon.LoadIcon(IDI_ICON_SCYLLA1))
+	if(hIcon)
 	{
 		SetIcon(hIcon, TRUE);
 		SetIcon(hIcon, FALSE);

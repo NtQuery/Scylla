@@ -21,6 +21,8 @@ MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports)
 	PluginLoader::findAllPlugins();
 	NativeWinApi::initialize();
 	SystemInformation::getSystemInformation();
+
+	hIcon.LoadIcon(IDI_ICON_SCYLLA1);
 }
 
 BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
@@ -270,7 +272,7 @@ void MainGui::OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void MainGui::setIconAndDialogCaption()
 {
-	if(hIcon.LoadIcon(IDI_ICON_SCYLLA1))
+	if(hIcon)
 	{
 		SetIcon(hIcon, TRUE);
 		SetIcon(hIcon, FALSE);

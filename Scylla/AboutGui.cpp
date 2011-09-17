@@ -25,5 +25,6 @@ BOOL AboutGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 void AboutGui::OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
+	FontBold.DeleteObject();
 	EndDialog(0);
 }

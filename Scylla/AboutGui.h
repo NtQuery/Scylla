@@ -30,7 +30,7 @@ protected:
 
 	// Handles
 
-	CFont FontBold;
+	CFontHandle FontBold;
 
 protected:
 

@@ -29,7 +29,7 @@ public:
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnCancel)
 	END_MSG_MAP()
 
-	PickDllGui(std::vector<ModuleInfo> &moduleList) : moduleList(moduleList), selectedModule(0) { }
+	PickDllGui(std::vector<ModuleInfo> &moduleList);
 
 	ModuleInfo* getSelectedModule() const { return selectedModule; }
 
