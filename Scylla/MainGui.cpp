@@ -53,7 +53,7 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	EditIATAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
 	EditIATSize.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
 
-	enableDialogButtons(FALSE);
+	enableDialogControls(FALSE);
 
 	setIconAndDialogCaption();
 
@@ -124,29 +124,11 @@ void MainGui::OnLButtonDown(UINT nFlags, CPoint point)
 
 void MainGui::OnContextMenu(CWindow wnd, CPoint point)
 { 
-	//TV_ITEM tvi;
-	//WCHAR ttt[260] = {0};
-	//HTREEITEM selectedTreeNode = 0;
-
 	switch(wnd.GetDlgCtrlID())
 	{
 	case IDC_TREE_IMPORTS:
-		if(TreeImports.GetCount()) //module list should not be empty
-		{
-			/*selectedTreeNode = (HTREEITEM)SendDlgItemMessage(hWndMainDlg,IDC_TREE_IMPORTS,TVM_GETNEXTITEM,TVGN_CARET,(LPARAM)selectedTreeNode);
-			tvi.mask=TVIF_TEXT;   // item text attrivute
-
-			tvi.pszText=ttt;     // Text is the pointer to the text 
-
-			tvi.cchTextMax=260;   // size of text to retrieve.
-
-			tvi.hItem=selectedTreeNode;   // the selected item
-
-			SendDlgItemMessage(hWndMainDlg,IDC_TREE_IMPORTS,TVM_GETITEM,TVGN_CARET,(LPARAM)&tvi);
-			Logger::printfDialog(L"selected %s",tvi.pszText);*/
-
-			DisplayContextMenuImports(wnd, point);
-		}
+		DisplayContextMenuImports(wnd, point);
+		break;
 		break;
 	case IDC_LIST_LOG:
 		DisplayContextMenuLog(wnd, point);
@@ -314,7 +296,7 @@ void MainGui::processSelectedActionHandler(int index)
 	Process &process = processList.at(index);
 	selectedProcess = &process;
 
-	enableDialogButtons(TRUE);
+	enableDialogControls(TRUE);
 
 	Logger::printfDialog(TEXT("Analyzing %s"),process.fullPath);
 
@@ -476,16 +458,47 @@ DWORD_PTR MainGui::stringToDwordPtr(const WCHAR * hexString)
 
 void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 {
-	BOOL menuItem = 0;
-	CTreeItem selectedTreeNode = 0;
-	std::vector<Plugin> &pluginList = PluginLoader::getScyllaPluginList();
-	CMenuHandle hmenuTrackPopup = getCorrectSubMenu(IDR_MENU_IMPORTS, 0);
+	if(TreeImports.GetCount() < 1)
+		return;
 
+	// Get item under cursor
+	CPoint client(pt);
+	CWindow(GetDesktopWindow()).MapWindowPoints(TreeImports, &client, 1); // pt is screen, we need client
+	UINT flags;
+	CTreeItem over = TreeImports.HitTest(client, &flags);
+	CTreeItem parent;
+	if(over)
+	{
+		if(!(flags & TVHT_ONITEM))
+		{
+			over = NULL;
+		}
+		else
+		{
+			parent = TreeImports.GetParentItem(over);
+		}
+	}
+
+	CMenuHandle hmenuTrackPopup = getCorrectSubMenu(IDR_MENU_IMPORTS, 0);
 	if (hmenuTrackPopup)
 	{
+		if(!over)
+		{
+			hmenuTrackPopup.EnableMenuItem(ID__INVALIDATEFUNCTION, MF_GRAYED);
+			hmenuTrackPopup.EnableMenuItem(ID__DISASSEMBLE, MF_GRAYED);
+			hmenuTrackPopup.EnableMenuItem(ID__CUTTHUNK, MF_GRAYED);
+			hmenuTrackPopup.EnableMenuItem(ID__DELETETREENODE, MF_GRAYED);
+		}
+		else if(!parent) // root element
+		{
+			hmenuTrackPopup.EnableMenuItem(ID__INVALIDATEFUNCTION, MF_GRAYED);
+			hmenuTrackPopup.EnableMenuItem(ID__DISASSEMBLE, MF_GRAYED);
+			hmenuTrackPopup.EnableMenuItem(ID__CUTTHUNK, MF_GRAYED);
+		}
+
 		appendPluginListToMenu(hmenuTrackPopup);
 
-		menuItem = hmenuTrackPopup.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
+		BOOL menuItem = hmenuTrackPopup.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
 		hmenuTrackPopup.DestroyMenu();
 		if (menuItem)
 		{
@@ -497,41 +510,25 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 				pluginActionHandler(menuItem);
 				return;
 			}
-			
-			selectedTreeNode = TreeImports.GetSelectedItem();
-
 			switch (menuItem)
 			{
 			case ID__INVALIDATEFUNCTION:
-				{
-					importsHandling.invalidateFunction(selectedTreeNode);
-				}
-				
+				importsHandling.invalidateFunction(over);
 				break;
 			case ID__DISASSEMBLE:
-				{
-					startDisassemblerGui(selectedTreeNode);
-				}
-				break;
-			case ID__CUTTHUNK:
-				{
-					importsHandling.cutThunk(selectedTreeNode);
-				}
-				break;
-			case ID__DELETETREENODE:
-				{
-					importsHandling.deleteTreeNode(selectedTreeNode);
-				}
+				startDisassemblerGui(over);
 				break;
 			case ID__EXPANDALLNODES:
-				{
-					importsHandling.expandAllTreeNodes();
-				}
+				importsHandling.expandAllTreeNodes();
 				break;
 			case ID__COLLAPSEALLNODES:
-				{
-					importsHandling.collapseAllTreeNodes();
-				}
+				importsHandling.collapseAllTreeNodes();
+				break;
+			case ID__CUTTHUNK:
+				importsHandling.cutThunk(over);
+				break;
+			case ID__DELETETREENODE:
+				importsHandling.deleteTreeNode(parent ? parent : over);
 				break;
 			}
 		}
@@ -540,12 +537,10 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 
 void MainGui::DisplayContextMenuLog(CWindow hwnd, CPoint pt)
 {
-	BOOL menuItem = 0;
 	CMenuHandle hmenuTrackPopup = getCorrectSubMenu(IDR_MENU_LOG, 0);
-
 	if (hmenuTrackPopup)
 	{
-		menuItem = hmenuTrackPopup.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
+		BOOL menuItem = hmenuTrackPopup.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
 		hmenuTrackPopup.DestroyMenu();
 		if (menuItem)
 		{
@@ -641,6 +636,9 @@ void MainGui::appendPluginListToMenu(CMenuHandle hMenuTrackPopup)
 
 void MainGui::dumpActionHandler()
 {
+	if(!selectedProcess)
+		return;
+
 	WCHAR * targetFile = 0;
 	PeDump peDump;
 
@@ -747,6 +745,9 @@ void MainGui::peRebuildActionHandler()
 
 void MainGui::dumpFixActionHandler()
 {
+	if(!selectedProcess)
+		return;
+
 	WCHAR * targetFile = 0;
 	WCHAR newFilePath[MAX_PATH];
 	ImportRebuild importRebuild;
@@ -803,7 +804,7 @@ void MainGui::dumpFixActionHandler()
 
 }
 
-void MainGui::enableDialogButtons(BOOL value)
+void MainGui::enableDialogControls(BOOL value)
 {
 	GetDlgItem(IDC_BTN_PICKDLL).EnableWindow(value);
 	GetDlgItem(IDC_BTN_DUMP).EnableWindow(value);
@@ -815,10 +816,19 @@ void MainGui::enableDialogButtons(BOOL value)
 	GetDlgItem(IDC_BTN_INVALIDIMPORTS).EnableWindow(value);
 	GetDlgItem(IDC_BTN_CLEARIMPORTS).EnableWindow(value);
 
+	CMenuHandle menu = GetMenu();
+
+	menu.EnableMenuItem(ID_FILE_DUMP, value ? MF_ENABLED : MF_GRAYED);
+	menu.EnableMenuItem(ID_FILE_FIXDUMP, value ? MF_ENABLED : MF_GRAYED);
+	menu.EnableMenuItem(ID_MISC_DLLINJECTION, value ? MF_ENABLED : MF_GRAYED);
+
 	//not yet implemented
 	GetDlgItem(IDC_BTN_AUTOTRACE).EnableWindow(FALSE);
 	GetDlgItem(IDC_BTN_SAVETREE).EnableWindow(FALSE);
 	GetDlgItem(IDC_BTN_LOADTREE).EnableWindow(FALSE);
+
+	menu.EnableMenuItem(ID_MISC_SAVETREE, MF_GRAYED);
+	menu.EnableMenuItem(ID_MISC_LOADTREE, MF_GRAYED);
 }
 
 void MainGui::showAboutDialog()
@@ -829,6 +839,9 @@ void MainGui::showAboutDialog()
 
 void MainGui::dllInjectActionHandler()
 {
+	if(!selectedProcess)
+		return;
+
 	WCHAR * targetFile = 0;
 	HMODULE hMod = 0;
 	DllInjection dllInjection;
@@ -868,6 +881,9 @@ void MainGui::optionsActionHandler()
 
 void MainGui::pluginActionHandler( int menuItem )
 {
+	if(!selectedProcess)
+		return;
+
 	DllInjectionPlugin dllInjectionPlugin;
 
 	std::vector<Plugin> &scyllaPluginList = PluginLoader::getScyllaPluginList();

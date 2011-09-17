@@ -161,7 +161,7 @@ protected:
 	void peRebuildActionHandler();
 	void startDisassemblerGui(CTreeItem selectedTreeNode);
 	void dumpFixActionHandler();
-	void enableDialogButtons(BOOL value);
+	void enableDialogControls(BOOL value);
 	void showAboutDialog();
 	void dllInjectActionHandler();
 	void optionsActionHandler();
