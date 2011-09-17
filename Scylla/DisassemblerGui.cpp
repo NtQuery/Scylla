@@ -111,10 +111,11 @@ void DisassemblerGui::copyToClipboard(const WCHAR * text)
 	if(OpenClipboard())
 	{
 		EmptyClipboard();
-		HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, (wcslen(text)+1)*sizeof(WCHAR));
+		size_t len = wcslen(text);
+		HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, (len+1)*sizeof(WCHAR));
 		if(hMem)
 		{
-			wcscpy((WCHAR *)GlobalLock(hMem), text);
+			wcscpy_s((WCHAR *)GlobalLock(hMem), len+1, text);
 			GlobalUnlock(hMem);
 			if(!SetClipboardData(CF_UNICODETEXT, hMem))
 			{
