@@ -21,6 +21,8 @@ public:
 
 	BEGIN_MSG_MAP(PickDllGui)
 		MSG_WM_INITDIALOG(OnInitDialog)
+		MSG_WM_GETMINMAXINFO(OnGetMinMaxInfo)
+		MSG_WM_SIZING(OnSizing)
 
 		COMMAND_ID_HANDLER_EX(IDC_BTN_PICKDLL_OK, OnOK)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_PICKDLL_CANCEL, OnCancel)
@@ -49,11 +51,15 @@ protected:
 		COL_IMAGESIZE
 	};
 
+	RECT MinSize;
+
 protected:
 
 	// Message handlers
 
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
+	void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
+	void OnSizing(UINT fwSide, RECT* pRect);
 	void OnOK(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl);
 
