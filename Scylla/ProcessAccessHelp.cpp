@@ -343,7 +343,7 @@ bool ProcessAccessHelp::readMemoryFromFile(HANDLE hFile, LONG offset, DWORD size
 	}
 }
 
-bool ProcessAccessHelp::writeMemoryToFile(HANDLE hFile, LONG offset, DWORD size, LPVOID dataBuffer)
+bool ProcessAccessHelp::writeMemoryToFile(HANDLE hFile, LONG offset, DWORD size, LPCVOID dataBuffer)
 {
 	DWORD lpNumberOfBytesWritten = 0;
 	DWORD retValue = 0;
@@ -385,7 +385,7 @@ bool ProcessAccessHelp::writeMemoryToFile(HANDLE hFile, LONG offset, DWORD size,
 	}
 }
 
-bool ProcessAccessHelp::writeMemoryToFileEnd(HANDLE hFile, DWORD size, LPVOID dataBuffer)
+bool ProcessAccessHelp::writeMemoryToFileEnd(HANDLE hFile, DWORD size, LPCVOID dataBuffer)
 {
 	DWORD lpNumberOfBytesWritten = 0;
 	DWORD retValue = 0;

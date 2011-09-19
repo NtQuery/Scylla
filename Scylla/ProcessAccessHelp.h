@@ -154,12 +154,12 @@ public:
 	/*
 	 * Write memory to file
 	 */
-	static bool writeMemoryToFile(HANDLE hFile, LONG offset, DWORD size, LPVOID dataBuffer);
+	static bool writeMemoryToFile(HANDLE hFile, LONG offset, DWORD size, LPCVOID dataBuffer);
 
 	/*
 	 * Write memory to file end
 	 */
-	static bool writeMemoryToFileEnd(HANDLE hFile, DWORD size, LPVOID dataBuffer);
+	static bool writeMemoryToFileEnd(HANDLE hFile, DWORD size, LPCVOID dataBuffer);
 
 	/*
 	 * Disassemble Memory
