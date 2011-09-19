@@ -80,7 +80,6 @@ public:
 
 	MainGui();
 
-	//Output Window
 	void addTextToOutputLog(const WCHAR * text);
 
 protected:
@@ -170,12 +169,9 @@ protected:
 	// GUI functions
 
 	bool showFileDialog(WCHAR * selectedFile, bool save, const WCHAR * defFileName, const WCHAR * filter = NULL, const WCHAR * defExtension = NULL, const WCHAR * directory = NULL);
-
-	void setIconAndDialogCaption();
-
 	void fillProcessListComboBox(CComboBox& hCombo);
-
-	//static bool displayModuleList(HWND hWndDlg, HWND hList, LRESULT index);
+	void setIconAndDialogCaption();
+	void enableDialogControls(BOOL value);
 
 	// Actions
 
@@ -185,13 +181,10 @@ protected:
 	void showSuspectImportsActionHandler();
 	void iatAutosearchActionHandler();
 	void getImportsActionHandler();
-	void appendPluginListToMenu(CMenuHandle hMenuTrackPopup);
 	void dumpActionHandler();
-	DWORD_PTR getOEPFromGui();
 	void peRebuildActionHandler();
 	void startDisassemblerGui(CTreeItem selectedTreeNode);
 	void dumpFixActionHandler();
-	void enableDialogControls(BOOL value);
 	void showAboutDialog();
 	void dllInjectActionHandler();
 	void optionsActionHandler();
@@ -200,15 +193,18 @@ protected:
 
 	// Popup menu functions
 
-	//void DisplayContextMenu(CWindow, CPoint);
 	void SetupImportsMenuItems(bool isItem, bool isThunk);
+	void appendPluginListToMenu(CMenuHandle hMenuTrackPopup);
 	void DisplayContextMenuImports(CWindow, CPoint);
 	void DisplayContextMenuLog(CWindow, CPoint);
 
-	// Misc
+	// Log
 
-	void clearOutputLog();//Output Window
+	void clearOutputLog();
 	bool saveLogToFile(const WCHAR * file);
 
+	// Misc
+
+	DWORD_PTR getOEPFromGui();
 	static DWORD_PTR stringToDwordPtr(const WCHAR * hexString);
 };

@@ -306,6 +306,10 @@ bool MainGui::showFileDialog(WCHAR * selectedFile, bool save, const WCHAR * defF
 {
 OPENFILENAME ofn = {0};
 
+	// WTL doesn't support new explorer styles on Vista and up
+	// This is because it uses a custom hook, we could remove it or derive
+	// from CFileDialog but this solution is easier and allows more control anyway (e.g. initial dir)
+
 	if(defFileName)
 	{
 		wcscpy_s(selectedFile, MAX_PATH, defFileName);
@@ -339,34 +343,12 @@ OPENFILENAME ofn = {0};
 		return 0 != GetSaveFileName(&ofn);
 	else
 		return 0 != GetOpenFileName(&ofn);
-
-	/*
-	DWORD dwFlags = OFN_LONGNAMES | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
-	if(!save)
-		dwFlags |= OFN_FILEMUSTEXIST;
-	else
-		dwFlags |= OFN_OVERWRITEPROMPT;
-
-	// Specify initial dir:
-	// Dir part of defFileName, maybe supply dir without file part?
-
-	CFileDialog dlgFile(!save, defExtension, defFileName, dwFlags, filter, m_hWnd);
-	if(dlgFile.DoModal() == IDOK)
-	{
-		wcscpy_s(selectedFile, MAX_PATH, dlgFile.m_szFileName);
-		return true;
-	}
-	return false;
-	*/
 }
 
 void MainGui::setIconAndDialogCaption()
 {
-	if(hIcon)
-	{
-		SetIcon(hIcon, TRUE);
-		SetIcon(hIcon, FALSE);
-	}
+	SetIcon(hIcon, TRUE);
+	SetIcon(hIcon, FALSE);
 
 	SetWindowText(TEXT(APPNAME)TEXT(" ")TEXT(ARCHITECTURE)TEXT(" ")TEXT(APPVERSION));
 }
@@ -728,41 +710,6 @@ void MainGui::DisplayContextMenuLog(CWindow hwnd, CPoint pt)
 		}
 	}
 }
-
-/*
-void MainGui::DisplayContextMenu(CWindow hwnd, CPoint pt) 
-{ 
-	CMenu hmenu;            // top-level menu 
-	CMenuHandle hmenuTrackPopup;  // shortcut menu 
-	int menuItem;			// selected menu item
-
-	// Load the menu resource. 
-	if (!hmenu.LoadMenu(IDR_MENU_IMPORTS)) 
-		return; 
-
-	// TrackPopupMenu cannot display the menu bar so get 
-	// a handle to the first shortcut menu. 
-
-	hmenuTrackPopup = hmenu.GetSubMenu(0);
-
-	// Display the shortcut menu. Track the right mouse 
-	// button. 
-	if (!hmenuTrackPopup)
-	{
-		MessageBox(L"hmenuTrackPopup == null", L"hmenuTrackPopup");
-	}
-
-	menuItem = hmenuTrackPopup.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
-
-	if (menuItem)
-	{
-		if (menuItem == ID_LISTCONTROL_SHOWEXPORTS)
-		{
-			//MessageBox(L"exports",L"dshhhhh");
-		}
-	}
-}
-*/
 
 void MainGui::appendPluginListToMenu(CMenuHandle hMenu)
 {
