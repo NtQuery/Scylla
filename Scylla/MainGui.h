@@ -34,6 +34,7 @@ public:
 		MSG_WM_SIZING(OnSizing)
 		MSG_WM_CONTEXTMENU(OnContextMenu)
 		MSG_WM_LBUTTONDOWN(OnLButtonDown)
+		MSG_WM_COMMAND(OnCommand)
 
 		//MSG_WM_ENTERSIZEMOVE(OnEnterSizeMove)
 		//MSG_WM_EXITSIZEMOVE(OnExitSizeMove)
@@ -62,8 +63,16 @@ public:
 		COMMAND_ID_HANDLER_EX(ID_FILE_PEREBUILD, OnPERebuild)
 		COMMAND_ID_HANDLER_EX(ID_FILE_FIXDUMP, OnFixDump)
 		COMMAND_ID_HANDLER_EX(ID_FILE_EXIT, OnExit)
+		COMMAND_ID_HANDLER_EX(ID_IMPORTS_SHOWINVALID, OnInvalidImports)
+		COMMAND_ID_HANDLER_EX(ID_IMPORTS_SHOWSUSPECT, OnSuspectImports)
+		COMMAND_ID_HANDLER_EX(ID_IMPORTS_INVALIDATESELECTED, OnInvalidateSelected)
+		COMMAND_ID_HANDLER_EX(ID_IMPORTS_CUTSELECTED, OnCutSelected)
+		COMMAND_ID_HANDLER_EX(ID_IMPORTS_CLEARIMPORTS, OnClearImports)
+		COMMAND_ID_HANDLER_EX(ID_IMPORTS_SAVETREE, OnSaveTree)
+		COMMAND_ID_HANDLER_EX(ID_IMPORTS_LOADTREE, OnLoadTree)
+		COMMAND_ID_HANDLER_EX(ID_TRACE_AUTOTRACE, OnAutotrace)
 		COMMAND_ID_HANDLER_EX(ID_MISC_DLLINJECTION, OnDLLInject)
-		COMMAND_ID_HANDLER_EX(ID_MISC_PREFERENCES, OnOptions)
+		COMMAND_ID_HANDLER_EX(ID_MISC_OPTIONS, OnOptions)
 		COMMAND_ID_HANDLER_EX(ID_HELP_ABOUT, OnAbout)
 
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnExit)
@@ -92,6 +101,7 @@ protected:
 	static const WCHAR filterExe[];
 	static const WCHAR filterDll[];
 	static const WCHAR filterExeDll[];
+	static const WCHAR filterTxt[];
 
 	// Controls
 
@@ -110,6 +120,10 @@ protected:
 	CMenu hMenuImports;
 	CMenu hMenuLog;
 
+	static const int MenuImportsOffsetTrace = 2;
+	static const int MenuImportsTraceOffsetScylla = 2;
+	static const int MenuImportsTraceOffsetImpRec = 4;
+
 protected:
 
 	// Message handlers
@@ -121,6 +135,7 @@ protected:
 	//void OnExitSizeMove();
 	void OnLButtonDown(UINT nFlags, CPoint point);
 	void OnContextMenu(CWindow wnd, CPoint point);
+	void OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	LRESULT OnTreeImportsClick(const NMHDR* pnmh);
 	LRESULT OnTreeImportsDoubleClick(const NMHDR* pnmh);
@@ -142,7 +157,12 @@ protected:
 	void OnInvalidImports(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnSuspectImports(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnClearImports(UINT uNotifyCode, int nID, CWindow wndCtl);
-	void OnClearLog(UINT uNotifyCode, int nID, CWindow wndCtl);
+
+	void OnInvalidateSelected(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void OnCutSelected(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void OnSaveTree(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void OnLoadTree(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void OnAutotrace(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	void OnExit(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl);
@@ -188,6 +208,7 @@ protected:
 	// Misc
 
 	void clearOutputLog();//Output Window
+	bool saveLogToFile(const WCHAR * file);
 
 	static DWORD_PTR stringToDwordPtr(const WCHAR * hexString);
 };

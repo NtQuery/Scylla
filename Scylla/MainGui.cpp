@@ -19,6 +19,7 @@
 const WCHAR MainGui::filterExe[] = L"Executable (*.exe)\0*.exe\0All files\0*.*\0";
 const WCHAR MainGui::filterDll[] = L"Dynamic Link Library (*.dll)\0*.dll\0All files\0*.*\0";
 const WCHAR MainGui::filterExeDll[] = L"Executable (*.exe)\0*.exe\0Dynamic Link Library (*.dll)\0*.dll\0All files\0*.*\0";
+const WCHAR MainGui::filterTxt[] = L"Text file (*.txt)\0*.txt\0All files\0*.*\0";
 
 MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports)
 {
@@ -66,12 +67,15 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	EditIATAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
 	EditIATSize.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
 
+	appendPluginListToMenu(CMenuHandle(GetMenu()).GetSubMenu(MenuImportsOffsetTrace));
+
 	enableDialogControls(FALSE);
 
 	setIconAndDialogCaption();
 
 	GetWindowRect(&MinSize);
 
+	SetMsgHandled(false);
 	return TRUE;
 }
 
@@ -128,40 +132,55 @@ void MainGui::OnSizing(UINT fwSide, RECT* pRect)
 
 	WindowDeferrer deferrer(m_hWnd, controls, _countof(controls));
 	deferrer.defer(deltaX, deltaY);
+
+	SetMsgHandled(false);
 }
 
 void MainGui::OnLButtonDown(UINT nFlags, CPoint point)
 {
-
+	SetMsgHandled(false);
 }
 
 void MainGui::OnContextMenu(CWindow wnd, CPoint point)
 { 
+	// point = -1, -1 for keyboard invoked shortcut!
 	switch(wnd.GetDlgCtrlID())
 	{
 	case IDC_TREE_IMPORTS:
 		DisplayContextMenuImports(wnd, point);
 		break;
-		break;
 	case IDC_LIST_LOG:
 		DisplayContextMenuLog(wnd, point);
 		break;
-	//default:
+	//default: // wnd == m_hWnd?
 	//	DisplayContextMenu(wnd, point); 
 	//	break;
 	}
 }
 
+void MainGui::OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	// Make sure it's a menu
+	if(uNotifyCode == 0 && !wndCtl.IsWindow())
+	{
+		if ((nID >= PLUGIN_MENU_BASE_ID) && (nID <= (int)(PluginLoader::getScyllaPluginList().size() + PluginLoader::getImprecPluginList().size() + PLUGIN_MENU_BASE_ID)))
+		{
+			pluginActionHandler(nID);
+			return;
+		}
+	}
+	SetMsgHandled(false);
+}
+
 LRESULT MainGui::OnTreeImportsClick(const NMHDR* pnmh)
 {
-	//Logger::printfDialog(L"NM_CLICK");
-	return FALSE;
+	return false;
 }
 
 LRESULT MainGui::OnTreeImportsDoubleClick(const NMHDR* pnmh)
 {
-	//Logger::printfDialog(L"NM_DBLCLK");
-	return FALSE;
+	CPoint pt = GetMessagePos();
+	return false;
 }
 
 LRESULT MainGui::OnTreeImportsRightClick(const NMHDR* pnmh)
@@ -175,13 +194,12 @@ LRESULT MainGui::OnTreeImportsRightClick(const NMHDR* pnmh)
 		TreeImports.Select(selectedTreeNode, TVGN_CARET);
 	}
 	*/
-	return FALSE;
+	return false;
 }
 
 LRESULT MainGui::OnTreeImportsRightDoubleClick(const NMHDR* pnmh)
 {
-	//Logger::printfDialog(L"NM_RDBLCLK");
-	return FALSE;
+	return false;
 }
 
 void MainGui::OnProcessListDrop(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -249,9 +267,29 @@ void MainGui::OnClearImports(UINT uNotifyCode, int nID, CWindow wndCtl)
 	clearImportsActionHandler();
 }
 
-void MainGui::OnClearLog(UINT uNotifyCode, int nID, CWindow wndCtl)
+void MainGui::OnInvalidateSelected(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	clearOutputLog();
+	// TODO
+}
+
+void MainGui::OnCutSelected(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	// TODO
+}
+
+void MainGui::OnSaveTree(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	// TODO
+}
+
+void MainGui::OnLoadTree(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	// TODO
+}
+
+void MainGui::OnAutotrace(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	// TODO
 }
 
 void MainGui::OnExit(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -271,6 +309,9 @@ bool MainGui::showFileDialog(WCHAR * selectedFile, bool save, const WCHAR * defF
 		dwFlags |= OFN_FILEMUSTEXIST;
 	else
 		dwFlags |= OFN_OVERWRITEPROMPT;
+
+	// Specify initial dir:
+	// Dir part of defFileName, maybe supply dir without file part?
 
 	CFileDialog dlgFile(!save, defExtension, defFileName, dwFlags, filter, m_hWnd);
 	if(dlgFile.DoModal() == IDOK)
@@ -396,6 +437,50 @@ void MainGui::clearOutputLog()
 	{
 		ListLog.ResetContent();
 	}
+}
+
+bool MainGui::saveLogToFile(const WCHAR * file)
+{
+	const BYTE BOM[] = {0xFF, 0xFE}; // UTF-16 little-endian
+	const WCHAR newLine[] = L"\r\n";
+	bool success = true;
+
+	HANDLE hFile = CreateFile(file, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	if(hFile != INVALID_HANDLE_VALUE)
+	{
+		ProcessAccessHelp::writeMemoryToFileEnd(hFile, sizeof(BOM), BOM);
+
+		WCHAR * buffer = 0;
+		int bufsize = 0;
+		for(int i = 0; i < ListLog.GetCount(); i++)
+		{
+			int size = ListLog.GetTextLen(i);
+			size += _countof(newLine)-1;
+			if(size+1 > bufsize)
+			{
+				bufsize = size+1;
+				delete[] buffer;
+				try
+				{
+					buffer = new WCHAR[bufsize];
+				}
+				catch(std::bad_alloc&)
+				{
+					buffer = 0;
+					success = false;
+					break;
+				}
+			}
+
+			ListLog.GetText(i, buffer);
+			wcscat_s(buffer, bufsize, newLine);
+
+			ProcessAccessHelp::writeMemoryToFileEnd(hFile, size * sizeof(WCHAR), buffer);
+		}
+		delete[] buffer;
+		CloseHandle(hFile);
+	}
+	return success;
 }
 
 void MainGui::showInvalidImportsActionHandler()
@@ -578,6 +663,13 @@ void MainGui::DisplayContextMenuLog(CWindow hwnd, CPoint pt)
 		{
 			switch (menuItem)
 			{
+			case ID__SAVE:
+				WCHAR selectedFilePath[MAX_PATH];
+				if(showFileDialog(selectedFilePath, true, NULL, filterTxt, L".txt"))
+				{
+					saveLogToFile(selectedFilePath);
+				}
+				break;
 			case ID__CLEAR:
 				clearOutputLog();
 				break;
@@ -621,7 +713,7 @@ void MainGui::DisplayContextMenu(CWindow hwnd, CPoint pt)
 }
 */
 
-void MainGui::appendPluginListToMenu(CMenuHandle hMenuTrackPopup)
+void MainGui::appendPluginListToMenu(CMenuHandle hMenu)
 {
 	std::vector<Plugin> &scyllaPluginList = PluginLoader::getScyllaPluginList();
 	std::vector<Plugin> &imprecPluginList = PluginLoader::getImprecPluginList();
@@ -636,8 +728,8 @@ void MainGui::appendPluginListToMenu(CMenuHandle hMenuTrackPopup)
 			newMenu.AppendMenu(MF_STRING, i + PLUGIN_MENU_BASE_ID, scyllaPluginList[i].pluginName);
 		}
 
-		hMenuTrackPopup.AppendMenu(MF_MENUBARBREAK);
-		hMenuTrackPopup.AppendMenu(MF_POPUP, newMenu, L"Scylla Plugins");
+		hMenu.AppendMenu(MF_MENUBARBREAK);
+		hMenu.AppendMenu(MF_POPUP, newMenu, L"Scylla Plugins");
 	}
 
 	if (imprecPluginList.size() > 0)
@@ -650,8 +742,8 @@ void MainGui::appendPluginListToMenu(CMenuHandle hMenuTrackPopup)
 			newMenu.AppendMenu(MF_STRING, scyllaPluginList.size() + i + PLUGIN_MENU_BASE_ID, imprecPluginList[i].pluginName);
 		}
 
-		hMenuTrackPopup.AppendMenu(MF_MENUBARBREAK);
-		hMenuTrackPopup.AppendMenu(MF_POPUP, newMenu, L"ImpREC Plugins");
+		hMenu.AppendMenu(MF_MENUBARBREAK);
+		hMenu.AppendMenu(MF_POPUP, newMenu, L"ImpREC Plugins");
 	}
 }
 
@@ -838,14 +930,20 @@ void MainGui::enableDialogControls(BOOL value)
 	menu.EnableMenuItem(ID_FILE_DUMP, value ? MF_ENABLED : MF_GRAYED);
 	menu.EnableMenuItem(ID_FILE_FIXDUMP, value ? MF_ENABLED : MF_GRAYED);
 	menu.EnableMenuItem(ID_MISC_DLLINJECTION, value ? MF_ENABLED : MF_GRAYED);
+	menu.GetSubMenu(MenuImportsOffsetTrace).EnableMenuItem(MenuImportsTraceOffsetScylla, MF_BYPOSITION | (value ? MF_ENABLED : MF_GRAYED));
+	menu.GetSubMenu(MenuImportsOffsetTrace).EnableMenuItem(MenuImportsTraceOffsetImpRec, MF_BYPOSITION | (value ? MF_ENABLED : MF_GRAYED));
 
 	//not yet implemented
 	GetDlgItem(IDC_BTN_AUTOTRACE).EnableWindow(FALSE);
 	GetDlgItem(IDC_BTN_SAVETREE).EnableWindow(FALSE);
 	GetDlgItem(IDC_BTN_LOADTREE).EnableWindow(FALSE);
 
-	menu.EnableMenuItem(ID_MISC_SAVETREE, MF_GRAYED);
-	menu.EnableMenuItem(ID_MISC_LOADTREE, MF_GRAYED);
+	menu.EnableMenuItem(ID_IMPORTS_INVALIDATESELECTED, MF_GRAYED);
+	menu.EnableMenuItem(ID_IMPORTS_CUTSELECTED, MF_GRAYED);
+	menu.EnableMenuItem(ID_IMPORTS_SAVETREE, MF_GRAYED);
+	menu.EnableMenuItem(ID_IMPORTS_SAVETREE, MF_GRAYED);
+	menu.EnableMenuItem(ID_IMPORTS_LOADTREE, MF_GRAYED);
+	menu.EnableMenuItem(ID_TRACE_AUTOTRACE, MF_GRAYED);
 }
 
 void MainGui::showAboutDialog()
