@@ -17,11 +17,8 @@ BOOL PickDllGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	CenterWindow();
 
-	if(hIcon)
-	{
-		SetIcon(hIcon, TRUE);
-		SetIcon(hIcon, FALSE);
-	}
+	SetIcon(hIcon, TRUE);
+	SetIcon(hIcon, FALSE);
 
 	GetWindowRect(&MinSize);
 
@@ -75,10 +72,10 @@ void PickDllGui::addColumnsToModuleList(CListViewCtrl& list)
 {
 	list.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
 
-	list.InsertColumn(COL_PATH, L"Path", LVCFMT_LEFT, 210);
-	list.InsertColumn(COL_NAME, L"Name", LVCFMT_CENTER, 130);
-	list.InsertColumn(COL_IMAGEBASE, L"ImageBase", LVCFMT_CENTER, 70);
-	list.InsertColumn(COL_IMAGESIZE, L"ImageSize", LVCFMT_CENTER, 70);
+	list.InsertColumn(COL_NAME, L"Name", LVCFMT_LEFT);
+	list.InsertColumn(COL_IMAGEBASE, L"ImageBase", LVCFMT_CENTER);
+	list.InsertColumn(COL_IMAGESIZE, L"ImageSize", LVCFMT_CENTER);
+	list.InsertColumn(COL_PATH, L"Path", LVCFMT_LEFT);
 }
 
 void PickDllGui::displayModuleList(CListViewCtrl& list)
@@ -92,22 +89,23 @@ void PickDllGui::displayModuleList(CListViewCtrl& list)
 
 	for( iter = moduleList.begin(); iter != moduleList.end(); iter++ , count++)
 	{
-		list.InsertItem(count, iter->fullPath);
+		list.InsertItem(count, iter->getFilename());
 
-		list.SetItemText(count, COL_NAME, iter->getFilename());
-
-		swprintf_s(temp,_countof(temp),L"%08X",iter->modBaseAddr);
+#ifdef _WIN64
+		swprintf_s(temp, _countof(temp), L"%016I64X", iter->modBaseAddr);
+#else
+		swprintf_s(temp, _countof(temp), L"%08X", iter->modBaseAddr);
+#endif
 		list.SetItemText(count, COL_IMAGEBASE, temp);
 
-		swprintf_s(temp,_countof(temp),L"%08X",iter->modBaseSize);
+		swprintf_s(temp, _countof(temp),L"%08X",iter->modBaseSize);
 		list.SetItemText(count, COL_IMAGESIZE, temp);
+
+		list.SetItemText(count, COL_PATH, iter->fullPath);
 	}
 
-	//list.SetColumnWidth(COL_PATH, LVSCW_AUTOSIZE);
-	list.SetColumnWidth(COL_NAME, LVSCW_AUTOSIZE);
-	//list.SetColumnWidth(COL_IMAGEBASE, LVSCW_AUTOSIZE);
-
+	list.SetColumnWidth(COL_NAME, LVSCW_AUTOSIZE_USEHEADER);
+	list.SetColumnWidth(COL_IMAGEBASE, LVSCW_AUTOSIZE_USEHEADER);
 	list.SetColumnWidth(COL_IMAGESIZE, LVSCW_AUTOSIZE_USEHEADER);
-
-	//m_hotkeysListView.SetColumnWidth(1, LVSCW_AUTOSIZE_USEHEADER);
+	list.SetColumnWidth(COL_PATH, LVSCW_AUTOSIZE_USEHEADER);
 }

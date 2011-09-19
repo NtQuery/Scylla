@@ -45,10 +45,10 @@ protected:
 	CListViewCtrl ListDLLSelect;
 
 	enum ListColumns {
-		COL_PATH,
 		COL_NAME,
 		COL_IMAGEBASE,
-		COL_IMAGESIZE
+		COL_IMAGESIZE,
+		COL_PATH
 	};
 
 	RECT MinSize;
