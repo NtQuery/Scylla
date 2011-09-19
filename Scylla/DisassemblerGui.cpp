@@ -70,10 +70,10 @@ void DisassemblerGui::addColumnsToDisassembler(CListViewCtrl& list)
 {
 	list.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
 
-	list.InsertColumn(COL_ADDRESS, L"Address", LVCFMT_LEFT, 105);
-	list.InsertColumn(COL_INSTRUCTION_SIZE, L"Size", LVCFMT_CENTER, 40);
-	list.InsertColumn(COL_OPCODES, L"OpCodes", LVCFMT_LEFT, 130);
-	list.InsertColumn(COL_INSTRUCTION, L"Instructions", LVCFMT_LEFT, 200);
+	list.InsertColumn(COL_ADDRESS, L"Address", LVCFMT_LEFT);
+	list.InsertColumn(COL_INSTRUCTION_SIZE, L"Size", LVCFMT_CENTER);
+	list.InsertColumn(COL_OPCODES, L"Opcodes", LVCFMT_LEFT);
+	list.InsertColumn(COL_INSTRUCTION, L"Instructions", LVCFMT_LEFT);
 }
 
 void DisassemblerGui::displayDisassembly(CListViewCtrl& list)
@@ -110,6 +110,11 @@ void DisassemblerGui::displayDisassembly(CListViewCtrl& list)
 
 		list.SetItemText(i, COL_INSTRUCTION, tempBuffer);
 	}
+
+	list.SetColumnWidth(COL_ADDRESS, LVSCW_AUTOSIZE_USEHEADER);
+	list.SetColumnWidth(COL_INSTRUCTION_SIZE, LVSCW_AUTOSIZE_USEHEADER);
+	list.SetColumnWidth(COL_OPCODES, LVSCW_AUTOSIZE_USEHEADER);
+	list.SetColumnWidth(COL_INSTRUCTION, LVSCW_AUTOSIZE_USEHEADER);
 }
 
 void DisassemblerGui::copyToClipboard(const WCHAR * text)
