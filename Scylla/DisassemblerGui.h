@@ -23,7 +23,7 @@ public:
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnCancel)
 	END_MSG_MAP()
 
-	DisassemblerGui(DWORD_PTR startAddress) : startAddress(startAddress) { }
+	DisassemblerGui(DWORD_PTR startAddress);
 
 protected:
 
