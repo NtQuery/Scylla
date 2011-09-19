@@ -671,6 +671,15 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 
 		it1 = it2;
 
+		/*
+		  This is flawed:
+		  It chooses api(prio:1, name:no) over api(prio:0, name:yes)
+		  (e.g. SHLWAPI.PathCombineW vs SHELL32.#25)
+
+		  Maybe there should be a check higher up in the code, to see if this API is surrounded
+		  by APIs of a DLL and pick the duplicate from that DLL
+		 */
+
 		if (countHighPriority == 0)
 		{
 #ifdef DEBUG_COMMENTS
@@ -679,7 +688,7 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 			*isSuspect = true;
 			return (ApiInfo *)((*it1).second);
 		}
-		else if (countHighPriority == 1)
+		else if (countHighPriority == 1) // what about kernel32, it has priority 2
 		{
 			//API is 100% correct if countHighPriority == 1 and name export
 
@@ -694,7 +703,7 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 				}
 			}
 		}
-		else
+		//else // fall through for case api1(priority:1, name:false) <> api2(priority:0, name:true)
 		{
 			//API not 100% correct
 #ifdef DEBUG_COMMENTS
@@ -762,7 +771,7 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 	}
 
 	//is never reached
-	Logger::printfDialog(TEXT("getApiByVirtualAddress :: There is a big bug\n"));
+	Logger::printfDialog(TEXT("getApiByVirtualAddress :: There is a big bug"));
 	return (ApiInfo *) 1; 
 }
 
