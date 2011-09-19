@@ -335,6 +335,9 @@ void MainGui::setIconAndDialogCaption()
 
 void MainGui::pickDllActionHandler()
 {
+	if(!selectedProcess)
+		return;
+
 	PickDllGui dlgPickDll(processAccessHelp.moduleList);
 	if(dlgPickDll.DoModal())
 	{
@@ -352,6 +355,9 @@ void MainGui::pickDllActionHandler()
 
 void MainGui::startDisassemblerGui(CTreeItem selectedTreeNode)
 {
+	if(!selectedProcess)
+		return;
+
 	DWORD_PTR address = importsHandling.getApiAddressByNode(selectedTreeNode);
 	if (address)
 	{
@@ -364,10 +370,9 @@ void MainGui::processSelectedActionHandler(int index)
 {
 	std::vector<Process>& processList = processLister.getProcessList();
 	Process &process = processList.at(index);
-	selectedProcess = &process;
+	selectedProcess = 0;
 
 	clearImportsActionHandler();
-	enableDialogControls(TRUE);
 
 	Logger::printfDialog(TEXT("Analyzing %s"),process.fullPath);
 
@@ -379,6 +384,7 @@ void MainGui::processSelectedActionHandler(int index)
 
 	if (!processAccessHelp.openProcessHandle(process.PID))
 	{
+		enableDialogControls(FALSE);
 		Logger::printfDialog(TEXT("Error: Cannot open process handle."));
 		return;
 	}
@@ -401,14 +407,15 @@ void MainGui::processSelectedActionHandler(int index)
 
 	Logger::printfDialog(TEXT("Imagebase: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size: %08X"),process.imageBase, process.imageSize);
 
-	selectedProcess->entryPoint = ProcessAccessHelp::getEntryPointFromFile(selectedProcess->fullPath);
+	process.entryPoint = ProcessAccessHelp::getEntryPointFromFile(process.fullPath);
 
-	swprintf_s(stringBuffer, _countof(stringBuffer),TEXT(PRINTF_DWORD_PTR_FULL),selectedProcess->entryPoint + selectedProcess->imageBase);
+	swprintf_s(stringBuffer, _countof(stringBuffer),TEXT(PRINTF_DWORD_PTR_FULL),process.entryPoint + process.imageBase);
 
 	EditOEPAddress.SetWindowText(stringBuffer);
+
+	selectedProcess = &process;
+	enableDialogControls(TRUE);
 }
-
-
 
 void MainGui::fillProcessListComboBox(CComboBox& hCombo)
 {
@@ -500,6 +507,9 @@ void MainGui::iatAutosearchActionHandler()
 	DWORD sizeIAT = 0;
 	IATSearch iatSearch;
 
+	if(!selectedProcess)
+		return;
+
 	if(EditOEPAddress.GetWindowText(stringBuffer, _countof(stringBuffer)) > 1)
 	{
 		searchAddress = stringToDwordPtr(stringBuffer);
@@ -530,6 +540,9 @@ void MainGui::getImportsActionHandler()
 {
 	DWORD_PTR addressIAT = 0;
 	DWORD sizeIAT = 0;
+
+	if(!selectedProcess)
+		return;
 
 	if (EditIATAddress.GetWindowText(stringBuffer, _countof(stringBuffer)) > 0)
 	{
