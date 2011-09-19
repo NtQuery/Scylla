@@ -561,7 +561,7 @@ bool ImportRebuild::rebuildImportTable(const WCHAR * targetFilePath, const WCHAR
 #ifdef DEBUG_COMMENTS
 		Logger::debugLog(TEXT("rebuildImportTable ::Failed to load target %s\n"), targetFilePath);
 #endif
-		return true;
+		return false;
 	}
 }
 
