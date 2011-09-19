@@ -5,7 +5,7 @@
 PickDllGui::PickDllGui(std::vector<ModuleInfo> &moduleList) : moduleList(moduleList)
 {
 	selectedModule = 0;
-	hIcon.LoadIcon(IDI_ICON_SCYLLA1);
+	hIcon.LoadIcon(IDI_ICON_SCYLLA);
 }
 
 BOOL PickDllGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)

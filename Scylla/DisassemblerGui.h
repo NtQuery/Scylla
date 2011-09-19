@@ -45,6 +45,10 @@ protected:
 		COL_INSTRUCTION
 	};
 
+	// Handles
+
+	CMenu hMenuDisassembler;
+
 protected:
 
 	// Message handlers
@@ -57,10 +61,6 @@ protected:
 
 	void addColumnsToDisassembler(CListViewCtrl& list);
 	void displayDisassembly(CListViewCtrl& list);
-
-	// Popup menu functions
-
-	CMenuHandle getCorrectSubMenu(int menuItem, int subMenuItem);
 
 	// Misc
 

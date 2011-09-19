@@ -101,6 +101,8 @@ protected:
 	// Handles
 
 	CIcon hIcon;
+	CMenu hMenuImports;
+	CMenu hMenuLog;
 
 protected:
 
@@ -165,17 +167,18 @@ protected:
 	void showAboutDialog();
 	void dllInjectActionHandler();
 	void optionsActionHandler();
+	void clearImportsActionHandler();
 	void pluginActionHandler(int menuItem);
 
 	// Popup menu functions
 
 	//void DisplayContextMenu(CWindow, CPoint);
+	void SetupImportsMenuItems(bool isItem, bool isThunk);
 	void DisplayContextMenuImports(CWindow, CPoint);
 	void DisplayContextMenuLog(CWindow, CPoint);
-	CMenuHandle getCorrectSubMenu(int, int);
 
 	// Misc
-	
+
 	void clearOutputLog();//Output Window
 
 	static DWORD_PTR stringToDwordPtr(const WCHAR * hexString);

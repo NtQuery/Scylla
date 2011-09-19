@@ -22,7 +22,14 @@ MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports)
 	NativeWinApi::initialize();
 	SystemInformation::getSystemInformation();
 
-	hIcon.LoadIcon(IDI_ICON_SCYLLA1);
+	hIcon.LoadIcon(IDI_ICON_SCYLLA);
+	hMenuImports.LoadMenu(IDR_MENU_IMPORTS);
+	hMenuLog.LoadMenu(IDR_MENU_LOG);
+
+	if(hMenuImports)
+	{
+		appendPluginListToMenu(hMenuImports.GetSubMenu(0));
+	}
 }
 
 BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
@@ -233,8 +240,7 @@ void MainGui::OnSuspectImports(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void MainGui::OnClearImports(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	TreeImports.DeleteAllItems();
-	importsHandling.moduleList.clear();
+	clearImportsActionHandler();
 }
 
 void MainGui::OnClearLog(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -296,6 +302,7 @@ void MainGui::processSelectedActionHandler(int index)
 	Process &process = processList.at(index);
 	selectedProcess = &process;
 
+	clearImportsActionHandler();
 	enableDialogControls(TRUE);
 
 	Logger::printfDialog(TEXT("Analyzing %s"),process.fullPath);
@@ -456,6 +463,22 @@ DWORD_PTR MainGui::stringToDwordPtr(const WCHAR * hexString)
 	}
 }
 
+void MainGui::SetupImportsMenuItems(bool isItem, bool isThunk)
+{
+	// assert(!(!isItem && isThunk));
+
+	CMenuHandle hSub = hMenuImports.GetSubMenu(0);
+
+	UINT itemOnly = isItem ? MF_ENABLED : MF_GRAYED;
+	UINT thunkOnly = isThunk ? MF_ENABLED : MF_GRAYED;
+
+	hSub.EnableMenuItem(ID__INVALIDATEFUNCTION, thunkOnly);
+	hSub.EnableMenuItem(ID__DISASSEMBLE, thunkOnly);
+	hSub.EnableMenuItem(ID__CUTTHUNK, thunkOnly);
+
+	hSub.EnableMenuItem(ID__DELETETREENODE, itemOnly);
+}
+
 void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 {
 	if(TreeImports.GetCount() < 1)
@@ -479,27 +502,14 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 		}
 	}
 
-	CMenuHandle hmenuTrackPopup = getCorrectSubMenu(IDR_MENU_IMPORTS, 0);
-	if (hmenuTrackPopup)
+	if (hMenuImports)
 	{
-		if(!over)
-		{
-			hmenuTrackPopup.EnableMenuItem(ID__INVALIDATEFUNCTION, MF_GRAYED);
-			hmenuTrackPopup.EnableMenuItem(ID__DISASSEMBLE, MF_GRAYED);
-			hmenuTrackPopup.EnableMenuItem(ID__CUTTHUNK, MF_GRAYED);
-			hmenuTrackPopup.EnableMenuItem(ID__DELETETREENODE, MF_GRAYED);
-		}
-		else if(!parent) // root element
-		{
-			hmenuTrackPopup.EnableMenuItem(ID__INVALIDATEFUNCTION, MF_GRAYED);
-			hmenuTrackPopup.EnableMenuItem(ID__DISASSEMBLE, MF_GRAYED);
-			hmenuTrackPopup.EnableMenuItem(ID__CUTTHUNK, MF_GRAYED);
-		}
+		// Prepare hmenuImports
+		SetupImportsMenuItems(!over.IsNull(), !parent.IsNull());
 
-		appendPluginListToMenu(hmenuTrackPopup);
+		CMenuHandle hSub = hMenuImports.GetSubMenu(0);
 
-		BOOL menuItem = hmenuTrackPopup.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
-		hmenuTrackPopup.DestroyMenu();
+		BOOL menuItem = hSub.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
 		if (menuItem)
 		{
 			if ((menuItem >= PLUGIN_MENU_BASE_ID) && (menuItem <= (int)(PluginLoader::getScyllaPluginList().size() + PluginLoader::getImprecPluginList().size() + PLUGIN_MENU_BASE_ID)))
@@ -537,11 +547,10 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 
 void MainGui::DisplayContextMenuLog(CWindow hwnd, CPoint pt)
 {
-	CMenuHandle hmenuTrackPopup = getCorrectSubMenu(IDR_MENU_LOG, 0);
-	if (hmenuTrackPopup)
+	if (hMenuLog)
 	{
-		BOOL menuItem = hmenuTrackPopup.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
-		hmenuTrackPopup.DestroyMenu();
+		CMenuHandle hSub = hMenuLog.GetSubMenu(0);
+		BOOL menuItem = hSub.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
 		if (menuItem)
 		{
 			switch (menuItem)
@@ -552,17 +561,6 @@ void MainGui::DisplayContextMenuLog(CWindow hwnd, CPoint pt)
 			}
 		}
 	}
-}
-
-CMenuHandle MainGui::getCorrectSubMenu(int menuItem, int subMenuItem)
-{
-	CMenuHandle hmenu; // top-level menu 
-
-	// Load the menu resource. 
-	if (!hmenu.LoadMenu(menuItem)) 
-		return NULL; 
-
-	return hmenu.GetSubMenu(subMenuItem);
 }
 
 /*
@@ -785,7 +783,6 @@ void MainGui::dumpFixActionHandler()
 		{
 			wcscat_s(newFilePath,MAX_PATH, L"_SCY.exe");
 		}
-		
 
 		if (importRebuild.rebuildImportTable(targetFile,newFilePath,importsHandling.moduleList))
 		{
@@ -877,6 +874,12 @@ void MainGui::optionsActionHandler()
 {
 	OptionsGui dlgOptions;
 	dlgOptions.DoModal();
+}
+
+void MainGui::clearImportsActionHandler()
+{
+	TreeImports.DeleteAllItems();
+	importsHandling.moduleList.clear();
 }
 
 void MainGui::pluginActionHandler( int menuItem )

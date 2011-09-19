@@ -2,6 +2,11 @@
 
 #include "ProcessAccessHelp.h"
 
+DisassemblerGui::DisassemblerGui(DWORD_PTR startAddress) : startAddress(startAddress)
+{
+	hMenuDisassembler.LoadMenu(IDR_MENU_DISASSEMBLER);
+}
+
 BOOL DisassemblerGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
 	ListDisassembler.Attach(GetDlgItem(IDC_LIST_DISASSEMBLER));
@@ -18,37 +23,38 @@ void DisassemblerGui::OnContextMenu(CWindow wnd, CPoint point)
 {
 	if (wnd.GetDlgCtrlID() == IDC_LIST_DISASSEMBLER)
 	{
-		CMenuHandle hmenuTrackPopup = getCorrectSubMenu(IDR_MENU_DISASSEMBLER, 0);
-
-		BOOL menuItem = hmenuTrackPopup.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, point.x, point.y, wnd);
-		hmenuTrackPopup.DestroyMenu();
-
-		if (menuItem)
+		if(hMenuDisassembler)
 		{
-			int selection = ListDisassembler.GetSelectionMark();
-			if (selection != -1) //valid selection?
+			CMenuHandle hSub = hMenuDisassembler.GetSubMenu(0);
+
+			BOOL menuItem = hSub.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, point.x, point.y, wnd);
+			if (menuItem)
 			{
-				int column = -1;
-				switch (menuItem)
+				int selection = ListDisassembler.GetSelectionMark();
+				if (selection != -1) //valid selection?
 				{
-				case ID__DIS_ADDRESS:
-					column = COL_ADDRESS;
-					break;
-				case ID__DIS_SIZE:
-					column = COL_INSTRUCTION_SIZE;
-					break;
-				case ID__DIS_OPCODES:
-					column = COL_OPCODES;
-					break;
-				case ID__DIS_INSTRUCTIONS:
-					column = COL_INSTRUCTION;
-					break;
-				}
-				if(column != -1)
-				{
-					tempBuffer[0] = '\0';
-					ListDisassembler.GetItemText(selection, column, tempBuffer, _countof(tempBuffer));
-					copyToClipboard(tempBuffer);
+					int column = -1;
+					switch (menuItem)
+					{
+					case ID__DIS_ADDRESS:
+						column = COL_ADDRESS;
+						break;
+					case ID__DIS_SIZE:
+						column = COL_INSTRUCTION_SIZE;
+						break;
+					case ID__DIS_OPCODES:
+						column = COL_OPCODES;
+						break;
+					case ID__DIS_INSTRUCTIONS:
+						column = COL_INSTRUCTION;
+						break;
+					}
+					if(column != -1)
+					{
+						tempBuffer[0] = '\0';
+						ListDisassembler.GetItemText(selection, column, tempBuffer, _countof(tempBuffer));
+						copyToClipboard(tempBuffer);
+					}
 				}
 			}
 		}
@@ -124,15 +130,4 @@ void DisassemblerGui::copyToClipboard(const WCHAR * text)
 		}
 		CloseClipboard();
 	}
-}
-
-CMenuHandle DisassemblerGui::getCorrectSubMenu(int menuItem, int subMenuItem)
-{
-	CMenuHandle hmenu; // top-level menu 
-
-	// Load the menu resource. 
-	if (!hmenu.LoadMenu(menuItem)) 
-		return NULL; 
-
-	return hmenu.GetSubMenu(subMenuItem);
 }
