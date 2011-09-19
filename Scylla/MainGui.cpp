@@ -1,5 +1,7 @@
 #include "MainGui.h"
 
+#include <atldlgs.h> // WTL common dialogs
+
 #include "definitions.h"
 #include "PluginLoader.h"
 #include "ConfigurationHolder.h"
@@ -13,6 +15,10 @@
 #include "AboutGui.h"
 #include "OptionsGui.h"
 #include "WindowDeferrer.h"
+
+const WCHAR MainGui::filterExe[] = L"Executable (*.exe)\0*.exe\0All files\0*.*\0";
+const WCHAR MainGui::filterDll[] = L"Dynamic Link Library (*.dll)\0*.dll\0All files\0*.*\0";
+const WCHAR MainGui::filterExeDll[] = L"Executable (*.exe)\0*.exe\0Dynamic Link Library (*.dll)\0*.dll\0All files\0*.*\0";
 
 MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports)
 {
@@ -256,6 +262,23 @@ void MainGui::OnExit(UINT uNotifyCode, int nID, CWindow wndCtl)
 void MainGui::OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	showAboutDialog();
+}
+
+bool MainGui::showFileDialog(WCHAR * selectedFile, bool save, const WCHAR * defFileName, const WCHAR * filter, const WCHAR * defExtension)
+{
+	DWORD dwFlags = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+	if(!save)
+		dwFlags |= OFN_FILEMUSTEXIST;
+	else
+		dwFlags |= OFN_OVERWRITEPROMPT;
+
+	CFileDialog dlgFile(!save, defExtension, defFileName, dwFlags, filter, m_hWnd);
+	if(dlgFile.DoModal() == IDOK)
+	{
+		wcscpy_s(selectedFile, MAX_PATH, dlgFile.m_szFileName);
+		return true;
+	}
+	return false;
 }
 
 void MainGui::setIconAndDialogCaption()
@@ -637,20 +660,23 @@ void MainGui::dumpActionHandler()
 	if(!selectedProcess)
 		return;
 
-	WCHAR * targetFile = 0;
+	WCHAR selectedFilePath[MAX_PATH];
+	const WCHAR * fileFilter;
+	const WCHAR * defExtension;
 	PeDump peDump;
 
 	if (processAccessHelp.selectedModule)
 	{
-		targetFile = ProcessAccessHelp::selectFile(ProcessAccessHelp::fileDll, true);
+		fileFilter = filterDll;
+		defExtension = L".dll";
 	}
 	else
 	{
-		targetFile = ProcessAccessHelp::selectFile(ProcessAccessHelp::fileExe, true);
+		fileFilter = filterExe;
+		defExtension = L".exe";
 	}
-	
-	
-	if (targetFile)
+
+	if(showFileDialog(selectedFilePath, true, NULL, fileFilter, defExtension))
 	{
 		if (processAccessHelp.selectedModule)
 		{
@@ -672,9 +698,9 @@ void MainGui::dumpActionHandler()
 		}
 
 		peDump.useHeaderFromDisk = ConfigurationHolder::getConfigObject(USE_PE_HEADER_FROM_DISK)->isTrue();
-		if (peDump.dumpCompleteProcessToDisk(targetFile))
+		if (peDump.dumpCompleteProcessToDisk(selectedFilePath))
 		{
-			Logger::printfDialog(TEXT("Dump success %s"),targetFile);
+			Logger::printfDialog(TEXT("Dump success %s"),selectedFilePath);
 			//MessageBox(L"Image dumped successfully.", L"Success");
 		}
 		else
@@ -682,8 +708,6 @@ void MainGui::dumpActionHandler()
 			Logger::printfDialog(TEXT("Error: Cannot dump image."));
 			MessageBox(L"Cannot dump image.", L"Failure", MB_ICONERROR);
 		}
-
-		delete [] targetFile;
 	}
 }
 
@@ -702,42 +726,38 @@ DWORD_PTR MainGui::getOEPFromGui()
 void MainGui::peRebuildActionHandler()
 {
 	DWORD newSize = 0;
-	WCHAR * targetFile = 0;
+	WCHAR selectedFilePath[MAX_PATH];
 	PeRebuild peRebuild;
 
-	targetFile = ProcessAccessHelp::selectFile(ProcessAccessHelp::fileExeDll, false);
-
-	if (targetFile)
+	if(showFileDialog(selectedFilePath, false, NULL, filterExeDll, NULL))
 	{
 		if (ConfigurationHolder::getConfigObject(CREATE_BACKUP)->isTrue())
 		{
-			if (!ProcessAccessHelp::createBackupFile(targetFile))
+			if (!ProcessAccessHelp::createBackupFile(selectedFilePath))
 			{
-				Logger::printfDialog(TEXT("Creating backup file failed %s"), targetFile);
+				Logger::printfDialog(TEXT("Creating backup file failed %s"), selectedFilePath);
 			}
 		}
 
-		LONGLONG fileSize = ProcessAccessHelp::getFileSize(targetFile);
-		LPVOID mapped = peRebuild.createFileMappingViewFull(targetFile);
+		LONGLONG fileSize = ProcessAccessHelp::getFileSize(selectedFilePath);
+		LPVOID mapped = peRebuild.createFileMappingViewFull(selectedFilePath);
 
 		newSize = peRebuild.realignPE(mapped, (DWORD)fileSize);
 		peRebuild.closeAllMappingHandles();
 
 		if (newSize < 10)
 		{
-			Logger::printfDialog(TEXT("Rebuild failed %s"), targetFile);
+			Logger::printfDialog(TEXT("Rebuild failed %s"), selectedFilePath);
 			MessageBox(L"Rebuild failed.", L"Failure", MB_ICONERROR);
 		}
 		else
 		{
-			peRebuild.truncateFile(targetFile, newSize);
+			peRebuild.truncateFile(selectedFilePath, newSize);
 
-			Logger::printfDialog(TEXT("Rebuild success %s"), targetFile);
+			Logger::printfDialog(TEXT("Rebuild success %s"), selectedFilePath);
 			Logger::printfDialog(TEXT("-> Old file size 0x%08X new file size 0x%08X (%d %%)"), (DWORD)fileSize, newSize, (DWORD)((newSize * 100) / (DWORD)fileSize) );
 			//MessageBox(L"Image rebuilded successfully.", L"Success", MB_ICONINFORMATION);
 		}
-
-		delete [] targetFile;
 	}
 }
 
@@ -746,8 +766,10 @@ void MainGui::dumpFixActionHandler()
 	if(!selectedProcess)
 		return;
 
-	WCHAR * targetFile = 0;
 	WCHAR newFilePath[MAX_PATH];
+	WCHAR selectedFilePath[MAX_PATH];
+	const WCHAR * fileFilter;
+
 	ImportRebuild importRebuild;
 
 	if (TreeImports.GetCount() < 2)
@@ -758,33 +780,34 @@ void MainGui::dumpFixActionHandler()
 
 	if (processAccessHelp.selectedModule)
 	{
-		targetFile = ProcessAccessHelp::selectFile(ProcessAccessHelp::fileDll, false);
+		fileFilter = filterDll;
 	}
 	else
 	{
-		targetFile = ProcessAccessHelp::selectFile(ProcessAccessHelp::fileExe, false);
+		fileFilter = filterExe;
 	}
 
-	if (targetFile)
+	if (showFileDialog(selectedFilePath, false, NULL, fileFilter, NULL))
 	{
-		wcscpy_s(newFilePath,MAX_PATH,targetFile);
+		wcscpy_s(newFilePath,MAX_PATH,selectedFilePath);
+
+		const WCHAR * extension = 0;
 
 		WCHAR* dot = wcsrchr(newFilePath, L'.');
 		if (dot)
 		{
 			*dot = L'\0';
+			extension = selectedFilePath + (dot - newFilePath); //wcsrchr(selectedFilePath, L'.');
 		}
 
-		if (processAccessHelp.selectedModule)
+		wcscat_s(newFilePath, MAX_PATH, L"_SCY");
+
+		if(extension)
 		{
-			wcscat_s(newFilePath,MAX_PATH, L"_SCY.dll");
-		}
-		else
-		{
-			wcscat_s(newFilePath,MAX_PATH, L"_SCY.exe");
+			wcscat_s(newFilePath, MAX_PATH, extension);
 		}
 
-		if (importRebuild.rebuildImportTable(targetFile,newFilePath,importsHandling.moduleList))
+		if (importRebuild.rebuildImportTable(selectedFilePath,newFilePath,importsHandling.moduleList))
 		{
 			//MessageBox(L"Imports rebuilding successful", L"Success", MB_ICONINFORMATION);
 
@@ -792,13 +815,10 @@ void MainGui::dumpFixActionHandler()
 		}
 		else
 		{
-			Logger::printfDialog(TEXT("Import Rebuild failed, target %s"), targetFile);
+			Logger::printfDialog(TEXT("Import Rebuild failed, target %s"), selectedFilePath);
 			MessageBox(L"Imports rebuilding failed", L"Failure", MB_ICONERROR);
 		}
-
-		delete [] targetFile;
 	}
-
 }
 
 void MainGui::enableDialogControls(BOOL value)
@@ -839,35 +859,30 @@ void MainGui::dllInjectActionHandler()
 	if(!selectedProcess)
 		return;
 
-	WCHAR * targetFile = 0;
+	WCHAR selectedFilePath[MAX_PATH];
 	HMODULE hMod = 0;
 	DllInjection dllInjection;
 
-	targetFile = ProcessAccessHelp::selectFile(ProcessAccessHelp::fileDll, false);
-
-	if (targetFile)
+	if (showFileDialog(selectedFilePath, false, NULL, filterDll, NULL))
 	{
-		hMod = dllInjection.dllInjection(ProcessAccessHelp::hProcess, targetFile);
+		hMod = dllInjection.dllInjection(ProcessAccessHelp::hProcess, selectedFilePath);
 		if (hMod && ConfigurationHolder::getConfigObject(DLL_INJECTION_AUTO_UNLOAD)->isTrue())
 		{
 			if (!dllInjection.unloadDllInProcess(ProcessAccessHelp::hProcess, hMod))
 			{
-				Logger::printfDialog(TEXT("DLL unloading failed, target %s"), targetFile);
+				Logger::printfDialog(TEXT("DLL unloading failed, target %s"), selectedFilePath);
 			}
 		}
 
 		if (hMod)
 		{
-			Logger::printfDialog(TEXT("DLL Injection was successful, target %s"), targetFile);
+			Logger::printfDialog(TEXT("DLL Injection was successful, target %s"), selectedFilePath);
 		}
 		else
 		{
-			Logger::printfDialog(TEXT("DLL Injection failed, target %s"), targetFile);
+			Logger::printfDialog(TEXT("DLL Injection failed, target %s"), selectedFilePath);
 		}
-
-		delete [] targetFile;
 	}
-	
 }
 
 void MainGui::optionsActionHandler()

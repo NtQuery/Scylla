@@ -1,11 +1,6 @@
 
 #include "ProcessAccessHelp.h"
 
-#include <atlbase.h>       // base ATL classes
-#include <atlapp.h>        // base WTL classes
-#include <atlwin.h>        // ATL GUI classes
-#include <atldlgs.h>       // WTL common dialogs
-
 #include "Logger.h"
 #include "NativeWinApi.h"
 
@@ -670,84 +665,6 @@ SIZE_T ProcessAccessHelp::getSizeOfImageProcess(HANDLE processHandle, DWORD_PTR 
 	//printf("Real sizeOfImage %X\n",sizeOfImage);
 
 	return sizeOfImage;
-}
-
-//OFN_FILEMUSTEXIST
-WCHAR * ProcessAccessHelp::selectFile(fileFilter type, BOOL save, DWORD flags, HWND parent)
-{
-	DWORD dwFlags = flags | OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING;
-	if(!save)
-		dwFlags |= OFN_FILEMUSTEXIST;
-
-	const WCHAR* filter;
-	const WCHAR* defExt;
-
-	switch (type)
-	{
-	case fileDll:
-		filter = TEXT("Dynamic Link Library (*.dll)\0*.dll\00");
-		defExt = TEXT(".dll");
-		break;
-	case fileExe:
-		filter	= TEXT("Executable (*.exe)\0*.exe\00");
-		defExt	= TEXT(".exe");
-		break;
-	case fileExeDll:
-		filter = TEXT("Executable (*.exe)\0*.exe\0Dynamic Link Library (*.dll)\0*.dll\00");
-		defExt = 0;
-		break;
-	default:
-		filter = 0;
-		defExt = 0;
-		break;
-	}
-
-	CFileDialog dlgFile(!save, defExt, NULL, dwFlags, filter, parent);
-	if(dlgFile.DoModal() == IDOK)
-	{
-		Logger::printfDialog(TEXT("Selected %s"), dlgFile.m_szFileName);
-		WCHAR * targetFile = new WCHAR[MAX_PATH];
-		wcscpy_s(targetFile, MAX_PATH, dlgFile.m_szFileName);
-		return targetFile;
-	}
-	else
-	{
-#ifdef DEBUG_COMMENTS
-		Logger::debugLog(TEXT("selectFileToSave :: CommDlgExtendedError 0x%X\r\n"), CommDlgExtendedError());
-#endif
-		return 0;
-	}
-
-	/*
-	OPENFILENAME ofn = {0};
-	WCHAR * targetFile = new WCHAR[MAX_PATH];
-	targetFile[0] = 0;
-
-	ofn.lStructSize			= sizeof(OPENFILENAME);
-	ofn.hwndOwner			= 0;
-
-	ofn.lpstrCustomFilter	= 0;
-	ofn.nFilterIndex		= 1;
-	ofn.lpstrFile			= targetFile;
-	ofn.nMaxFile			= MAX_PATH;
-	ofn.lpstrFileTitle		= 0;
-	ofn.nMaxFileTitle		= 0;
-	ofn.lpstrInitialDir		= 0;
-	ofn.lpstrTitle			= TEXT("Select a file");
-	ofn.Flags				= OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING | flags;
-
-	if(GetOpenFileName(&ofn)) {
-		Logger::printfDialog(TEXT("Selected %s"),targetFile);
-		return targetFile;
-	} else {
-		delete [] targetFile;
-
-#ifdef DEBUG_COMMENTS
-		Logger::debugLog(TEXT("selectFileToSave :: CommDlgExtendedError 0x%X\r\n"), CommDlgExtendedError());
-#endif
-		return 0;
-	}
-	*/
 }
 
 DWORD ProcessAccessHelp::getEntryPointFromFile(const WCHAR * filePath)

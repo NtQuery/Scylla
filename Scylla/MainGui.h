@@ -87,6 +87,12 @@ protected:
 
 	Process * selectedProcess;
 
+	// File selection stuff
+
+	static const WCHAR filterExe[];
+	static const WCHAR filterDll[];
+	static const WCHAR filterExeDll[];
+
 	// Controls
 
 	CTreeViewCtrl TreeImports;
@@ -142,6 +148,8 @@ protected:
 	void OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	// GUI functions
+
+	bool showFileDialog(WCHAR * selectedFile, bool save, const WCHAR * defFileName, const WCHAR * filter, const WCHAR * defExtension);
 
 	void setIconAndDialogCaption();
 
