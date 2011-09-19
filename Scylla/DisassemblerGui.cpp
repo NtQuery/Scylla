@@ -102,7 +102,7 @@ void DisassemblerGui::displayDisassembly(CListViewCtrl& list)
 
 		list.SetItemText(i, COL_INSTRUCTION_SIZE, tempBuffer);
 
-		swprintf_s(tempBuffer, _countof(tempBuffer),L"%-24S",(char *)ProcessAccessHelp::decodedInstructions[i].instructionHex.p);
+		swprintf_s(tempBuffer, _countof(tempBuffer),L"%S",(char *)ProcessAccessHelp::decodedInstructions[i].instructionHex.p);
 
 		list.SetItemText(i, COL_OPCODES, tempBuffer);
 
