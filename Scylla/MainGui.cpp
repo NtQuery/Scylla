@@ -302,9 +302,46 @@ void MainGui::OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl)
 	showAboutDialog();
 }
 
-bool MainGui::showFileDialog(WCHAR * selectedFile, bool save, const WCHAR * defFileName, const WCHAR * filter, const WCHAR * defExtension)
+bool MainGui::showFileDialog(WCHAR * selectedFile, bool save, const WCHAR * defFileName, const WCHAR * filter, const WCHAR * defExtension, const WCHAR * directory)
 {
-	DWORD dwFlags = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+OPENFILENAME ofn = {0};
+
+	if(defFileName)
+	{
+		wcscpy_s(selectedFile, MAX_PATH, defFileName);
+	}
+	else
+	{
+		selectedFile[0] = _T('\0');
+	}
+
+	ofn.lStructSize     = sizeof(ofn);
+	ofn.hwndOwner       = m_hWnd;
+	ofn.lpstrFilter     = filter;
+	ofn.lpstrDefExt     = defExtension; // only first 3 chars are used, no dots!
+	ofn.lpstrFile       = selectedFile;
+	ofn.lpstrInitialDir = directory;
+	ofn.nMaxFile        = MAX_PATH;
+	ofn.Flags           = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+
+	/*
+	 *OFN_EXPLORER is automatically used, it only has to be specified
+	 *if using a custom hook
+	 *OFN_LONGNAMES is automatically used by explorer-style dialogs
+	 */
+
+	if(save)
+		ofn.Flags |= OFN_OVERWRITEPROMPT;
+	else
+		ofn.Flags |= OFN_FILEMUSTEXIST;
+
+	if(save)
+		return 0 != GetSaveFileName(&ofn);
+	else
+		return 0 != GetOpenFileName(&ofn);
+
+	/*
+	DWORD dwFlags = OFN_LONGNAMES | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
 	if(!save)
 		dwFlags |= OFN_FILEMUSTEXIST;
 	else
@@ -320,6 +357,7 @@ bool MainGui::showFileDialog(WCHAR * selectedFile, bool save, const WCHAR * defF
 		return true;
 	}
 	return false;
+	*/
 }
 
 void MainGui::setIconAndDialogCaption()
@@ -678,7 +716,7 @@ void MainGui::DisplayContextMenuLog(CWindow hwnd, CPoint pt)
 			{
 			case ID__SAVE:
 				WCHAR selectedFilePath[MAX_PATH];
-				if(showFileDialog(selectedFilePath, true, NULL, filterTxt, L".txt"))
+				if(showFileDialog(selectedFilePath, true, NULL, filterTxt, L"txt"))
 				{
 					saveLogToFile(selectedFilePath);
 				}
@@ -773,12 +811,12 @@ void MainGui::dumpActionHandler()
 	if (processAccessHelp.selectedModule)
 	{
 		fileFilter = filterDll;
-		defExtension = L".dll";
+		defExtension = L"dll";
 	}
 	else
 	{
 		fileFilter = filterExe;
-		defExtension = L".exe";
+		defExtension = L"exe";
 	}
 
 	if(showFileDialog(selectedFilePath, true, NULL, fileFilter, defExtension))
@@ -834,7 +872,7 @@ void MainGui::peRebuildActionHandler()
 	WCHAR selectedFilePath[MAX_PATH];
 	PeRebuild peRebuild;
 
-	if(showFileDialog(selectedFilePath, false, NULL, filterExeDll, NULL))
+	if(showFileDialog(selectedFilePath, false, NULL, filterExeDll))
 	{
 		if (ConfigurationHolder::getConfigObject(CREATE_BACKUP)->isTrue())
 		{
@@ -892,7 +930,7 @@ void MainGui::dumpFixActionHandler()
 		fileFilter = filterExe;
 	}
 
-	if (showFileDialog(selectedFilePath, false, NULL, fileFilter, NULL))
+	if (showFileDialog(selectedFilePath, false, NULL, fileFilter))
 	{
 		wcscpy_s(newFilePath,MAX_PATH,selectedFilePath);
 
@@ -974,7 +1012,7 @@ void MainGui::dllInjectActionHandler()
 	HMODULE hMod = 0;
 	DllInjection dllInjection;
 
-	if (showFileDialog(selectedFilePath, false, NULL, filterDll, NULL))
+	if (showFileDialog(selectedFilePath, false, NULL, filterDll))
 	{
 		hMod = dllInjection.dllInjection(ProcessAccessHelp::hProcess, selectedFilePath);
 		if (hMod && ConfigurationHolder::getConfigObject(DLL_INJECTION_AUTO_UNLOAD)->isTrue())
