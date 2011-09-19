@@ -73,6 +73,16 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	setIconAndDialogCaption();
 
+	LOGFONT lf;
+	CFontHandle font = CButton(GetDlgItem(IDC_BTN_FIXDUMP)).GetFont();
+	font.GetLogFont(&lf);
+	lf.lfWeight = FW_BOLD;
+	FontBold.CreateFontIndirect(&lf);
+
+	CButton(GetDlgItem(IDC_BTN_IATAUTOSEARCH)).SetFont(FontBold, FALSE);
+	CButton(GetDlgItem(IDC_BTN_GETIMPORTS)).SetFont(FontBold, FALSE);
+	CButton(GetDlgItem(IDC_BTN_FIXDUMP)).SetFont(FontBold, FALSE);
+
 	GetWindowRect(&MinSize);
 
 	SetMsgHandled(false);
@@ -294,6 +304,7 @@ void MainGui::OnAutotrace(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void MainGui::OnExit(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
+	FontBold.DeleteObject();
 	EndDialog(0);
 }
 

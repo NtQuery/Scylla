@@ -118,6 +118,7 @@ protected:
 	CIcon hIcon;
 	CMenu hMenuImports;
 	CMenu hMenuLog;
+	CFontHandle FontBold;
 
 	static const int MenuImportsOffsetTrace = 2;
 	static const int MenuImportsTraceOffsetScylla = 2;
