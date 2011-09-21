@@ -33,6 +33,6 @@ public:
 
 	CTreeItem hTreeItem;
 
-	DWORD_PTR getFirstThunk();
-	bool isValid();
+	DWORD_PTR getFirstThunk() const;
+	bool isValid() const;
 };
