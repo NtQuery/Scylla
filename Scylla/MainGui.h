@@ -32,12 +32,10 @@ public:
 		MSG_WM_INITDIALOG(OnInitDialog)
 		MSG_WM_GETMINMAXINFO(OnGetMinMaxInfo)
 		MSG_WM_SIZING(OnSizing)
+		MSG_WM_SIZE(OnSize)
 		MSG_WM_CONTEXTMENU(OnContextMenu)
 		MSG_WM_LBUTTONDOWN(OnLButtonDown)
 		MSG_WM_COMMAND(OnCommand)
-
-		//MSG_WM_ENTERSIZEMOVE(OnEnterSizeMove)
-		//MSG_WM_EXITSIZEMOVE(OnExitSizeMove)
 
 		NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_CLICK, OnTreeImportsClick)
 		NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_DBLCLK, OnTreeImportsDoubleClick)
@@ -52,7 +50,6 @@ public:
 		COMMAND_ID_HANDLER_EX(IDC_BTN_DUMP, OnDump)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_FIXDUMP, OnFixDump)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_PEREBUILD, OnPERebuild)
-		COMMAND_ID_HANDLER_EX(IDC_BTN_DLLINJECT, OnDLLInject)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_IATAUTOSEARCH, OnIATAutoSearch)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_GETIMPORTS, OnGetImports)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_INVALIDIMPORTS, OnInvalidImports)
@@ -112,13 +109,13 @@ protected:
 	CListBox ListLog;
 
 	RECT MinSize;
+	CSize SizeOffset;
 
 	// Handles
 
 	CIcon hIcon;
 	CMenu hMenuImports;
 	CMenu hMenuLog;
-	CFontHandle FontBold;
 
 	static const int MenuImportsOffsetTrace = 2;
 	static const int MenuImportsTraceOffsetScylla = 2;
@@ -131,8 +128,7 @@ protected:
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
 	void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 	void OnSizing(UINT fwSide, RECT* pRect);
-	//void OnEnterSizeMove();
-	//void OnExitSizeMove();
+	void OnSize(UINT nType, CSize size);
 	void OnLButtonDown(UINT nFlags, CPoint point);
 	void OnContextMenu(CWindow wnd, CPoint point);
 	void OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl);

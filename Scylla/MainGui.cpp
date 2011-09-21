@@ -43,9 +43,11 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
 	if (SystemInformation::currenOS == UNKNOWN_OS)
 	{
-		MessageBox(L"Operating System is not supported", L"Error Operating System", MB_ICONERROR);
-		EndDialog(0);
-		return FALSE;
+		if(IDCANCEL == MessageBox(L"Operating System is not supported\r\nContinue anyway?", L"Scylla", MB_ICONWARNING | MB_OKCANCEL))
+		{
+			EndDialog(0);
+			return FALSE;
+		}
 	}
 
 	if(ConfigurationHolder::getConfigObject(DEBUG_PRIVILEGE)->isTrue())
@@ -73,16 +75,6 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	setIconAndDialogCaption();
 
-	LOGFONT lf;
-	CFontHandle font = CButton(GetDlgItem(IDC_BTN_FIXDUMP)).GetFont();
-	font.GetLogFont(&lf);
-	lf.lfWeight = FW_BOLD;
-	FontBold.CreateFontIndirect(&lf);
-
-	CButton(GetDlgItem(IDC_BTN_IATAUTOSEARCH)).SetFont(FontBold, FALSE);
-	CButton(GetDlgItem(IDC_BTN_GETIMPORTS)).SetFont(FontBold, FALSE);
-	CButton(GetDlgItem(IDC_BTN_FIXDUMP)).SetFont(FontBold, FALSE);
-
 	GetWindowRect(&MinSize);
 
 	SetMsgHandled(false);
@@ -97,6 +89,19 @@ void MainGui::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 
 void MainGui::OnSizing(UINT fwSide, RECT* pRect)
 {
+	// Get size difference
+	RECT rectOld;
+	GetWindowRect(&rectOld);
+	long deltaX = (pRect->right  - pRect->left) - (rectOld.right  - rectOld.left);
+	long deltaY = (pRect->bottom - pRect->top)  - (rectOld.bottom - rectOld.top);
+
+	SizeOffset.SetSize(deltaX, deltaY);
+
+	SetMsgHandled(false);
+}
+
+void MainGui::OnSize(UINT nType, CSize size)
+{
 	WindowDeferrer::Deferrable controls[] =
 	{
 		{IDC_GROUP_ATTACH,    false, false, true, false},
@@ -105,6 +110,11 @@ void MainGui::OnSizing(UINT fwSide, RECT* pRect)
 
 		{IDC_GROUP_IMPORTS, false, false, true, true},
 		{IDC_TREE_IMPORTS,  false, false, true, true},
+		{IDC_BTN_INVALIDIMPORTS,   false, true, false, false},
+		{IDC_BTN_SUSPECTIMPORTS,   false, true, false, false},
+		{IDC_BTN_SAVETREE,         true, true, false, false},
+		{IDC_BTN_LOADTREE,         true, true, false, false},
+		{IDC_BTN_CLEARIMPORTS,     true, true, false, false},
 
 		{IDC_GROUP_IATINFO,     false, true, false, false},
 		{IDC_STATIC_OEPADDRESS, false, true, false, false},
@@ -116,32 +126,21 @@ void MainGui::OnSizing(UINT fwSide, RECT* pRect)
 		{IDC_BTN_IATAUTOSEARCH, false, true, false, false},
 		{IDC_BTN_GETIMPORTS,    false, true, false, false},
 
-		{IDC_GROUP_IMPORTSOPTIONS, true, true, false, false},
-		{IDC_BTN_INVALIDIMPORTS,   true, true, false, false},
-		{IDC_BTN_SUSPECTIMPORTS,   true, true, false, false},
-		{IDC_BTN_CLEARIMPORTS,     true, true, false, false},
-		{IDC_BTN_AUTOTRACE,        true, true, false, false},
-		{IDC_BTN_SAVETREE,         true, true, false, false},
-		{IDC_BTN_LOADTREE,         true, true, false, false},
+		{IDC_GROUP_ACTIONS, false, true, false, false},
+		{IDC_BTN_AUTOTRACE, false, true, false, false},
+
+		{IDC_GROUP_DUMP,    false, true, false, false},
+		{IDC_BTN_DUMP,      false, true, false, false},
+		{IDC_BTN_PEREBUILD, false, true, false, false},
+		{IDC_BTN_FIXDUMP,   false, true, false, false},
 
 		{IDC_GROUP_LOG, false, true, true, false},
-		{IDC_LIST_LOG,  false, true, true, false},
-
-		{IDC_GROUP_MISC,    true, false, false, true},
-		{IDC_BTN_DUMP,      true, false, false, false},
-		{IDC_BTN_PEREBUILD, true, false, false, false},
-		{IDC_BTN_DLLINJECT, true, false, false, false},
-		{IDC_BTN_FIXDUMP,   true, false, false, false}
+		{IDC_LIST_LOG,  false, true, true, false}
 	};
 
-	// Get size difference
-	RECT rectOld;
-	GetWindowRect(&rectOld);
-	long deltaX = (pRect->right  - pRect->left) - (rectOld.right  - rectOld.left);
-	long deltaY = (pRect->bottom - pRect->top)  - (rectOld.bottom - rectOld.top);
-
 	WindowDeferrer deferrer(m_hWnd, controls, _countof(controls));
-	deferrer.defer(deltaX, deltaY);
+	deferrer.defer(SizeOffset.cx, SizeOffset.cy);
+	SizeOffset.SetSize(0, 0);
 
 	SetMsgHandled(false);
 }
@@ -195,8 +194,6 @@ LRESULT MainGui::OnTreeImportsDoubleClick(const NMHDR* pnmh)
 
 LRESULT MainGui::OnTreeImportsRightClick(const NMHDR* pnmh)
 {
-	//Logger::printfDialog(L"NM_RCLICK");
-
 	/*
 	HTREEITEM selectedTreeNode = TreeImports.GetNextItem(NULL, TVGN_DROPHILITE);
 	if(selectedTreeNode != NULL)
@@ -304,7 +301,6 @@ void MainGui::OnAutotrace(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void MainGui::OnExit(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	FontBold.DeleteObject();
 	EndDialog(0);
 }
 
@@ -376,7 +372,6 @@ void MainGui::pickDllActionHandler()
 		processAccessHelp.selectedModule = dlgPickDll.getSelectedModule();
 		Logger::printfDialog(TEXT("->>> Module %s selected."), processAccessHelp.selectedModule->getFilename());
 		Logger::printfDialog(TEXT("Imagebase: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size: %08X"),processAccessHelp.selectedModule->modBaseAddr,processAccessHelp.selectedModule->modBaseSize);
-
 	}
 	else
 	{
@@ -392,8 +387,17 @@ void MainGui::startDisassemblerGui(CTreeItem selectedTreeNode)
 	DWORD_PTR address = importsHandling.getApiAddressByNode(selectedTreeNode);
 	if (address)
 	{
-		DisassemblerGui dlgDisassembler(address);
-		dlgDisassembler.DoModal();
+		BYTE test;
+		if(!ProcessAccessHelp::readMemoryFromProcess(address, sizeof(test), &test))
+		{
+			swprintf_s(stringBuffer, _countof(stringBuffer), TEXT("Can't read memory at ")TEXT(PRINTF_DWORD_PTR_FULL),address);
+			MessageBox(stringBuffer, L"Failure", MB_ICONERROR);
+		}
+		else
+		{
+			DisassemblerGui dlgDisassembler(address);
+			dlgDisassembler.DoModal();
+		}
 	}
 }
 
@@ -926,7 +930,6 @@ void MainGui::enableDialogControls(BOOL value)
 {
 	GetDlgItem(IDC_BTN_PICKDLL).EnableWindow(value);
 	GetDlgItem(IDC_BTN_DUMP).EnableWindow(value);
-	GetDlgItem(IDC_BTN_DLLINJECT).EnableWindow(value);
 	GetDlgItem(IDC_BTN_FIXDUMP).EnableWindow(value);
 	GetDlgItem(IDC_BTN_IATAUTOSEARCH).EnableWindow(value);
 	GetDlgItem(IDC_BTN_GETIMPORTS).EnableWindow(value);
