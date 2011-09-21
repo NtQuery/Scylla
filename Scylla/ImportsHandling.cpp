@@ -179,11 +179,11 @@ CTreeItem ImportsHandling::addApiToTreeView(CTreeViewCtrl& idTreeView, CTreeItem
 			swprintf_s(tempString, _countof(tempString),TEXT("ord: %04X"),importThunk->ordinal);
 		}
 
-		swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("va: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" rva: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" mod: %s %s"),importThunk->va,importThunk->rva,importThunk->moduleName,tempString);
+		swprintf_s(stringBuffer, _countof(stringBuffer),/*TEXT("va: ")TEXT(PRINTF_DWORD_PTR_FULL)*/TEXT(" rva: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" mod: %s %s"),/*importThunk->va,*/importThunk->rva,importThunk->moduleName,tempString);
 	}
 	else
 	{
-		swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("va: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" rva: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" ptr: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(""),importThunk->va,importThunk->rva,importThunk->apiAddressVA);
+		swprintf_s(stringBuffer, _countof(stringBuffer),/*TEXT("va: ")TEXT(PRINTF_DWORD_PTR_FULL)*/TEXT(" rva: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" ptr: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(""),/*importThunk->va,*/importThunk->rva,importThunk->apiAddressVA);
 	}
 
 	CTreeItem item = idTreeView.InsertItem(stringBuffer, parentDll, TVI_LAST);
