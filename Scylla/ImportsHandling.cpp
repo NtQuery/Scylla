@@ -3,7 +3,26 @@
 #include "Thunks.h"
 #include "definitions.h"
 
+#include "resource.h"
+
 //#define DEBUG_COMMENTS
+
+ImportsHandling::ImportsHandling(CTreeViewCtrl& TreeImports) : TreeImports(TreeImports)
+{
+	hIconCheck.LoadIcon(IDI_ICON_CHECK);
+	hIconWarning.LoadIcon(IDI_ICON_WARNING);
+	hIconError.LoadIcon(IDI_ICON_ERROR);
+
+	TreeIcons.Create(16, 16, ILC_COLOR32, 3, 1);
+	TreeIcons.AddIcon(hIconCheck);
+	TreeIcons.AddIcon(hIconWarning);
+	TreeIcons.AddIcon(hIconError);
+}
+
+ImportsHandling::~ImportsHandling()
+{
+	TreeIcons.Destroy();
+}
 
 bool ImportModuleThunk::isValid()
 {
@@ -103,56 +122,48 @@ DWORD_PTR ImportModuleThunk::getFirstThunk()
 
 void ImportsHandling::displayAllImports()
 {
-	std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
-	std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
+	std::map<DWORD_PTR, ImportModuleThunk>::iterator it_module;
+	std::map<DWORD_PTR, ImportThunk>::iterator it_thunk;
 	ImportModuleThunk * moduleThunk;
 	ImportThunk * importThunk;
 	CTreeItem module;
 	CTreeItem apiFunction;
 
 	TreeImports.DeleteAllItems();
+	TreeImports.SetImageList(TreeIcons);
 
-	 iterator1 = moduleList.begin();
+	 it_module = moduleList.begin();
 
-	 while (iterator1 != moduleList.end())
+	 while (it_module != moduleList.end())
 	 {
-		 moduleThunk = &(iterator1->second);
+		 moduleThunk = &(it_module->second);
 
 		 module = addDllToTreeView(TreeImports,moduleThunk->moduleName,moduleThunk->firstThunk,moduleThunk->thunkList.size(),moduleThunk->isValid());
 		
 		 moduleThunk->hTreeItem = module;
 
-		 iterator2 = moduleThunk->thunkList.begin();
+		 it_thunk = moduleThunk->thunkList.begin();
 
-		 while (iterator2 != moduleThunk->thunkList.end())
+		 while (it_thunk != moduleThunk->thunkList.end())
 		 {
-			 importThunk = &(iterator2->second);
+			 importThunk = &(it_thunk->second);
 			 apiFunction = addApiToTreeView(TreeImports,module,importThunk);
 			 importThunk->hTreeItem = apiFunction;
-			 iterator2++;
+			 it_thunk++;
 		 }
 
-		 iterator1++;
+		 it_module++;
 	 }
-
 }
 
 CTreeItem ImportsHandling::addDllToTreeView(CTreeViewCtrl& idTreeView, const WCHAR * dllName, DWORD_PTR firstThunk, size_t numberOfFunctions, bool valid)
 {
-	WCHAR validString[4];
-
-	if (valid)
-	{
-		wcscpy_s(validString,_countof(validString),TEXT("YES"));
-	}
-	else
-	{
-		wcscpy_s(validString,_countof(validString),TEXT("NO"));
-	}
-
-	swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("%s FThunk: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" NbThunk: %02X (dec: %02d) valid: %s"),dllName,firstThunk,numberOfFunctions,numberOfFunctions,validString);
+	swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("%s FThunk: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" NbThunk: %d"),dllName,firstThunk,numberOfFunctions,numberOfFunctions);
 	
-	return idTreeView.InsertItem(stringBuffer, NULL, TVI_ROOT);
+	CTreeItem item = idTreeView.InsertItem(stringBuffer, NULL, TVI_ROOT);
+	Icon icon = getAppropiateIcon(valid);
+	idTreeView.SetItemImage(item, icon, icon);
+	return item;
 }
 
 CTreeItem ImportsHandling::addApiToTreeView(CTreeViewCtrl& idTreeView, CTreeItem parentDll, const ImportThunk * importThunk)
@@ -175,7 +186,10 @@ CTreeItem ImportsHandling::addApiToTreeView(CTreeViewCtrl& idTreeView, CTreeItem
 		swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("va: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" rva: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" ptr: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(""),importThunk->va,importThunk->rva,importThunk->apiAddressVA);
 	}
 
-	return idTreeView.InsertItem(stringBuffer, parentDll, TVI_LAST);
+	CTreeItem item = idTreeView.InsertItem(stringBuffer, parentDll, TVI_LAST);
+	Icon icon = getAppropiateIcon(importThunk);
+	idTreeView.SetItemImage(item, icon, icon);
+	return item;
 }
 
 void ImportsHandling::showImports(bool invalid, bool suspect)
@@ -356,6 +370,39 @@ void ImportsHandling::updateImportInTreeView(ImportThunk * importThunk)
 	}
 
 	TreeImports.SetItemText(importThunk->hTreeItem, stringBuffer);
+	Icon icon = getAppropiateIcon(importThunk);
+	TreeImports.SetItemImage(importThunk->hTreeItem, icon, icon);
+}
+
+ImportsHandling::Icon ImportsHandling::getAppropiateIcon(const ImportThunk * importThunk)
+{
+	if(importThunk->valid)
+	{
+		if(importThunk->suspect)
+		{
+			return iconWarning;
+		}
+		else
+		{
+			return iconCheck;
+		}
+	}
+	else
+	{
+		return iconError;
+	}
+}
+
+ImportsHandling::Icon ImportsHandling::getAppropiateIcon(bool valid)
+{
+	if(valid)
+	{
+		return iconCheck;
+	}
+	else
+	{
+		return iconError;
+	}
 }
 
 void ImportsHandling::updateModuleInTreeView(ImportModuleThunk * importThunk)
@@ -374,6 +421,8 @@ void ImportsHandling::updateModuleInTreeView(ImportModuleThunk * importThunk)
 	swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("%s FThunk: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" NbThunk: %02X (dec: %02d) valid: %s"),importThunk->moduleName,importThunk->firstThunk,importThunk->thunkList.size(),importThunk->thunkList.size(),validString);
 
 	TreeImports.SetItemText(importThunk->hTreeItem, stringBuffer);
+	Icon icon = getAppropiateIcon(importThunk->isValid());
+	TreeImports.SetItemImage(importThunk->hTreeItem, icon, icon);
 }
 
 bool ImportsHandling::cutThunk(CTreeItem selectedTreeNode)
