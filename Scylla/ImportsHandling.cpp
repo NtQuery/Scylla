@@ -24,9 +24,9 @@ ImportsHandling::~ImportsHandling()
 	TreeIcons.Destroy();
 }
 
-bool ImportModuleThunk::isValid()
+bool ImportModuleThunk::isValid() const
 {
-	std::map<DWORD_PTR, ImportThunk>::iterator iterator = thunkList.begin();
+	std::map<DWORD_PTR, ImportThunk>::const_iterator iterator = thunkList.begin();
 	while (iterator != thunkList.end())
 	{
 		if (iterator->second.valid == false)
@@ -39,11 +39,11 @@ bool ImportModuleThunk::isValid()
 	return true;
 }
 
-DWORD_PTR ImportModuleThunk::getFirstThunk()
+DWORD_PTR ImportModuleThunk::getFirstThunk() const
 {
 	if (thunkList.size() > 0)
 	{
-		std::map<DWORD_PTR, ImportThunk>::iterator iterator = thunkList.begin();
+		const std::map<DWORD_PTR, ImportThunk>::const_iterator iterator = thunkList.begin();
 		return iterator->first;
 	}
 	else
@@ -138,7 +138,7 @@ void ImportsHandling::displayAllImports()
 	 {
 		 moduleThunk = &(it_module->second);
 
-		 module = addDllToTreeView(TreeImports,moduleThunk->moduleName,moduleThunk->firstThunk,moduleThunk->thunkList.size(),moduleThunk->isValid());
+		 module = addDllToTreeView(TreeImports,moduleThunk);
 		
 		 moduleThunk->hTreeItem = module;
 
@@ -156,39 +156,17 @@ void ImportsHandling::displayAllImports()
 	 }
 }
 
-CTreeItem ImportsHandling::addDllToTreeView(CTreeViewCtrl& idTreeView, const WCHAR * dllName, DWORD_PTR firstThunk, size_t numberOfFunctions, bool valid)
+CTreeItem ImportsHandling::addDllToTreeView(CTreeViewCtrl& idTreeView, const ImportModuleThunk * importThunk)
 {
-	swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("%s FThunk: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" NbThunk: %d"),dllName,firstThunk,numberOfFunctions,numberOfFunctions);
-	
-	CTreeItem item = idTreeView.InsertItem(stringBuffer, NULL, TVI_ROOT);
-	Icon icon = getAppropiateIcon(valid);
-	idTreeView.SetItemImage(item, icon, icon);
+	CTreeItem item = idTreeView.InsertItem(L"", NULL, TVI_ROOT);
+	updateModuleInTreeView(importThunk, item);
 	return item;
 }
 
 CTreeItem ImportsHandling::addApiToTreeView(CTreeViewCtrl& idTreeView, CTreeItem parentDll, const ImportThunk * importThunk)
 {
-	if (importThunk->ordinal != 0)
-	{
-		if (importThunk->name[0] != 0x00)
-		{
-			swprintf_s(tempString, _countof(tempString),TEXT("ord: %04X name: %S"),importThunk->ordinal,importThunk->name);
-		}
-		else
-		{
-			swprintf_s(tempString, _countof(tempString),TEXT("ord: %04X"),importThunk->ordinal);
-		}
-
-		swprintf_s(stringBuffer, _countof(stringBuffer),/*TEXT("va: ")TEXT(PRINTF_DWORD_PTR_FULL)*/TEXT(" rva: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" mod: %s %s"),/*importThunk->va,*/importThunk->rva,importThunk->moduleName,tempString);
-	}
-	else
-	{
-		swprintf_s(stringBuffer, _countof(stringBuffer),/*TEXT("va: ")TEXT(PRINTF_DWORD_PTR_FULL)*/TEXT(" rva: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" ptr: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(""),/*importThunk->va,*/importThunk->rva,importThunk->apiAddressVA);
-	}
-
-	CTreeItem item = idTreeView.InsertItem(stringBuffer, parentDll, TVI_LAST);
-	Icon icon = getAppropiateIcon(importThunk);
-	idTreeView.SetItemImage(item, icon, icon);
+	CTreeItem item = idTreeView.InsertItem(L"", parentDll, TVI_LAST);
+	updateImportInTreeView(importThunk, item);
 	return item;
 }
 
@@ -334,9 +312,9 @@ bool ImportsHandling::invalidateFunction(CTreeItem selectedTreeNode)
 				importThunk->suspect = false;
 				importThunk->moduleName[0] = 0;
 				importThunk->name[0] = 0;
-			
-				updateImportInTreeView(importThunk);
-				updateModuleInTreeView(moduleThunk);
+
+				updateImportInTreeView(importThunk, importThunk->hTreeItem);
+				updateModuleInTreeView(moduleThunk, moduleThunk->hTreeItem);
 				return true;
 			}
 
@@ -349,9 +327,9 @@ bool ImportsHandling::invalidateFunction(CTreeItem selectedTreeNode)
 	return false;
 }
 
-void ImportsHandling::updateImportInTreeView(ImportThunk * importThunk)
+void ImportsHandling::updateImportInTreeView(const ImportThunk * importThunk, CTreeItem item)
 {
-	if (importThunk->ordinal != 0)
+	if (importThunk->valid)
 	{
 		if (importThunk->name[0] != 0x00)
 		{
@@ -362,16 +340,26 @@ void ImportsHandling::updateImportInTreeView(ImportThunk * importThunk)
 			swprintf_s(tempString, _countof(tempString),TEXT("ord: %04X"),importThunk->ordinal);
 		}
 
-		swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("va: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" rva: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" mod: %s %s"),importThunk->va,importThunk->rva,importThunk->moduleName,tempString);
+		swprintf_s(stringBuffer, _countof(stringBuffer),TEXT(" rva: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" mod: %s %s"),importThunk->rva,importThunk->moduleName,tempString);
 	}
 	else
 	{
-		swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("va: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" rva: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" prt: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(""),importThunk->va,importThunk->rva,importThunk->apiAddressVA);
+		swprintf_s(stringBuffer, _countof(stringBuffer),TEXT(" rva: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" ptr: ")TEXT(PRINTF_DWORD_PTR_FULL),importThunk->rva,importThunk->apiAddressVA);
 	}
 
-	TreeImports.SetItemText(importThunk->hTreeItem, stringBuffer);
+	TreeImports.SetItemText(item, stringBuffer);
 	Icon icon = getAppropiateIcon(importThunk);
-	TreeImports.SetItemImage(importThunk->hTreeItem, icon, icon);
+	TreeImports.SetItemImage(item, icon, icon);
+}
+
+void ImportsHandling::updateModuleInTreeView(const ImportModuleThunk * importThunk, CTreeItem item)
+{
+	//swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("%s FThunk: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" NbThunk: %d"),importThunk->moduleName,importThunk->firstThunk,importThunk->thunkList.size());
+	swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("%s (%d) FThunk: ")TEXT(PRINTF_DWORD_PTR_HALF),importThunk->moduleName,importThunk->thunkList.size(), importThunk->firstThunk);
+
+	TreeImports.SetItemText(item, stringBuffer);
+	Icon icon = getAppropiateIcon(importThunk->isValid());
+	TreeImports.SetItemImage(item, icon, icon);
 }
 
 ImportsHandling::Icon ImportsHandling::getAppropiateIcon(const ImportThunk * importThunk)
@@ -405,26 +393,6 @@ ImportsHandling::Icon ImportsHandling::getAppropiateIcon(bool valid)
 	}
 }
 
-void ImportsHandling::updateModuleInTreeView(ImportModuleThunk * importThunk)
-{
-	WCHAR validString[4];
-
-	if (importThunk->isValid())
-	{
-		wcscpy_s(validString,_countof(validString),TEXT("YES"));
-	}
-	else
-	{
-		wcscpy_s(validString,_countof(validString),TEXT("NO"));
-	}
-
-	swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("%s FThunk: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" NbThunk: %02X (dec: %02d) valid: %s"),importThunk->moduleName,importThunk->firstThunk,importThunk->thunkList.size(),importThunk->thunkList.size(),validString);
-
-	TreeImports.SetItemText(importThunk->hTreeItem, stringBuffer);
-	Icon icon = getAppropiateIcon(importThunk->isValid());
-	TreeImports.SetItemImage(importThunk->hTreeItem, icon, icon);
-}
-
 bool ImportsHandling::cutThunk(CTreeItem selectedTreeNode)
 {
 	std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
@@ -456,7 +424,7 @@ bool ImportsHandling::cutThunk(CTreeItem selectedTreeNode)
 				}
 				else
 				{
-					updateModuleInTreeView(moduleThunk);
+					updateModuleInTreeView(moduleThunk, moduleThunk->hTreeItem);
 				}
 				return true;
 			}

@@ -28,8 +28,8 @@ public:
 	bool cutThunk(CTreeItem selectedTreeNode);
 	bool deleteTreeNode(CTreeItem selectedTreeNode);
 
-	void updateImportInTreeView(ImportThunk * importThunk);
-	void updateModuleInTreeView(ImportModuleThunk * importThunk);
+	void updateImportInTreeView(const ImportThunk * importThunk, CTreeItem item);
+	void updateModuleInTreeView(const ImportModuleThunk * importThunk, CTreeItem item);
 	DWORD_PTR getApiAddressByNode(CTreeItem selectedTreeNode);
 	void scanAndFixModuleList();
 	void expandAllTreeNodes();
@@ -54,7 +54,7 @@ private:
 		iconError
 	};
 
-	CTreeItem addDllToTreeView(CTreeViewCtrl& idTreeView, const WCHAR * dllName, DWORD_PTR firstThunk, size_t numberOfFunctions, bool valid);
+	CTreeItem addDllToTreeView(CTreeViewCtrl& idTreeView, const ImportModuleThunk * importThunk);
 	CTreeItem addApiToTreeView(CTreeViewCtrl& idTreeView, CTreeItem parentDll, const ImportThunk * importThunk);
 	
 	bool isItemSelected(const CTreeViewCtrl& hwndTV, CTreeItem hItem);
