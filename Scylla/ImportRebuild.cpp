@@ -517,18 +517,25 @@ DWORD ImportRebuild::fillImportSection( std::map<DWORD_PTR, ImportModuleThunk> &
 		{
 			pImportByName->Hint = (*mapIt2).second.hint;
 
-			stringLength = strlen((*mapIt2).second.name) + 1;
-			memcpy(pImportByName->Name, (*mapIt2).second.name, stringLength);
+			if((*mapIt2).second.name[0] == '\0')
+			{
+				pThunk->u1.AddressOfData = (IMAGE_ORDINAL((*mapIt2).second.ordinal) | IMAGE_ORDINAL_FLAG);
+			}
+			else
+			{
+				stringLength = strlen((*mapIt2).second.name) + 1;
+				memcpy(pImportByName->Name, (*mapIt2).second.name, stringLength);
 
-			//pThunk = (PIMAGE_THUNK_DATA)(getMemoryPointerFromRVA((*mapIt2).second.rva));
+				//pThunk = (PIMAGE_THUNK_DATA)(getMemoryPointerFromRVA((*mapIt2).second.rva));
 
-			pThunk->u1.AddressOfData = convertOffsetToRVAVector(vecSectionHeaders[importSectionIndex].PointerToRawData + offset);
+				pThunk->u1.AddressOfData = convertOffsetToRVAVector(vecSectionHeaders[importSectionIndex].PointerToRawData + offset);
 
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog("pThunk->u1.AddressOfData %X %X %X\n",pThunk->u1.AddressOfData, pThunk,  vecSectionHeaders[importSectionIndex].PointerToRawData + offset);
+				Logger::debugLog("pThunk->u1.AddressOfData %X %X %X\n",pThunk->u1.AddressOfData, pThunk,  vecSectionHeaders[importSectionIndex].PointerToRawData + offset);
 #endif
-			offset += (DWORD)(sizeof(WORD) + stringLength);
-			pImportByName = (PIMAGE_IMPORT_BY_NAME)((DWORD_PTR)pImportByName + (sizeof(WORD) + stringLength));
+				offset += (DWORD)(sizeof(WORD) + stringLength);
+				pImportByName = (PIMAGE_IMPORT_BY_NAME)((DWORD_PTR)pImportByName + (sizeof(WORD) + stringLength));
+			}
 			pThunk++;
 		}
 
