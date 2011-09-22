@@ -39,7 +39,7 @@ protected:
 	CListViewCtrl ListDisassembler;
 
 	enum DisassemblerColumns {
-		COL_ADDRESS,
+		COL_ADDRESS = 0,
 		COL_INSTRUCTION_SIZE,
 		COL_OPCODES,
 		COL_INSTRUCTION

@@ -20,37 +20,46 @@ BOOL PickDllGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	SetIcon(hIcon, TRUE);
 	SetIcon(hIcon, FALSE);
 
-	GetWindowRect(&MinSize);
+	GetWindowRect(&minDlgSize);
 
 	return TRUE;
 }
 
 void PickDllGui::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 {
-	lpMMI->ptMinTrackSize.x = MinSize.right - MinSize.left;
-	lpMMI->ptMinTrackSize.y = MinSize.bottom - MinSize.top;
+	lpMMI->ptMinTrackSize.x = minDlgSize.Width();
+	lpMMI->ptMinTrackSize.y = minDlgSize.Height();
 }
 
 void PickDllGui::OnSizing(UINT fwSide, RECT* pRect)
 {
-	int toResize[] = {IDC_LIST_DLLSELECT};
-	int toMove[] = {IDC_BTN_PICKDLL_OK, IDC_BTN_PICKDLL_CANCEL};
+	// Get size difference
+	CRect rectOld;
+	GetWindowRect(&rectOld);
+	CRect rectNew = *pRect;
 
-	WindowDeferrer::Deferrable controls[] =
+	int deltaX = rectNew.Width() - rectOld.Width();
+	int deltaY = rectNew.Height() - rectOld.Height();
+
+	CSize delta(deltaX, deltaY);
+	sizeOffset = delta;
+}
+
+void PickDllGui::OnSize(UINT nType, CSize size)
+{
+	const WindowDeferrer::Deferrable controls[] =
 	{
 		{IDC_LIST_DLLSELECT, false, false, true, true},
 		{IDC_BTN_PICKDLL_OK, true, true, false, false},
 		{IDC_BTN_PICKDLL_CANCEL, true, true, false, false},
 	};
 
-	// Get size difference
-	RECT rectOld;
-	GetWindowRect(&rectOld);
-	long deltaX = (pRect->right  - pRect->left) - (rectOld.right  - rectOld.left);
-	long deltaY = (pRect->bottom - pRect->top)  - (rectOld.bottom - rectOld.top);
-
-	WindowDeferrer deferrer(m_hWnd, controls, _countof(controls));
-	deferrer.defer(deltaX, deltaY);
+	if(nType == SIZE_RESTORED)
+	{
+		WindowDeferrer deferrer(m_hWnd, controls, _countof(controls));
+		deferrer.defer(sizeOffset.cx, sizeOffset.cy);
+		sizeOffset.SetSize(0, 0);
+	}
 }
 
 void PickDllGui::OnOK(UINT uNotifyCode, int nID, CWindow wndCtl)

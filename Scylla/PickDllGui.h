@@ -23,6 +23,7 @@ public:
 		MSG_WM_INITDIALOG(OnInitDialog)
 		MSG_WM_GETMINMAXINFO(OnGetMinMaxInfo)
 		MSG_WM_SIZING(OnSizing)
+		MSG_WM_SIZE(OnSize)
 
 		COMMAND_ID_HANDLER_EX(IDC_BTN_PICKDLL_OK, OnOK)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_PICKDLL_CANCEL, OnCancel)
@@ -45,13 +46,14 @@ protected:
 	CListViewCtrl ListDLLSelect;
 
 	enum ListColumns {
-		COL_NAME,
+		COL_NAME = 0,
 		COL_IMAGEBASE,
 		COL_IMAGESIZE,
 		COL_PATH
 	};
 
-	RECT MinSize;
+	CRect minDlgSize;
+	CSize sizeOffset;
 
 	// Handles
 
@@ -64,6 +66,7 @@ protected:
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
 	void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 	void OnSizing(UINT fwSide, RECT* pRect);
+	void OnSize(UINT nType, CSize size);
 	void OnOK(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl);
 

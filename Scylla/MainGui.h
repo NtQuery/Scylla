@@ -108,8 +108,8 @@ protected:
 	CEdit EditIATSize;
 	CListBox ListLog;
 
-	RECT MinSize;
-	CSize SizeOffset;
+	CRect minDlgSize;
+	CSize sizeOffset;
 
 	// Handles
 

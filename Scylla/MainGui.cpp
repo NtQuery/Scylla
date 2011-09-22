@@ -75,34 +75,34 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	setIconAndDialogCaption();
 
-	GetWindowRect(&MinSize);
+	GetWindowRect(&minDlgSize);
 
-	SetMsgHandled(false);
 	return TRUE;
 }
 
 void MainGui::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 {
-	lpMMI->ptMinTrackSize.x = MinSize.right - MinSize.left;
-	lpMMI->ptMinTrackSize.y = MinSize.bottom - MinSize.top;
+	lpMMI->ptMinTrackSize.x = minDlgSize.Width();
+	lpMMI->ptMinTrackSize.y = minDlgSize.Height();
 }
 
 void MainGui::OnSizing(UINT fwSide, RECT* pRect)
 {
 	// Get size difference
-	RECT rectOld;
+	CRect rectOld;
 	GetWindowRect(&rectOld);
-	long deltaX = (pRect->right  - pRect->left) - (rectOld.right  - rectOld.left);
-	long deltaY = (pRect->bottom - pRect->top)  - (rectOld.bottom - rectOld.top);
+	CRect rectNew = *pRect;
 
-	SizeOffset.SetSize(deltaX, deltaY);
+	int deltaX = rectNew.Width() - rectOld.Width();
+	int deltaY = rectNew.Height() - rectOld.Height();
 
-	SetMsgHandled(false);
+	CSize delta(deltaX, deltaY);
+	sizeOffset = delta;
 }
 
 void MainGui::OnSize(UINT nType, CSize size)
 {
-	WindowDeferrer::Deferrable controls[] =
+	const WindowDeferrer::Deferrable controls[] =
 	{
 		{IDC_GROUP_ATTACH,    false, false, true, false},
 		{IDC_CBO_PROCESSLIST, false, false, true, false},
@@ -110,11 +110,11 @@ void MainGui::OnSize(UINT nType, CSize size)
 
 		{IDC_GROUP_IMPORTS, false, false, true, true},
 		{IDC_TREE_IMPORTS,  false, false, true, true},
-		{IDC_BTN_INVALIDIMPORTS,   false, true, false, false},
-		{IDC_BTN_SUSPECTIMPORTS,   false, true, false, false},
-		{IDC_BTN_SAVETREE,         true, true, false, false},
-		{IDC_BTN_LOADTREE,         true, true, false, false},
-		{IDC_BTN_CLEARIMPORTS,     true, true, false, false},
+		{IDC_BTN_INVALIDIMPORTS, false, true, false, false},
+		{IDC_BTN_SUSPECTIMPORTS, false, true, false, false},
+		{IDC_BTN_SAVETREE,       true, true, false, false},
+		{IDC_BTN_LOADTREE,       true, true, false, false},
+		{IDC_BTN_CLEARIMPORTS,   true, true, false, false},
 
 		{IDC_GROUP_IATINFO,     false, true, false, false},
 		{IDC_STATIC_OEPADDRESS, false, true, false, false},
@@ -138,11 +138,12 @@ void MainGui::OnSize(UINT nType, CSize size)
 		{IDC_LIST_LOG,  false, true, true, false}
 	};
 
-	WindowDeferrer deferrer(m_hWnd, controls, _countof(controls));
-	deferrer.defer(SizeOffset.cx, SizeOffset.cy);
-	SizeOffset.SetSize(0, 0);
-
-	SetMsgHandled(false);
+	if(nType == SIZE_RESTORED)
+	{
+		WindowDeferrer deferrer(m_hWnd, controls, _countof(controls));
+		deferrer.defer(sizeOffset.cx, sizeOffset.cy);
+		sizeOffset.SetSize(0, 0);
+	}
 }
 
 void MainGui::OnLButtonDown(UINT nFlags, CPoint point)
@@ -157,14 +158,16 @@ void MainGui::OnContextMenu(CWindow wnd, CPoint point)
 	{
 	case IDC_TREE_IMPORTS:
 		DisplayContextMenuImports(wnd, point);
-		break;
+		return;
 	case IDC_LIST_LOG:
 		DisplayContextMenuLog(wnd, point);
-		break;
+		return;
 	//default: // wnd == m_hWnd?
 	//	DisplayContextMenu(wnd, point); 
-	//	break;
+	//	return;
 	}
+
+	SetMsgHandled(false);
 }
 
 void MainGui::OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -183,12 +186,14 @@ void MainGui::OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 LRESULT MainGui::OnTreeImportsClick(const NMHDR* pnmh)
 {
+	SetMsgHandled(false);
 	return false;
 }
 
 LRESULT MainGui::OnTreeImportsDoubleClick(const NMHDR* pnmh)
 {
 	CPoint pt = GetMessagePos();
+	SetMsgHandled(false);
 	return false;
 }
 
@@ -201,11 +206,13 @@ LRESULT MainGui::OnTreeImportsRightClick(const NMHDR* pnmh)
 		TreeImports.Select(selectedTreeNode, TVGN_CARET);
 	}
 	*/
+	SetMsgHandled(false);
 	return false;
 }
 
 LRESULT MainGui::OnTreeImportsRightDoubleClick(const NMHDR* pnmh)
 {
+	SetMsgHandled(false);
 	return false;
 }
 
@@ -871,17 +878,17 @@ void MainGui::dumpFixActionHandler()
 	if(!selectedProcess)
 		return;
 
-	WCHAR newFilePath[MAX_PATH];
-	WCHAR selectedFilePath[MAX_PATH];
-	const WCHAR * fileFilter;
-
-	ImportRebuild importRebuild;
-
 	if (TreeImports.GetCount() < 2)
 	{
 		Logger::printfDialog(TEXT("Nothing to rebuild"));
 		return;
 	}
+
+	WCHAR newFilePath[MAX_PATH];
+	WCHAR selectedFilePath[MAX_PATH];
+	const WCHAR * fileFilter;
+
+	ImportRebuild importRebuild;
 
 	if (processAccessHelp.selectedModule)
 	{
