@@ -455,7 +455,7 @@ DWORD ImportRebuild::calculateMinSize(std::map<DWORD_PTR, ImportModuleThunk> & m
 			if((*mapIt2).second.name[0] != '\0')
 			{
 				dwSize += sizeof(IMAGE_IMPORT_BY_NAME);
-				dwSize += (DWORD)(strlen((*mapIt2).second.name) + 1);
+				dwSize += (DWORD)strlen((*mapIt2).second.name);
 			}
 		}
 	}
