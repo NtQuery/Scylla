@@ -1,6 +1,6 @@
 #include "OptionsGui.h"
-
 #include "ConfigurationHolder.h"
+#include "definitions.h"
 
 BOOL OptionsGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
@@ -69,21 +69,15 @@ void OptionsGui::displayConfigInDlg( ConfigObject & config )
 		break;
 	case Decimal:
 		{
-#ifdef _WIN64
-			swprintf_s(config.valueString, CONFIG_OPTIONS_STRING_LENGTH, TEXT("%I64u"),config.valueNumeric);
-#else
-			swprintf_s(config.valueString, CONFIG_OPTIONS_STRING_LENGTH, TEXT("%u"),config.valueNumeric);
-#endif
+			swprintf_s(config.valueString, CONFIG_OPTIONS_STRING_LENGTH, TEXT(PRINTF_INTEGER),config.valueNumeric);
+
 			setEditControl(config.dialogItemValue, config.valueString);
 		}
 		break;
 	case Hexadecimal:
 		{
-#ifdef _WIN64
-			swprintf_s(config.valueString, CONFIG_OPTIONS_STRING_LENGTH, TEXT("%016I64X"),config.valueNumeric);
-#else
-			swprintf_s(config.valueString, CONFIG_OPTIONS_STRING_LENGTH, TEXT("%08X"),config.valueNumeric);
-#endif
+			swprintf_s(config.valueString, CONFIG_OPTIONS_STRING_LENGTH, TEXT(PRINTF_DWORD_PTR_FULL),config.valueNumeric);
+
 			setEditControl(config.dialogItemValue, config.valueString);
 		}
 		break;

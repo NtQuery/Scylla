@@ -1,6 +1,7 @@
 
 #include "ConfigurationHolder.h"
 #include "resource.h"
+#include "definitions.h"
 
 WCHAR ConfigurationHolder::configPath[MAX_PATH];
 ConfigurationInitializer ConfigurationHolder::config;
@@ -66,19 +67,11 @@ bool ConfigurationHolder::saveNumericToConfigFile(ConfigObject & configObject, i
 
 	if (nBase == 16)
 	{
-#ifdef _WIN64
-		swprintf_s(configObject.valueString, CONFIG_OPTIONS_STRING_LENGTH, TEXT("%016I64X"),configObject.valueNumeric);
-#else
-		swprintf_s(configObject.valueString, CONFIG_OPTIONS_STRING_LENGTH, TEXT("%08X"),configObject.valueNumeric);
-#endif
+		swprintf_s(configObject.valueString, CONFIG_OPTIONS_STRING_LENGTH, TEXT(PRINTF_DWORD_PTR_FULL),configObject.valueNumeric);
 	}
 	else
 	{
-#ifdef _WIN64
-		swprintf_s(configObject.valueString, CONFIG_OPTIONS_STRING_LENGTH, TEXT("%I64u"),configObject.valueNumeric);
-#else
-		swprintf_s(configObject.valueString, CONFIG_OPTIONS_STRING_LENGTH, TEXT("%u"),configObject.valueNumeric);
-#endif
+		swprintf_s(configObject.valueString, CONFIG_OPTIONS_STRING_LENGTH, TEXT(PRINTF_INTEGER),configObject.valueNumeric);
 	}
 
 
