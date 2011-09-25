@@ -2,6 +2,11 @@
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Scylla", "Scylla\Scylla.vcxproj", "{710434C9-FC4B-4F1D-B318-E10ADC78499F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A4B94DE4-BE0E-4E7D-95E7-7B84E6F117A1} = {A4B94DE4-BE0E-4E7D-95E7-7B84E6F117A1}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "diStorm", "diStorm\diStorm.vcxproj", "{A4B94DE4-BE0E-4E7D-95E7-7B84E6F117A1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,6 +24,14 @@ Global
 		{710434C9-FC4B-4F1D-B318-E10ADC78499F}.Release|Win32.Build.0 = Release|Win32
 		{710434C9-FC4B-4F1D-B318-E10ADC78499F}.Release|x64.ActiveCfg = Release|x64
 		{710434C9-FC4B-4F1D-B318-E10ADC78499F}.Release|x64.Build.0 = Release|x64
+		{A4B94DE4-BE0E-4E7D-95E7-7B84E6F117A1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A4B94DE4-BE0E-4E7D-95E7-7B84E6F117A1}.Debug|Win32.Build.0 = Debug|Win32
+		{A4B94DE4-BE0E-4E7D-95E7-7B84E6F117A1}.Debug|x64.ActiveCfg = Debug|x64
+		{A4B94DE4-BE0E-4E7D-95E7-7B84E6F117A1}.Debug|x64.Build.0 = Debug|x64
+		{A4B94DE4-BE0E-4E7D-95E7-7B84E6F117A1}.Release|Win32.ActiveCfg = Release|Win32
+		{A4B94DE4-BE0E-4E7D-95E7-7B84E6F117A1}.Release|Win32.Build.0 = Release|Win32
+		{A4B94DE4-BE0E-4E7D-95E7-7B84E6F117A1}.Release|x64.ActiveCfg = Release|x64
+		{A4B94DE4-BE0E-4E7D-95E7-7B84E6F117A1}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

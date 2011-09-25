@@ -84,6 +84,9 @@
     <ClCompile Include="OptionsGui.cpp">
       <Filter>Quelldateien\GUI</Filter>
     </ClCompile>
+    <ClCompile Include="WindowDeferrer.cpp">
+      <Filter>Quelldateien\GUI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -108,9 +111,6 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="IATSearch.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="distorm.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="ProcessAccessHelp.h">
@@ -156,6 +156,9 @@
       <Filter>Headerdateien\GUI</Filter>
     </ClInclude>
     <ClInclude Include="OptionsGui.h">
+      <Filter>Headerdateien\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowDeferrer.h">
       <Filter>Headerdateien\GUI</Filter>
     </ClInclude>
   </ItemGroup>

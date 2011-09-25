@@ -1,0 +1,8 @@
+To get Scylla to compile, you need WTL and set it up properly.
+WTL can be downloaded from:
+http://wtl.sourceforge.net/
+
+Unzip the WTL dir anywhere. Now add the 'Include' path to
+Visual Studio's default include directories.
+Don't forget to also add it to the Resource includes, otherwise VS
+can't find atlres.h when included from .rc files.
