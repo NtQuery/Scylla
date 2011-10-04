@@ -25,6 +25,7 @@ public:
 		MSG_WM_SIZING(OnSizing)
 		MSG_WM_SIZE(OnSize)
 
+		NOTIFY_HANDLER_EX(IDC_LIST_DLLSELECT, LVN_COLUMNCLICK, OnListDllColumnClicked)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_PICKDLL_OK, OnOK)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_PICKDLL_CANCEL, OnCancel)
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnCancel)
@@ -52,6 +53,9 @@ protected:
 		COL_PATH
 	};
 
+	int prevColumn;
+	bool ascending;
+
 	CRect minDlgSize;
 	CSize sizeOffset;
 
@@ -67,6 +71,8 @@ protected:
 	void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 	void OnSizing(UINT fwSide, RECT* pRect);
 	void OnSize(UINT nType, CSize size);
+
+	LRESULT OnListDllColumnClicked(NMHDR* pnmh);
 	void OnOK(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl);
 
@@ -74,4 +80,6 @@ protected:
 
 	void addColumnsToModuleList(CListViewCtrl& list);
 	void displayModuleList(CListViewCtrl& list);
+
+	static int CALLBACK listviewCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 };

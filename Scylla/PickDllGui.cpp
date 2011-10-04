@@ -4,6 +4,9 @@
 
 PickDllGui::PickDllGui(std::vector<ModuleInfo> &moduleList) : moduleList(moduleList)
 {
+	prevColumn = -1;
+	ascending = true;
+
 	selectedModule = 0;
 	hIcon.LoadIcon(IDI_ICON_SCYLLA);
 }
@@ -62,12 +65,33 @@ void PickDllGui::OnSize(UINT nType, CSize size)
 	}
 }
 
+LRESULT PickDllGui::OnListDllColumnClicked(NMHDR* pnmh)
+{
+	NMLISTVIEW* list = (NMLISTVIEW*)pnmh;
+	int column = list->iSubItem;
+
+    if(column == prevColumn)
+	{
+        ascending = !ascending;
+	}
+    else
+    {
+		prevColumn = column;
+        ascending = true;
+    }
+
+	// lo-byte: column, hi-byte: sort-order
+	ListDLLSelect.SortItems(&listviewCompareFunc, MAKEWORD(column, ascending));
+
+	return 0;
+}
+
 void PickDllGui::OnOK(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	int index = ListDLLSelect.GetSelectionMark();
 	if (index != -1)
 	{
-		selectedModule = &moduleList[index];
+		selectedModule = (ModuleInfo *)ListDLLSelect.GetItemData(index);
 		EndDialog(1);
 	}
 }
@@ -111,10 +135,42 @@ void PickDllGui::displayModuleList(CListViewCtrl& list)
 		list.SetItemText(count, COL_IMAGESIZE, temp);
 
 		list.SetItemText(count, COL_PATH, iter->fullPath);
+
+		list.SetItemData(count, (DWORD_PTR)&(*iter));
 	}
 
 	list.SetColumnWidth(COL_NAME, LVSCW_AUTOSIZE_USEHEADER);
 	list.SetColumnWidth(COL_IMAGEBASE, LVSCW_AUTOSIZE_USEHEADER);
 	list.SetColumnWidth(COL_IMAGESIZE, LVSCW_AUTOSIZE_USEHEADER);
 	list.SetColumnWidth(COL_PATH, LVSCW_AUTOSIZE_USEHEADER);
+}
+
+// lParamSort - lo-byte: column, hi-byte: sort-order
+int PickDllGui::listviewCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
+{
+	const ModuleInfo * module1 = (ModuleInfo *)lParam1;
+	const ModuleInfo * module2 = (ModuleInfo *)lParam2;
+
+	int column = LOBYTE(lParamSort);
+	bool ascending = HIBYTE(lParamSort) == true;
+
+	int diff = 0;
+
+	switch(column)
+	{
+	case COL_NAME:
+		diff = _wcsicmp(module1->getFilename(), module2->getFilename());
+		break;
+	case COL_IMAGEBASE:
+		diff = module1->modBaseAddr < module2->modBaseAddr ? -1 : 1;
+		break;
+	case COL_IMAGESIZE:
+		diff = module1->modBaseSize < module2->modBaseSize ? -1 : 1;
+		break;
+	case COL_PATH:
+		diff = _wcsicmp(module1->fullPath, module2->fullPath);
+		break;
+	}
+
+	return ascending ? diff : -diff;
 }
