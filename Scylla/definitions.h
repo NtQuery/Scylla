@@ -25,14 +25,4 @@
 
 #define APPVERSION "v0.4"
 
-#define RECOMMENDED_OS "This tool was designed to work with Windows 7 x64"
-#define DEVELOPED "Developed with Microsoft Visual Studio, written in pure C/C++"
-#define CREDIT_DISTORM "This tool uses the diStorm disassembler library v3 -> http://code.google.com/p/distorm/"
-#define CREDIT_YODA "The PE Rebuilder engine is based on the Realign DLL v1.5 by yoda"
-#define CREDIT_SILK "The small icons are taken from the Silk icon package -> http://www.famfamfam.com"
-#define CREDIT_WTL "Windows Template Library v8 is used for the GUI -> http://wtl.sourceforge.net"
-#define GREETINGS "Greetz: metr0, G36KV and all from the gRn Team"
-#define VISIT "Visit  http://kickme.to/grn  and  http://forum.tuts4you.com "
-
-
 #define PLUGIN_MENU_BASE_ID 0x10
