@@ -9,6 +9,7 @@
 #include "PeRebuild.h"
 #include "DllInjectionPlugin.h"
 #include "DisassemblerGui.h"
+#include "PickApiGui.h"
 #include "NativeWinApi.h"
 #include "ImportRebuild.h"
 #include "SystemInformation.h"
@@ -194,6 +195,71 @@ LRESULT MainGui::OnTreeImportsDoubleClick(const NMHDR* pnmh)
 {
 	CPoint pt = GetMessagePos();
 	SetMsgHandled(false);
+
+	if(TreeImports.GetCount() < 1)
+		return false;
+
+	// Get item under cursor
+	CPoint client(GetMessagePos());
+	CWindow(GetDesktopWindow()).MapWindowPoints(TreeImports, &client, 1); // pt is screen, we need client
+	UINT flags;
+	CTreeItem over = TreeImports.HitTest(client, &flags);
+	CTreeItem parent;
+	if(over)
+	{
+		if(!(flags & TVHT_ONITEM))
+		{
+			over = NULL;
+		}
+		else
+		{
+			parent = TreeImports.GetParentItem(over);
+		}
+	}
+
+	if(!over.IsNull() && !parent.IsNull())
+	{
+		PickApiGui dlgPickApi(processAccessHelp.moduleList);
+		if(dlgPickApi.DoModal())
+		{
+			const ApiInfo* api = dlgPickApi.getSelectedApi();
+			if(api && api->module)
+			{
+				std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
+				std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
+
+				iterator1 = importsHandling.moduleList.begin();
+				while(iterator1 != importsHandling.moduleList.end())
+				{
+					if(iterator1->second.hTreeItem == parent)
+					{
+						iterator2 = iterator1->second.thunkList.begin();
+						while(iterator2 != iterator1->second.thunkList.end())
+						{
+							if(iterator2->second.hTreeItem == over)
+							{
+								ImportThunk &imp = iterator2->second;
+								wcscpy_s(imp.moduleName, MAX_PATH, api->module->getFilename());
+								strcpy_s(imp.name, MAX_PATH, api->name);
+								imp.ordinal = api->ordinal;
+								//imp.apiAddressVA = api->va;
+								imp.hint = api->hint;
+								imp.valid = true;
+								imp.suspect = api->isForwarded;
+
+								importsHandling.updateImportInTreeView(&imp, over);
+								break;
+							}
+							iterator2++;
+						}
+						break;
+					}
+					iterator1++;
+				}
+			}
+		}
+	}
+
 	return false;
 }
 

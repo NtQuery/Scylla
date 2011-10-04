@@ -170,6 +170,7 @@
     <ClCompile Include="OptionsGui.cpp" />
     <ClCompile Include="PeDump.cpp" />
     <ClCompile Include="PeRebuild.cpp" />
+    <ClCompile Include="PickApiGui.cpp" />
     <ClCompile Include="PickDllGui.cpp" />
     <ClCompile Include="PluginLoader.cpp" />
     <ClCompile Include="ProcessAccessHelp.cpp" />
@@ -194,6 +195,7 @@
     <ClInclude Include="OptionsGui.h" />
     <ClInclude Include="PeDump.h" />
     <ClInclude Include="PeRebuild.h" />
+    <ClInclude Include="PickApiGui.h" />
     <ClInclude Include="PickDllGui.h" />
     <ClInclude Include="PluginLoader.h" />
     <ClInclude Include="ProcessAccessHelp.h" />
