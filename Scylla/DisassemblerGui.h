@@ -20,7 +20,8 @@ public:
 		MSG_WM_INITDIALOG(OnInitDialog)
 		MSG_WM_CONTEXTMENU(OnContextMenu)
 
-		COMMAND_ID_HANDLER_EX(IDCANCEL, OnCancel)
+		COMMAND_ID_HANDLER_EX(IDCANCEL, OnExit)
+		COMMAND_ID_HANDLER_EX(IDOK, OnExit)
 	END_MSG_MAP()
 
 	DisassemblerGui(DWORD_PTR startAddress);
@@ -55,7 +56,7 @@ protected:
 
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
 	void OnContextMenu(CWindow wnd, CPoint point);
-	void OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void OnExit(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	// GUI functions
 

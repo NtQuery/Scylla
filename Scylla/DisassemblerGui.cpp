@@ -23,45 +23,52 @@ void DisassemblerGui::OnContextMenu(CWindow wnd, CPoint point)
 {
 	if (wnd.GetDlgCtrlID() == IDC_LIST_DISASSEMBLER)
 	{
+		int selection = ListDisassembler.GetSelectionMark();
+		if(selection == -1) // no item selected
+			return;
+
 		if(hMenuDisassembler)
 		{
+			if(point.x == -1 && point.y == -1) // invoked by keyboard
+			{
+				ListDisassembler.EnsureVisible(selection, TRUE);
+				ListDisassembler.GetItemPosition(selection, &point);
+				ListDisassembler.ClientToScreen(&point);
+			}
+
 			CMenuHandle hSub = hMenuDisassembler.GetSubMenu(0);
 
 			BOOL menuItem = hSub.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, point.x, point.y, wnd);
 			if (menuItem)
 			{
-				int selection = ListDisassembler.GetSelectionMark();
-				if (selection != -1) //valid selection?
+				int column = -1;
+				switch (menuItem)
 				{
-					int column = -1;
-					switch (menuItem)
-					{
-					case ID__DIS_ADDRESS:
-						column = COL_ADDRESS;
-						break;
-					case ID__DIS_SIZE:
-						column = COL_INSTRUCTION_SIZE;
-						break;
-					case ID__DIS_OPCODES:
-						column = COL_OPCODES;
-						break;
-					case ID__DIS_INSTRUCTIONS:
-						column = COL_INSTRUCTION;
-						break;
-					}
-					if(column != -1)
-					{
-						tempBuffer[0] = '\0';
-						ListDisassembler.GetItemText(selection, column, tempBuffer, _countof(tempBuffer));
-						copyToClipboard(tempBuffer);
-					}
+				case ID__DIS_ADDRESS:
+					column = COL_ADDRESS;
+					break;
+				case ID__DIS_SIZE:
+					column = COL_INSTRUCTION_SIZE;
+					break;
+				case ID__DIS_OPCODES:
+					column = COL_OPCODES;
+					break;
+				case ID__DIS_INSTRUCTIONS:
+					column = COL_INSTRUCTION;
+					break;
+				}
+				if(column != -1)
+				{
+					tempBuffer[0] = '\0';
+					ListDisassembler.GetItemText(selection, column, tempBuffer, _countof(tempBuffer));
+					copyToClipboard(tempBuffer);
 				}
 			}
 		}
 	}
 }
 
-void DisassemblerGui::OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl)
+void DisassemblerGui::OnExit(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	EndDialog(0);
 }
