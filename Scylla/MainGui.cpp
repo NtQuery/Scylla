@@ -722,14 +722,8 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 		if(over)
 		{
 			TreeImports.EnsureVisible(over);
-			if(!TreeImports.GetItemRect(over, &pos, FALSE))
-			{
-				over = NULL;
-			}
-			else
-			{
-				TreeImports.ClientToScreen(&pos);
-			}
+			TreeImports.GetItemRect(over, &pos, TRUE);
+			TreeImports.ClientToScreen(&pos);
 		}
 		else
 		{
@@ -743,7 +737,7 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 		CPoint client = pt;
 		TreeImports.ScreenToClient(&client);
 		UINT flags;
-		CTreeItem over = TreeImports.HitTest(client, &flags);
+		over = TreeImports.HitTest(client, &flags);
 		if(over && !(flags & TVHT_ONITEM))
 		{
 			over = NULL;
