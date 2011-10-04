@@ -207,7 +207,10 @@
     <ResourceCompile Include="MainGui.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="check.ico" />
+    <None Include="error.ico" />
     <None Include="scylla.ico" />
+    <None Include="warning.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

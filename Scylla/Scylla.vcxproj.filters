@@ -171,5 +171,14 @@
     <None Include="scylla.ico">
       <Filter>Ressourcendateien</Filter>
     </None>
+    <None Include="check.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="error.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
+    <None Include="warning.ico">
+      <Filter>Ressourcendateien</Filter>
+    </None>
   </ItemGroup>
 </Project>

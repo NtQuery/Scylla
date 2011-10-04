@@ -23,7 +23,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 
 		pMainGui = &dlgMain; // o_O
 
-		nRet = dlgMain.DoModal();
+		nRet = (int)dlgMain.DoModal();
 	}
 
 	_Module.Term();

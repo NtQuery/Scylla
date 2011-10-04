@@ -51,7 +51,8 @@ bool ImportRebuild::splitTargetFile()
 			dwSize = 300000000;
 		}
 
-		alignment = alignValue(dwSize, pNTHeader->OptionalHeader.FileAlignment);
+		//TODO better use section alignment because it is better?
+		alignment = alignValue(dwSize, pNTHeader->OptionalHeader.SectionAlignment);
 		data = new BYTE[alignment];
 
 		ZeroMemory(data, alignment);
@@ -448,6 +449,8 @@ DWORD ImportRebuild::calculateMinSize(std::map<DWORD_PTR, ImportModuleThunk> & m
 
 	for ( mapIt = moduleList.begin() ; mapIt != moduleList.end(); mapIt++ )
 	{
+
+		//dwSize += (DWORD)((*mapIt).second.thunkList.size() + sizeof(IMAGE_IMPORT_BY_NAME));
 		dwSize += (DWORD)(wcslen((*mapIt).second.moduleName) + 1);
 
 		for ( mapIt2 = (*mapIt).second.thunkList.begin() ; mapIt2 != (*mapIt).second.thunkList.end(); mapIt2++ )
