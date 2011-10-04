@@ -200,8 +200,8 @@ LRESULT MainGui::OnTreeImportsDoubleClick(const NMHDR* pnmh)
 		return false;
 
 	// Get item under cursor
-	CPoint client(GetMessagePos());
-	CWindow(GetDesktopWindow()).MapWindowPoints(TreeImports, &client, 1); // pt is screen, we need client
+	CPoint client = GetMessagePos();
+	TreeImports.ScreenToClient(&client);
 	UINT flags;
 	CTreeItem over = TreeImports.HitTest(client, &flags);
 	CTreeItem parent;
@@ -713,22 +713,46 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 	if(TreeImports.GetCount() < 1)
 		return;
 
-	// Get item under cursor
-	CPoint client(pt);
-	CWindow(GetDesktopWindow()).MapWindowPoints(TreeImports, &client, 1); // pt is screen, we need client
-	UINT flags;
-	CTreeItem over = TreeImports.HitTest(client, &flags);
-	CTreeItem parent;
-	if(over)
+	CTreeItem over, parent;
+
+	if(pt.x == -1 && pt.y == -1) // invoked by keyboard
 	{
-		if(!(flags & TVHT_ONITEM))
+		CRect pos;
+		over = TreeImports.GetSelectedItem();
+		if(over)
 		{
-			over = NULL;
+			TreeImports.EnsureVisible(over);
+			if(!TreeImports.GetItemRect(over, &pos, FALSE))
+			{
+				over = NULL;
+			}
+			else
+			{
+				TreeImports.ClientToScreen(&pos);
+			}
 		}
 		else
 		{
-			parent = TreeImports.GetParentItem(over);
+			TreeImports.GetWindowRect(&pos);
 		}
+		pt = pos.TopLeft();
+	}
+	else
+	{
+		// Get item under cursor
+		CPoint client = pt;
+		TreeImports.ScreenToClient(&client);
+		UINT flags;
+		CTreeItem over = TreeImports.HitTest(client, &flags);
+		if(over && !(flags & TVHT_ONITEM))
+		{
+			over = NULL;
+		}
+	}
+
+	if(over)
+	{
+		parent = TreeImports.GetParentItem(over);
 	}
 
 	if (hMenuImports)
@@ -778,6 +802,13 @@ void MainGui::DisplayContextMenuLog(CWindow hwnd, CPoint pt)
 {
 	if (hMenuLog)
 	{
+		if(pt.x == -1 && pt.y == -1) // invoked by keyboard
+		{
+			CRect pos;
+			ListLog.GetWindowRect(&pos);
+			pt = pos.TopLeft();
+		}
+
 		CMenuHandle hSub = hMenuLog.GetSubMenu(0);
 		BOOL menuItem = hSub.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
 		if (menuItem)
