@@ -85,6 +85,9 @@ protected:
 	LRESULT OnLink(NMHDR* pnmh);
 	void OnExit(UINT uNotifyCode, int nID, CWindow wndCtl);
 
+	// GUI helpers
+
 	void setupLinks();
+	void setLinkURL(CLinkCtrl& link, const WCHAR* url, int index = 0);
 	void setupTooltip(CToolTipCtrl tooltip, CWindow window, const WCHAR* text);
 };

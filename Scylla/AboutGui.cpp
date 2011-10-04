@@ -24,13 +24,13 @@ BOOL AboutGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	StaticDeveloped.Attach(GetDlgItem(IDC_STATIC_DEVELOPED));
 	StaticGreetings.Attach(GetDlgItem(IDC_STATIC_GREETINGS));
 	StaticYoda.Attach(GetDlgItem(IDC_STATIC_YODA));
-
 	LinkVisit.Attach(GetDlgItem(IDC_SYSLINK_VISIT));
 	LinkDistorm.Attach(GetDlgItem(IDC_SYSLINK_DISTORM));
 	LinkWTL.Attach(GetDlgItem(IDC_SYSLINK_WTL));
 	LinkSilk.Attach(GetDlgItem(IDC_SYSLINK_SILK));
 	LinkLicense.Attach(GetDlgItem(IDC_SYSLINK_LICENSE));
 
+	// Create a bold font for the title
 	LOGFONT lf;
 	CFontHandle font = StaticTitle.GetFont();
 	font.GetLogFont(&lf);
@@ -48,6 +48,7 @@ BOOL AboutGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	CenterWindow();
 
+	// Set focus to the OK button
 	GotoDlgCtrl(GetDlgItem(IDOK));
 	return FALSE;
 }
@@ -76,42 +77,42 @@ void AboutGui::OnExit(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void AboutGui::setupLinks()
 {
-	LITEM item;
-	item.mask = LIF_ITEMINDEX | LIF_URL;
-	item.iLink = 0;
-
-	LinkDistorm.SetWindowText(TEXT_CREDIT_DISTORM);
-	wcscpy_s(item.szUrl, _countof(item.szUrl), URL_DISTORM);
-	LinkDistorm.SetItem(&item);
-
-	LinkWTL.SetWindowText(TEXT_CREDIT_WTL);
-	wcscpy_s(item.szUrl, _countof(item.szUrl), URL_WTL);
-	LinkWTL.SetItem(&item);
-
-	LinkSilk.SetWindowText(TEXT_CREDIT_SILK);
-	wcscpy_s(item.szUrl, _countof(item.szUrl), URL_SILK);
-	LinkSilk.SetItem(&item);
-
-	LinkLicense.SetWindowText(TEXT_LICENSE);
-	wcscpy_s(item.szUrl, _countof(item.szUrl), URL_LICENSE);
-	LinkLicense.SetItem(&item);
-
+	// Set link text (must be set before assigning URLs)
 	LinkVisit.SetWindowText(TEXT_VISIT);
-	wcscpy_s(item.szUrl, _countof(item.szUrl), URL_VISIT1);
-	LinkVisit.SetItem(&item);
-	item.iLink = 1;
-	wcscpy_s(item.szUrl, _countof(item.szUrl), URL_VISIT2);
-	LinkVisit.SetItem(&item);
+	LinkDistorm.SetWindowText(TEXT_CREDIT_DISTORM);
+	LinkWTL.SetWindowText(TEXT_CREDIT_WTL);
+	LinkSilk.SetWindowText(TEXT_CREDIT_SILK);
+	LinkLicense.SetWindowText(TEXT_LICENSE);
 
+	// Assign URLs to anchors in the link text
+	setLinkURL(LinkVisit, URL_VISIT1, 0);
+	setLinkURL(LinkVisit, URL_VISIT2, 1);
+	setLinkURL(LinkDistorm, URL_DISTORM);
+	setLinkURL(LinkWTL, URL_WTL);
+	setLinkURL(LinkSilk, URL_SILK);
+	setLinkURL(LinkLicense, URL_LICENSE);
+
+	// Create tooltips for the links
 	TooltipDistorm.Create(m_hWnd, NULL, NULL, TTS_NOPREFIX, WS_EX_TOPMOST);
 	TooltipWTL.Create(m_hWnd, NULL, NULL, TTS_NOPREFIX, WS_EX_TOPMOST);
 	TooltipSilk.Create(m_hWnd, NULL, NULL, TTS_NOPREFIX, WS_EX_TOPMOST);
 	TooltipLicense.Create(m_hWnd, NULL, NULL, TTS_NOPREFIX, WS_EX_TOPMOST);
 
+	// Assign control and text to the tooltips
 	setupTooltip(TooltipDistorm, LinkDistorm, URL_DISTORM);
 	setupTooltip(TooltipWTL, LinkWTL, URL_WTL);
 	setupTooltip(TooltipSilk, LinkSilk, URL_SILK);
 	setupTooltip(TooltipLicense, LinkLicense, URL_LICENSE);
+}
+
+void AboutGui::setLinkURL(CLinkCtrl& link, const WCHAR* url, int index)
+{
+	LITEM item;
+	item.mask = LIF_ITEMINDEX | LIF_URL;
+	item.iLink = index;
+
+	wcscpy_s(item.szUrl, _countof(item.szUrl), url);
+	link.SetItem(&item);
 }
 
 void AboutGui::setupTooltip(CToolTipCtrl tooltip, CWindow window, const WCHAR* text)
