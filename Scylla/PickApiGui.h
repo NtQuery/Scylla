@@ -33,6 +33,7 @@ public:
 		MSG_WM_SIZE(OnSize)
 
 		COMMAND_HANDLER_EX(IDC_CBO_DLLSELECT, CBN_SELENDOK, OnDllListSelected)
+		COMMAND_HANDLER_EX(IDC_LIST_APISELECT, LBN_DBLCLK, OnApiListDoubleClick)
 		COMMAND_HANDLER_EX(IDC_EDIT_APIFILTER, EN_UPDATE, OnApiFilterUpdated)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_PICKAPI_OK, OnOK)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_PICKAPI_CANCEL, OnCancel)
@@ -76,7 +77,12 @@ protected:
 	void OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	void OnDllListSelected(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void OnApiListDoubleClick(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnApiFilterUpdated(UINT uNotifyCode, int nID, CWindow wndCtl);
+
+	// Actions
+
+	void actionApiSelected();
 
 	// GUI functions
 

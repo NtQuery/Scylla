@@ -31,6 +31,7 @@ public:
 		MSG_WM_SIZE(OnSize)
 
 		NOTIFY_HANDLER_EX(IDC_LIST_DLLSELECT, LVN_COLUMNCLICK, OnListDllColumnClicked)
+		NOTIFY_HANDLER_EX(IDC_LIST_DLLSELECT, NM_DBLCLK, OnListDllDoubleClick)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_PICKDLL_OK, OnOK)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_PICKDLL_CANCEL, OnCancel)
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnCancel)
@@ -78,6 +79,7 @@ protected:
 	void OnSize(UINT nType, CSize size);
 
 	LRESULT OnListDllColumnClicked(NMHDR* pnmh);
+	LRESULT OnListDllDoubleClick(NMHDR* pnmh);
 	void OnOK(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl);
 

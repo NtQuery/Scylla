@@ -81,6 +81,20 @@ LRESULT PickDllGui::OnListDllColumnClicked(NMHDR* pnmh)
 	return 0;
 }
 
+LRESULT PickDllGui::OnListDllDoubleClick(NMHDR* pnmh)
+{
+	NMITEMACTIVATE* ia = (NMITEMACTIVATE*)pnmh;
+	LVHITTESTINFO hti;
+	hti.pt = ia->ptAction;
+	int clicked = ListDLLSelect.HitTest(&hti);
+	if(clicked != -1)
+	{
+		selectedModule = (ModuleInfo *)ListDLLSelect.GetItemData(clicked);
+		EndDialog(1);
+	}
+	return 0;
+}
+
 void PickDllGui::OnOK(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	int index = ListDLLSelect.GetSelectionMark();

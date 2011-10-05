@@ -66,13 +66,7 @@ void PickApiGui::OnSize(UINT nType, CSize size)
 
 void PickApiGui::OnOK(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	int indexDll = ComboDllSelect.GetCurSel();
-	int indexApi = ListApiSelect.GetCurSel();
-	if (indexDll != CB_ERR && indexApi != CB_ERR)
-	{
-		selectedApi = apiListTemp[indexApi];
-		EndDialog(1);
-	}
+	actionApiSelected();
 }
 
 void PickApiGui::OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -89,6 +83,11 @@ void PickApiGui::OnDllListSelected(UINT uNotifyCode, int nID, CWindow wndCtl)
 		fillApiListBox(ListApiSelect, apiListTemp);
 		EditApiFilter.SetWindowText(L"");
 	}
+}
+
+void PickApiGui::OnApiListDoubleClick(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	actionApiSelected();
 }
 
 void PickApiGui::OnApiFilterUpdated(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -133,6 +132,17 @@ void PickApiGui::OnApiFilterUpdated(UINT uNotifyCode, int nID, CWindow wndCtl)
 		}
 
 		fillApiListBox(ListApiSelect, apiListTemp);
+	}
+}
+
+void PickApiGui::actionApiSelected()
+{
+	int indexDll = ComboDllSelect.GetCurSel();
+	int indexApi = ListApiSelect.GetCurSel();
+	if (indexDll != CB_ERR && indexApi != CB_ERR)
+	{
+		selectedApi = apiListTemp[indexApi];
+		EndDialog(1);
 	}
 }
 
