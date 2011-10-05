@@ -5,7 +5,7 @@
 // WTL
 #include <atlbase.h>
 #include <atlapp.h>
-#include <atlctrls.h> // CTreeViewCtrl, CTreeItem
+#include <atlctrls.h> // CTreeViewCtrlEx, CTreeItem
 
 class ImportThunk;
 class ImportModuleThunk;
@@ -19,7 +19,7 @@ public:
 	//bool addFunction(WCHAR * moduleName, char * name, DWORD_PTR va, DWORD_PTR rva, DWORD_PTR ordinal, bool valid, bool suspect);
 	//bool addModule(WCHAR * moduleName, DWORD_PTR firstThunk);
 
-	ImportsHandling(CTreeViewCtrl& TreeImports);
+	ImportsHandling(CTreeViewCtrlEx& TreeImports);
 	~ImportsHandling();
 
 	void displayAllImports();
@@ -38,10 +38,9 @@ public:
 private:
 	DWORD numberOfFunctions;
 
-	WCHAR stringBuffer[600]; // o_O
-	WCHAR tempString[300];
+	WCHAR stringBuffer[600];
 
-	CTreeViewCtrl& TreeImports;
+	CTreeViewCtrlEx& TreeImports;
 	CImageList TreeIcons;
 	CIcon hIconCheck;
 	CIcon hIconWarning;
@@ -54,13 +53,13 @@ private:
 		iconError
 	};
 
-	CTreeItem addDllToTreeView(CTreeViewCtrl& idTreeView, const ImportModuleThunk * importThunk);
-	CTreeItem addApiToTreeView(CTreeViewCtrl& idTreeView, CTreeItem parentDll, const ImportThunk * importThunk);
+	CTreeItem addDllToTreeView(CTreeViewCtrlEx& idTreeView, const ImportModuleThunk * importThunk);
+	CTreeItem addApiToTreeView(CTreeViewCtrlEx& idTreeView, CTreeItem parentDll, const ImportThunk * importThunk);
 	
-	bool isItemSelected(const CTreeViewCtrl& hwndTV, CTreeItem hItem);
-	void unselectItem(CTreeViewCtrl& hwndTV, CTreeItem htItem);
-	bool selectItem(CTreeViewCtrl& hwndTV, CTreeItem hItem, bool select = true);
-	void setFocus(CTreeViewCtrl& hwndTV, CTreeItem htItem);
+	bool isItemSelected(CTreeItem hItem);
+	void unselectItem(CTreeItem htItem);
+	bool selectItem(CTreeItem hItem, bool select = true);
+	void setFocus(CTreeViewCtrlEx& hwndTV, CTreeItem htItem);
 	bool findNewModules(std::map<DWORD_PTR, ImportThunk> & thunkList);
 
 	Icon getAppropiateIcon(const ImportThunk * importThunk);

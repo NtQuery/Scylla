@@ -9,11 +9,24 @@
 #include <atlwin.h>        // ATL GUI classes
 #include <atlcrack.h>      // WTL enhanced msg map macros
 #include <atlctrls.h>      // WTL controls
+#include <atlddx.h>        // WTL dialog data exchange
 
-class AboutGui : public CDialogImpl<AboutGui>
+class AboutGui : public CDialogImpl<AboutGui>, public CWinDataExchange<AboutGui>
 {
 public:
 	enum { IDD = IDD_DLG_ABOUT };
+
+	BEGIN_DDX_MAP(AboutGui)
+		DDX_CONTROL_HANDLE(IDC_STATIC_ABOUT_TITLE, StaticTitle)
+		DDX_CONTROL_HANDLE(IDC_STATIC_DEVELOPED, StaticDeveloped)
+		DDX_CONTROL_HANDLE(IDC_STATIC_GREETINGS, StaticGreetings)
+		DDX_CONTROL_HANDLE(IDC_STATIC_YODA, StaticYoda)
+		DDX_CONTROL_HANDLE(IDC_SYSLINK_VISIT, LinkVisit)
+		DDX_CONTROL_HANDLE(IDC_SYSLINK_DISTORM, LinkDistorm)
+		DDX_CONTROL_HANDLE(IDC_SYSLINK_WTL, LinkWTL)
+		DDX_CONTROL_HANDLE(IDC_SYSLINK_SILK, LinkSilk)
+		DDX_CONTROL_HANDLE(IDC_SYSLINK_LICENSE, LinkLicense)
+	END_DDX_MAP()
 
 	BEGIN_MSG_MAP(AboutGui)
 		MSG_WM_INITDIALOG(OnInitDialog)

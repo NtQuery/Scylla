@@ -58,13 +58,7 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	processAccessHelp.getProcessModules(GetCurrentProcessId(), processAccessHelp.ownModuleList);
 
-	TreeImports.Attach(GetDlgItem(IDC_TREE_IMPORTS));
-	ComboProcessList.Attach(GetDlgItem(IDC_CBO_PROCESSLIST));
-	ListLog.Attach(GetDlgItem(IDC_LIST_LOG));
-
-	EditOEPAddress.Attach(GetDlgItem(IDC_EDIT_OEPADDRESS));
-	EditIATAddress.Attach(GetDlgItem(IDC_EDIT_IATADDRESS));
-	EditIATSize.Attach(GetDlgItem(IDC_EDIT_IATSIZE));
+	DoDataExchange(); // attach controls
 
 	EditOEPAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
 	EditIATAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
@@ -83,8 +77,7 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 void MainGui::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 {
-	lpMMI->ptMinTrackSize.x = minDlgSize.Width();
-	lpMMI->ptMinTrackSize.y = minDlgSize.Height();
+	lpMMI->ptMinTrackSize = CPoint(minDlgSize.Size());
 }
 
 void MainGui::OnSizing(UINT fwSide, RECT* pRect)
@@ -94,11 +87,7 @@ void MainGui::OnSizing(UINT fwSide, RECT* pRect)
 	GetWindowRect(&rectOld);
 	CRect rectNew = *pRect;
 
-	int deltaX = rectNew.Width() - rectOld.Width();
-	int deltaY = rectNew.Height() - rectOld.Height();
-
-	CSize delta(deltaX, deltaY);
-	sizeOffset = delta;
+	sizeOffset = rectNew.Size() - rectOld.Size();
 }
 
 void MainGui::OnSize(UINT nType, CSize size)
@@ -193,7 +182,6 @@ LRESULT MainGui::OnTreeImportsClick(const NMHDR* pnmh)
 
 LRESULT MainGui::OnTreeImportsDoubleClick(const NMHDR* pnmh)
 {
-	CPoint pt = GetMessagePos();
 	SetMsgHandled(false);
 
 	if(TreeImports.GetCount() < 1)
@@ -213,7 +201,7 @@ LRESULT MainGui::OnTreeImportsDoubleClick(const NMHDR* pnmh)
 		}
 		else
 		{
-			parent = TreeImports.GetParentItem(over);
+			parent = over.GetParent();
 		}
 	}
 
@@ -721,8 +709,8 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 		over = TreeImports.GetSelectedItem();
 		if(over)
 		{
-			TreeImports.EnsureVisible(over);
-			TreeImports.GetItemRect(over, &pos, TRUE);
+			over.EnsureVisible();
+			over.GetRect(&pos, TRUE);
 			TreeImports.ClientToScreen(&pos);
 		}
 		else
@@ -746,7 +734,7 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 
 	if(over)
 	{
-		parent = TreeImports.GetParentItem(over);
+		parent = over.GetParent();
 	}
 
 	if (hMenuImports)

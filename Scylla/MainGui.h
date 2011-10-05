@@ -10,6 +10,7 @@
 #include <atlmisc.h>       // WTL utility classes like CString
 #include <atlcrack.h>      // WTL enhanced msg map macros
 #include <atlctrls.h>      // WTL controls
+#include <atlddx.h>        // WTL dialog data exchange
 
 //#define _CRTDBG_MAP_ALLOC
 //#include <cstdlib>
@@ -23,10 +24,19 @@
 #include "PickDllGui.h"
 #include "ImportsHandling.h"
 
-class MainGui : public CDialogImpl<MainGui>
+class MainGui : public CDialogImpl<MainGui>, public CWinDataExchange<MainGui>
 {
 public:
 	enum { IDD = IDD_DLG_MAIN };
+
+	BEGIN_DDX_MAP(MainGui)
+		DDX_CONTROL_HANDLE(IDC_TREE_IMPORTS, TreeImports)
+		DDX_CONTROL_HANDLE(IDC_CBO_PROCESSLIST, ComboProcessList)
+		DDX_CONTROL_HANDLE(IDC_LIST_LOG, ListLog)
+		DDX_CONTROL_HANDLE(IDC_EDIT_OEPADDRESS, EditOEPAddress)
+		DDX_CONTROL_HANDLE(IDC_EDIT_IATADDRESS, EditIATAddress)
+		DDX_CONTROL_HANDLE(IDC_EDIT_IATSIZE, EditIATSize)
+	END_DDX_MAP()
 
 	BEGIN_MSG_MAP(MainGui)
 		MSG_WM_INITDIALOG(OnInitDialog)
@@ -101,7 +111,7 @@ protected:
 
 	// Controls
 
-	CTreeViewCtrl TreeImports;
+	CTreeViewCtrlEx TreeImports;
 	CComboBox ComboProcessList;
 	CEdit EditOEPAddress;
 	CEdit EditIATAddress;

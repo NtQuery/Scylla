@@ -10,14 +10,21 @@
 #include <atlmisc.h>       // WTL utility classes like CString
 #include <atlcrack.h>      // WTL enhanced msg map macros
 #include <atlctrls.h>      // WTL controls
+#include <atlddx.h>        // WTL dialog data exchange
 
 #include <vector>
 #include "ProcessAccessHelp.h"
 
-class PickApiGui : public CDialogImpl<PickApiGui>
+class PickApiGui : public CDialogImpl<PickApiGui>, public CWinDataExchange<PickApiGui>
 {
 public:
 	enum { IDD = IDD_DLG_PICKAPI };
+
+	BEGIN_DDX_MAP(PickApiGui)
+		DDX_CONTROL_HANDLE(IDC_CBO_DLLSELECT, ComboDllSelect)
+		DDX_CONTROL_HANDLE(IDC_LIST_APISELECT, ListApiSelect)
+		DDX_CONTROL_HANDLE(IDC_EDIT_APIFILTER, EditApiFilter)
+	END_DDX_MAP()
 
 	BEGIN_MSG_MAP(PickDllGui)
 		MSG_WM_INITDIALOG(OnInitDialog)
@@ -75,6 +82,4 @@ protected:
 
 	void fillDllComboBox(CComboBox& combo);
 	void fillApiListBox(CListBox& list, const std::vector<ApiInfo *> &apis);
-
-	//void displayModuleList(CListViewCtrl& list);
 };

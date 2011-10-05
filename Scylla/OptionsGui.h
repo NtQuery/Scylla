@@ -9,13 +9,18 @@
 #include <atlwin.h>        // ATL GUI classes
 #include <atlcrack.h>      // WTL enhanced msg map macros
 #include <atlctrls.h>      // WTL controls
+#include <atlddx.h>        // WTL dialog data exchange
 
 class ConfigObject;
 
-class OptionsGui : public CDialogImpl<OptionsGui>
+class OptionsGui : public CDialogImpl<OptionsGui>, public CWinDataExchange<OptionsGui>
 {
 public:
 	enum { IDD = IDD_DLG_OPTIONS };
+
+	BEGIN_DDX_MAP(OptionsGui)
+		DDX_CONTROL_HANDLE(IDC_OPTIONS_SECTIONNAME, EditSectionName)
+	END_DDX_MAP()
 
 	BEGIN_MSG_MAP(OptionsGui)
 		MSG_WM_INITDIALOG(OnInitDialog)

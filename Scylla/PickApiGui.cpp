@@ -11,9 +11,7 @@ PickApiGui::PickApiGui(const std::vector<ModuleInfo> &moduleList) : moduleList(m
 
 BOOL PickApiGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
-	ComboDllSelect.Attach(GetDlgItem(IDC_CBO_DLLSELECT));
-	ListApiSelect.Attach(GetDlgItem(IDC_LIST_APISELECT));
-	EditApiFilter.Attach(GetDlgItem(IDC_EDIT_APIFILTER));
+	DoDataExchange(); // attach controls
 
 	fillDllComboBox(ComboDllSelect);
 
@@ -29,8 +27,7 @@ BOOL PickApiGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 void PickApiGui::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 {
-	lpMMI->ptMinTrackSize.x = minDlgSize.Width();
-	lpMMI->ptMinTrackSize.y = minDlgSize.Height();
+	lpMMI->ptMinTrackSize = CPoint(minDlgSize.Size());
 }
 
 void PickApiGui::OnSizing(UINT fwSide, RECT* pRect)
@@ -40,11 +37,7 @@ void PickApiGui::OnSizing(UINT fwSide, RECT* pRect)
 	GetWindowRect(&rectOld);
 	CRect rectNew = *pRect;
 
-	int deltaX = rectNew.Width() - rectOld.Width();
-	int deltaY = rectNew.Height() - rectOld.Height();
-
-	CSize delta(deltaX, deltaY);
-	sizeOffset = delta;
+	sizeOffset = rectNew.Size() - rectOld.Size();
 }
 
 void PickApiGui::OnSize(UINT nType, CSize size)

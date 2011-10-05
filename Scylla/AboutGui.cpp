@@ -20,15 +20,7 @@ const WCHAR AboutGui::URL_LICENSE[] = L"http://www.gnu.org/licenses/gpl-3.0.html
 
 BOOL AboutGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
-	StaticTitle.Attach(GetDlgItem(IDC_STATIC_ABOUT_TITLE));
-	StaticDeveloped.Attach(GetDlgItem(IDC_STATIC_DEVELOPED));
-	StaticGreetings.Attach(GetDlgItem(IDC_STATIC_GREETINGS));
-	StaticYoda.Attach(GetDlgItem(IDC_STATIC_YODA));
-	LinkVisit.Attach(GetDlgItem(IDC_SYSLINK_VISIT));
-	LinkDistorm.Attach(GetDlgItem(IDC_SYSLINK_DISTORM));
-	LinkWTL.Attach(GetDlgItem(IDC_SYSLINK_WTL));
-	LinkSilk.Attach(GetDlgItem(IDC_SYSLINK_SILK));
-	LinkLicense.Attach(GetDlgItem(IDC_SYSLINK_LICENSE));
+	DoDataExchange(); // attach controls
 
 	// Create a bold font for the title
 	LOGFONT lf;

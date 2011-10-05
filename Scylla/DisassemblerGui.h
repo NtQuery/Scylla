@@ -10,11 +10,16 @@
 #include <atlmisc.h>       // WTL utility classes like CString
 #include <atlcrack.h>      // WTL enhanced msg map macros
 #include <atlctrls.h>      // WTL controls
+#include <atlddx.h>        // WTL dialog data exchange
 
-class DisassemblerGui : public CDialogImpl<DisassemblerGui>
+class DisassemblerGui : public CDialogImpl<DisassemblerGui>, public CWinDataExchange<DisassemblerGui>
 {
 public:
 	enum { IDD = IDD_DLG_DISASSEMBLER };
+
+	BEGIN_DDX_MAP(DisassemblerGui)
+		DDX_CONTROL_HANDLE(IDC_LIST_DISASSEMBLER, ListDisassembler)
+	END_DDX_MAP()
 
 	BEGIN_MSG_MAP(DisassemblerGui)
 		MSG_WM_INITDIALOG(OnInitDialog)

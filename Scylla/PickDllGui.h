@@ -10,14 +10,19 @@
 #include <atlmisc.h>       // WTL utility classes like CString
 #include <atlcrack.h>      // WTL enhanced msg map macros
 #include <atlctrls.h>      // WTL controls
+#include <atlddx.h>        // WTL dialog data exchange
 
 #include <vector>
 #include "ProcessAccessHelp.h"
 
-class PickDllGui : public CDialogImpl<PickDllGui>
+class PickDllGui : public CDialogImpl<PickDllGui>, public CWinDataExchange<PickDllGui>
 {
 public:
 	enum { IDD = IDD_DLG_PICKDLL };
+
+	BEGIN_DDX_MAP(PickDllGui)
+		DDX_CONTROL_HANDLE(IDC_LIST_DLLSELECT, ListDLLSelect)
+	END_DDX_MAP()
 
 	BEGIN_MSG_MAP(PickDllGui)
 		MSG_WM_INITDIALOG(OnInitDialog)

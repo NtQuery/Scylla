@@ -4,7 +4,8 @@
 
 BOOL OptionsGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
-	EditSectionName.Attach(GetDlgItem(IDC_OPTIONS_SECTIONNAME));
+	DoDataExchange(); // attach controls
+
 	EditSectionName.LimitText(IMAGE_SIZEOF_SHORT_NAME);
 
 	loadOptions();

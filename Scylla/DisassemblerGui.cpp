@@ -9,7 +9,7 @@ DisassemblerGui::DisassemblerGui(DWORD_PTR startAddress) : startAddress(startAdd
 
 BOOL DisassemblerGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
-	ListDisassembler.Attach(GetDlgItem(IDC_LIST_DISASSEMBLER));
+	DoDataExchange(); // attach controls
 
 	addColumnsToDisassembler(ListDisassembler);
 	displayDisassembly(ListDisassembler);

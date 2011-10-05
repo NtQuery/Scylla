@@ -13,7 +13,7 @@ PickDllGui::PickDllGui(std::vector<ModuleInfo> &moduleList) : moduleList(moduleL
 
 BOOL PickDllGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
-	ListDLLSelect.Attach(GetDlgItem(IDC_LIST_DLLSELECT));
+	DoDataExchange(); // attach controls
 
 	addColumnsToModuleList(ListDLLSelect);
 	displayModuleList(ListDLLSelect);
@@ -30,8 +30,7 @@ BOOL PickDllGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 void PickDllGui::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 {
-	lpMMI->ptMinTrackSize.x = minDlgSize.Width();
-	lpMMI->ptMinTrackSize.y = minDlgSize.Height();
+	lpMMI->ptMinTrackSize = CPoint(minDlgSize.Size());
 }
 
 void PickDllGui::OnSizing(UINT fwSide, RECT* pRect)
@@ -41,11 +40,7 @@ void PickDllGui::OnSizing(UINT fwSide, RECT* pRect)
 	GetWindowRect(&rectOld);
 	CRect rectNew = *pRect;
 
-	int deltaX = rectNew.Width() - rectOld.Width();
-	int deltaY = rectNew.Height() - rectOld.Height();
-
-	CSize delta(deltaX, deltaY);
-	sizeOffset = delta;
+	sizeOffset = rectNew.Size() - rectOld.Size();
 }
 
 void PickDllGui::OnSize(UINT nType, CSize size)
@@ -70,15 +65,15 @@ LRESULT PickDllGui::OnListDllColumnClicked(NMHDR* pnmh)
 	NMLISTVIEW* list = (NMLISTVIEW*)pnmh;
 	int column = list->iSubItem;
 
-    if(column == prevColumn)
+	if(column == prevColumn)
 	{
-        ascending = !ascending;
+		ascending = !ascending;
 	}
-    else
-    {
+	else
+	{
 		prevColumn = column;
-        ascending = true;
-    }
+		ascending = true;
+	}
 
 	// lo-byte: column, hi-byte: sort-order
 	ListDLLSelect.SortItems(&listviewCompareFunc, MAKEWORD(column, ascending));
