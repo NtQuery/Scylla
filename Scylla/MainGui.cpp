@@ -17,6 +17,8 @@
 #include "OptionsGui.h"
 #include "WindowDeferrer.h"
 
+extern CAppModule _Module; // o_O
+
 const WCHAR MainGui::filterExe[] = L"Executable (*.exe)\0*.exe\0All files\0*.*\0";
 const WCHAR MainGui::filterDll[] = L"Dynamic Link Library (*.dll)\0*.dll\0All files\0*.*\0";
 const WCHAR MainGui::filterExeDll[] = L"Executable (*.exe)\0*.exe\0Dynamic Link Library (*.dll)\0*.dll\0All files\0*.*\0";
@@ -38,6 +40,13 @@ MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports), TreeImpor
 	{
 		appendPluginListToMenu(hMenuImports.GetSubMenu(0));
 	}
+
+	accelerators.LoadAccelerators(IDR_ACCELERATOR_MAIN);
+}
+
+BOOL MainGui::PreTranslateMessage(MSG* pMsg)
+{
+	return accelerators.TranslateAccelerator(m_hWnd, pMsg);
 }
 
 BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
@@ -61,6 +70,9 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	DoDataExchange(); // attach controls
 	TreeImportsSubclass.SubclassWindow(TreeImports);
 
+	CMessageLoop* pLoop = _Module.GetMessageLoop();
+	pLoop->AddMessageFilter(this);
+
 	EditOEPAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
 	EditIATAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
 	EditIATSize.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
@@ -74,6 +86,11 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	GetWindowRect(&minDlgSize);
 
 	return TRUE;
+}
+
+void MainGui::OnDestroy()
+{
+	PostQuitMessage(0);
 }
 
 void MainGui::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
@@ -175,13 +192,12 @@ void MainGui::OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl)
 	SetMsgHandled(FALSE);
 }
 
-/*
 LRESULT MainGui::OnTreeImportsClick(const NMHDR* pnmh)
 {
 	SetMsgHandled(FALSE);
 	return 0;
 }
-*/
+
 LRESULT MainGui::OnTreeImportsDoubleClick(const NMHDR* pnmh)
 {
 	if(TreeImports.GetCount() < 1)
@@ -213,7 +229,6 @@ LRESULT MainGui::OnTreeImportsDoubleClick(const NMHDR* pnmh)
 	return 0;
 }
 
-/*
 LRESULT MainGui::OnTreeImportsRightClick(const NMHDR* pnmh)
 {
 	SetMsgHandled(FALSE);
@@ -225,7 +240,6 @@ LRESULT MainGui::OnTreeImportsRightDoubleClick(const NMHDR* pnmh)
 	SetMsgHandled(FALSE);
 	return 0;
 }
-*/
 
 LRESULT MainGui::OnTreeImportsOnKey(const NMHDR* pnmh)
 {
@@ -370,7 +384,7 @@ void MainGui::OnAutotrace(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void MainGui::OnExit(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	EndDialog(0);
+	DestroyWindow();
 }
 
 void MainGui::OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -454,6 +468,8 @@ void MainGui::pickApiActionHandler(CTreeItem item)
 	if(parent.IsNull())
 		return;
 
+	// TODO: new node when user picked an API from another DLL?
+
 	PickApiGui dlgPickApi(processAccessHelp.moduleList);
 	if(dlgPickApi.DoModal())
 	{
@@ -477,7 +493,7 @@ void MainGui::pickApiActionHandler(CTreeItem item)
 							wcscpy_s(imp.moduleName, MAX_PATH, api->module->getFilename());
 							strcpy_s(imp.name, MAX_PATH, api->name);
 							imp.ordinal = api->ordinal;
-							//imp.apiAddressVA = api->va;
+							//imp.apiAddressVA = api->va; //??
 							imp.hint = api->hint;
 							imp.valid = true;
 							imp.suspect = api->isForwarded;

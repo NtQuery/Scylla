@@ -24,7 +24,14 @@
 #include "PickDllGui.h"
 #include "ImportsHandling.h"
 
-class MainGui : public CDialogImpl<MainGui>, public CWinDataExchange<MainGui>
+/*
+TODO: Multiselect treeview:
+	- GetSelectedCount(), GetFirstSelected(), GetNextSelected(), GetAllSelected() -> vector, SetSelection(), AddSelection(), ClearSelection()
+	- pass vector of items to cutThunk for 'Cut selected thunks' menu item
+	- otherwise use GetFirstSelected
+*/
+
+class MainGui : public CDialogImpl<MainGui>, public CWinDataExchange<MainGui>, public CMessageFilter
 {
 public:
 	enum { IDD = IDD_DLG_MAIN };
@@ -41,11 +48,12 @@ public:
 	BEGIN_MSG_MAP_EX(MainGui)
 
 		MSG_WM_INITDIALOG(OnInitDialog)
+		MSG_WM_DESTROY(OnDestroy)
 		MSG_WM_GETMINMAXINFO(OnGetMinMaxInfo)
 		MSG_WM_SIZING(OnSizing)
 		MSG_WM_SIZE(OnSize)
 		MSG_WM_CONTEXTMENU(OnContextMenu)
-		MSG_WM_LBUTTONDOWN(OnLButtonDown)
+		//MSG_WM_LBUTTONDOWN(OnLButtonDown)
 		MSG_WM_COMMAND(OnCommand)
 
 		//NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_CLICK, OnTreeImportsClick)
@@ -130,6 +138,8 @@ protected:
 	CRect minDlgSize;
 	CSize sizeOffset;
 
+	CAccelerator accelerators;
+
 	// Handles
 
 	CIcon hIcon;
@@ -142,9 +152,12 @@ protected:
 
 protected:
 
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
+
 	// Message handlers
 
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
+	void OnDestroy();
 	void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 	void OnSizing(UINT fwSide, const RECT* pRect);
 	void OnSize(UINT nType, CSize size);
@@ -152,10 +165,10 @@ protected:
 	void OnContextMenu(CWindow wnd, CPoint point);
 	void OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl);
 
-	//LRESULT OnTreeImportsClick(const NMHDR* pnmh);
+	LRESULT OnTreeImportsClick(const NMHDR* pnmh);
 	LRESULT OnTreeImportsDoubleClick(const NMHDR* pnmh);
-	//LRESULT OnTreeImportsRightClick(const NMHDR* pnmh);
-	//LRESULT OnTreeImportsRightDoubleClick(const NMHDR* pnmh);
+	LRESULT OnTreeImportsRightClick(const NMHDR* pnmh);
+	LRESULT OnTreeImportsRightDoubleClick(const NMHDR* pnmh);
 	LRESULT OnTreeImportsOnKey(const NMHDR* pnmh);
 
 	UINT OnTreeImportsSubclassGetDlgCode(const MSG * lpMsg);

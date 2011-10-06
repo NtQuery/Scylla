@@ -20,10 +20,15 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 	// BLOCK: Run application
 	{
 		MainGui dlgMain;
-
 		pMainGui = &dlgMain; // o_O
 
-		nRet = (int)dlgMain.DoModal();
+		CMessageLoop loop;
+		_Module.AddMessageLoop(&loop);
+
+		dlgMain.Create(GetDesktopWindow());
+		dlgMain.ShowWindow(SW_SHOW);
+
+		loop.Run();
 	}
 
 	_Module.Term();
