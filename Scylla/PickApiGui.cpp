@@ -79,8 +79,7 @@ void PickApiGui::OnDllListSelected(UINT uNotifyCode, int nID, CWindow wndCtl)
 	int indexDll = ComboDllSelect.GetCurSel();
 	if (indexDll != CB_ERR)
 	{
-		apiListTemp = moduleList[indexDll].apiList;
-		fillApiListBox(ListApiSelect, apiListTemp);
+		fillApiListBox(ListApiSelect, moduleList[indexDll].apiList);
 		EditApiFilter.SetWindowText(L"");
 	}
 }
@@ -92,56 +91,63 @@ void PickApiGui::OnApiListDoubleClick(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void PickApiGui::OnApiFilterUpdated(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	// remove from apiListTemp that don't fit
 	int indexDll = ComboDllSelect.GetCurSel();
-	if (indexDll != CB_ERR)
+	if (indexDll == CB_ERR)
+		return;
+
+	std::vector<ApiInfo *> newApis;
+	WCHAR filter[MAX_PATH];
+
+	int lenFilter = EditApiFilter.GetWindowText(filter, _countof(filter));
+	if(lenFilter > 0)
 	{
-		WCHAR filter[MAX_PATH];
-		int lenFilter = EditApiFilter.GetWindowText(filter, _countof(filter));
-		if(lenFilter > 0)
+		const std::vector<ApiInfo *> &apis = moduleList[indexDll].apiList;
+
+		for (size_t i = 0; i < apis.size(); i++)
 		{
-			apiListTemp.clear();
-
-			const std::vector<ApiInfo *> &apis = moduleList[indexDll].apiList;
-
-			for (size_t i = 0; i < apis.size(); i++)
+			ApiInfo* api = apis[i];
+			if(api->name[0] != '\0')
 			{
-				ApiInfo* api = apis[i];
-				if(api->name[0] != '\0')
+				CA2WEX<MAX_PATH> wStr(api->name);
+				if(!_wcsnicmp(wStr, filter, lenFilter))
 				{
-					CA2WEX<MAX_PATH> wStr(api->name);
-					if(!_wcsnicmp(wStr, filter, lenFilter))
-					{
-						apiListTemp.push_back(api);
-					}
+					newApis.push_back(api);
 				}
-				else
+			}
+			else
+			{
+				WCHAR buf[6];
+				swprintf_s(buf, _countof(buf), L"#%04X", api->ordinal);
+				if(!_wcsnicmp(buf, filter, lenFilter))
 				{
-					WCHAR buf[6];
-					swprintf_s(buf, _countof(buf), L"#%04X", api->ordinal);
-					if(!_wcsnicmp(buf, filter, lenFilter))
-					{
-						apiListTemp.push_back(api);
-					}
+					newApis.push_back(api);
 				}
 			}
 		}
-		else
-		{
-			apiListTemp = moduleList[indexDll].apiList;
-		}
-
-		fillApiListBox(ListApiSelect, apiListTemp);
 	}
+	else
+	{
+		newApis = moduleList[indexDll].apiList;
+	}
+
+	fillApiListBox(ListApiSelect, newApis);
 }
 
 void PickApiGui::actionApiSelected()
 {
 	int indexDll = ComboDllSelect.GetCurSel();
-	int indexApi = ListApiSelect.GetCurSel();
-	if (indexDll != CB_ERR && indexApi != CB_ERR)
+	int indexApi;
+	if(ListApiSelect.GetCount() == 1)
 	{
-		selectedApi = apiListTemp[indexApi];
+		indexApi = 0;
+	}
+	else
+	{
+		indexApi = ListApiSelect.GetCurSel();
+	}
+	if (indexDll != CB_ERR && indexApi != LB_ERR)
+	{
+		selectedApi = (ApiInfo *)ListApiSelect.GetItemData(indexApi);
 		EndDialog(1);
 	}
 }
@@ -163,16 +169,18 @@ void PickApiGui::fillApiListBox(CListBox& list, const std::vector<ApiInfo *> &ap
 	for (size_t i = 0; i < apis.size(); i++)
 	{
 		const ApiInfo* api = apis[i];
+		int item;
 		if(api->name[0] != '\0')
 		{
 			CA2WEX<MAX_PATH> wStr(api->name);
-			list.AddString(wStr);
+			item = list.AddString(wStr);
 		}
 		else
 		{
 			WCHAR buf[6];
 			swprintf_s(buf, _countof(buf), L"#%04X", api->ordinal);
-			list.AddString(buf);
+			item = list.AddString(buf);
 		}
+		list.SetItemData(item, (DWORD_PTR)api);
 	}
 }

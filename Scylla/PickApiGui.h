@@ -49,7 +49,6 @@ protected:
 	// Variables
 
 	const std::vector<ModuleInfo> &moduleList;
-	std::vector<ApiInfo *> apiListTemp;
 	ApiInfo* selectedApi;
 
 	// Controls
