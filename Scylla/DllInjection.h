@@ -2,7 +2,6 @@
 #include <Commctrl.h>
 #include <stdio.h>
 #include <map>
-#include <Windowsx.h>
 
 
 class DllInjection {

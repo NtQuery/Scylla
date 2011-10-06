@@ -38,7 +38,8 @@ public:
 		DDX_CONTROL_HANDLE(IDC_EDIT_IATSIZE, EditIATSize)
 	END_DDX_MAP()
 
-	BEGIN_MSG_MAP(MainGui)
+	BEGIN_MSG_MAP_EX(MainGui)
+
 		MSG_WM_INITDIALOG(OnInitDialog)
 		MSG_WM_GETMINMAXINFO(OnGetMinMaxInfo)
 		MSG_WM_SIZING(OnSizing)
@@ -47,10 +48,11 @@ public:
 		MSG_WM_LBUTTONDOWN(OnLButtonDown)
 		MSG_WM_COMMAND(OnCommand)
 
-		NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_CLICK, OnTreeImportsClick)
+		//NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_CLICK, OnTreeImportsClick)
 		NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_DBLCLK, OnTreeImportsDoubleClick)
-		NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_RCLICK, OnTreeImportsRightClick)
-		NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_RDBLCLK, OnTreeImportsRightDoubleClick)
+		//NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_RCLICK, OnTreeImportsRightClick)
+		//NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_RDBLCLK, OnTreeImportsRightDoubleClick)
+		NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, TVN_KEYDOWN, OnTreeImportsOnKey)
 
 		COMMAND_HANDLER_EX(IDC_CBO_PROCESSLIST, CBN_DROPDOWN, OnProcessListDrop)
 		COMMAND_HANDLER_EX(IDC_CBO_PROCESSLIST, CBN_SELENDOK, OnProcessListSelected)
@@ -83,6 +85,11 @@ public:
 		COMMAND_ID_HANDLER_EX(ID_HELP_ABOUT, OnAbout)
 
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnExit)
+
+	ALT_MSG_MAP(IDC_TREE_IMPORTS)
+
+		MSG_WM_GETDLGCODE(OnTreeImportsSubclassGetDlgCode)
+
 	END_MSG_MAP()
 
 	MainGui();
@@ -118,6 +125,8 @@ protected:
 	CEdit EditIATSize;
 	CListBox ListLog;
 
+	CContainedWindow TreeImportsSubclass;
+
 	CRect minDlgSize;
 	CSize sizeOffset;
 
@@ -137,16 +146,19 @@ protected:
 
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
 	void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
-	void OnSizing(UINT fwSide, RECT* pRect);
+	void OnSizing(UINT fwSide, const RECT* pRect);
 	void OnSize(UINT nType, CSize size);
 	void OnLButtonDown(UINT nFlags, CPoint point);
 	void OnContextMenu(CWindow wnd, CPoint point);
 	void OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl);
 
-	LRESULT OnTreeImportsClick(const NMHDR* pnmh);
+	//LRESULT OnTreeImportsClick(const NMHDR* pnmh);
 	LRESULT OnTreeImportsDoubleClick(const NMHDR* pnmh);
-	LRESULT OnTreeImportsRightClick(const NMHDR* pnmh);
-	LRESULT OnTreeImportsRightDoubleClick(const NMHDR* pnmh);
+	//LRESULT OnTreeImportsRightClick(const NMHDR* pnmh);
+	//LRESULT OnTreeImportsRightDoubleClick(const NMHDR* pnmh);
+	LRESULT OnTreeImportsOnKey(const NMHDR* pnmh);
+
+	UINT OnTreeImportsSubclassGetDlgCode(const MSG * lpMsg);
 
 	void OnProcessListDrop(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnProcessListSelected(UINT uNotifyCode, int nID, CWindow wndCtl);
@@ -183,6 +195,7 @@ protected:
 	// Actions
 
 	void pickDllActionHandler();
+	void pickApiActionHandler(CTreeItem item);
 	void processSelectedActionHandler(int index);
 	void showInvalidImportsActionHandler();
 	void showSuspectImportsActionHandler();

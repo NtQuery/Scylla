@@ -22,7 +22,7 @@ const WCHAR MainGui::filterDll[] = L"Dynamic Link Library (*.dll)\0*.dll\0All fi
 const WCHAR MainGui::filterExeDll[] = L"Executable (*.exe)\0*.exe\0Dynamic Link Library (*.dll)\0*.dll\0All files\0*.*\0";
 const WCHAR MainGui::filterTxt[] = L"Text file (*.txt)\0*.txt\0All files\0*.*\0";
 
-MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports)
+MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports), TreeImportsSubclass(this, IDC_TREE_IMPORTS)
 {
 	Logger::getDebugLogFilePath();
 	ConfigurationHolder::loadConfiguration();
@@ -59,6 +59,7 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	processAccessHelp.getProcessModules(GetCurrentProcessId(), processAccessHelp.ownModuleList);
 
 	DoDataExchange(); // attach controls
+	TreeImportsSubclass.SubclassWindow(TreeImports);
 
 	EditOEPAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
 	EditIATAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
@@ -80,7 +81,7 @@ void MainGui::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 	lpMMI->ptMinTrackSize = CPoint(minDlgSize.Size());
 }
 
-void MainGui::OnSizing(UINT fwSide, RECT* pRect)
+void MainGui::OnSizing(UINT fwSide, const RECT* pRect)
 {
 	// Get size difference
 	CRect rectOld;
@@ -138,7 +139,7 @@ void MainGui::OnSize(UINT nType, CSize size)
 
 void MainGui::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	SetMsgHandled(false);
+	SetMsgHandled(FALSE);
 }
 
 void MainGui::OnContextMenu(CWindow wnd, CPoint point)
@@ -157,7 +158,7 @@ void MainGui::OnContextMenu(CWindow wnd, CPoint point)
 	//	return;
 	}
 
-	SetMsgHandled(false);
+	SetMsgHandled(FALSE);
 }
 
 void MainGui::OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -171,21 +172,20 @@ void MainGui::OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl)
 			return;
 		}
 	}
-	SetMsgHandled(false);
+	SetMsgHandled(FALSE);
 }
 
+/*
 LRESULT MainGui::OnTreeImportsClick(const NMHDR* pnmh)
 {
-	SetMsgHandled(false);
-	return false;
+	SetMsgHandled(FALSE);
+	return 0;
 }
-
+*/
 LRESULT MainGui::OnTreeImportsDoubleClick(const NMHDR* pnmh)
 {
-	SetMsgHandled(false);
-
 	if(TreeImports.GetCount() < 1)
-		return false;
+		return 0;
 
 	// Get item under cursor
 	CPoint client = GetMessagePos();
@@ -207,67 +207,75 @@ LRESULT MainGui::OnTreeImportsDoubleClick(const NMHDR* pnmh)
 
 	if(!over.IsNull() && !parent.IsNull())
 	{
-		PickApiGui dlgPickApi(processAccessHelp.moduleList);
-		if(dlgPickApi.DoModal())
-		{
-			const ApiInfo* api = dlgPickApi.getSelectedApi();
-			if(api && api->module)
-			{
-				std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
-				std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
-
-				iterator1 = importsHandling.moduleList.begin();
-				while(iterator1 != importsHandling.moduleList.end())
-				{
-					if(iterator1->second.hTreeItem == parent)
-					{
-						iterator2 = iterator1->second.thunkList.begin();
-						while(iterator2 != iterator1->second.thunkList.end())
-						{
-							if(iterator2->second.hTreeItem == over)
-							{
-								ImportThunk &imp = iterator2->second;
-								wcscpy_s(imp.moduleName, MAX_PATH, api->module->getFilename());
-								strcpy_s(imp.name, MAX_PATH, api->name);
-								imp.ordinal = api->ordinal;
-								//imp.apiAddressVA = api->va;
-								imp.hint = api->hint;
-								imp.valid = true;
-								imp.suspect = api->isForwarded;
-
-								importsHandling.updateImportInTreeView(&imp, over);
-								break;
-							}
-							iterator2++;
-						}
-						break;
-					}
-					iterator1++;
-				}
-			}
-		}
+		pickApiActionHandler(over);
 	}
 
-	return false;
+	return 0;
 }
 
+/*
 LRESULT MainGui::OnTreeImportsRightClick(const NMHDR* pnmh)
 {
-	/*
-	HTREEITEM selectedTreeNode = TreeImports.GetNextItem(NULL, TVGN_DROPHILITE);
-	if(selectedTreeNode != NULL)
-	{
-		TreeImports.Select(selectedTreeNode, TVGN_CARET);
-	}
-	*/
-	SetMsgHandled(false);
-	return false;
+	SetMsgHandled(FALSE);
+	return 0;
 }
 
 LRESULT MainGui::OnTreeImportsRightDoubleClick(const NMHDR* pnmh)
 {
-	SetMsgHandled(false);
-	return false;
+	SetMsgHandled(FALSE);
+	return 0;
+}
+*/
+
+LRESULT MainGui::OnTreeImportsOnKey(const NMHDR* pnmh)
+{
+	const NMTVKEYDOWN * tkd = (NMTVKEYDOWN *)pnmh;
+	switch(tkd->wVKey)
+	{
+	case VK_RETURN:
+		{
+			CTreeItem selected = TreeImports.GetSelectedItem();
+			if(!selected.IsNull() && !selected.GetParent().IsNull())
+			{
+				pickApiActionHandler(selected);
+			}
+		}
+		return 1;
+	case VK_DELETE:
+		{
+			CTreeItem selected = TreeImports.GetSelectedItem();
+			if(!selected.IsNull())
+			{
+				if(selected.GetParent().IsNull())
+				{
+					importsHandling.deleteTreeNode(selected);
+				}
+				else
+				{
+					importsHandling.cutThunk(selected);
+				}
+			}
+		}
+		return 1;
+	}
+
+	SetMsgHandled(FALSE);
+	return 0;
+}
+
+UINT MainGui::OnTreeImportsSubclassGetDlgCode(const MSG * lpMsg)
+{
+	if(lpMsg)
+	{
+		switch(lpMsg->wParam)
+		{
+		case VK_RETURN:
+			return DLGC_WANTMESSAGE;
+		}
+	}
+
+	SetMsgHandled(FALSE);
+	return 0;
 }
 
 void MainGui::OnProcessListDrop(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -437,6 +445,53 @@ void MainGui::pickDllActionHandler()
 	else
 	{
 		processAccessHelp.selectedModule = 0;
+	}
+}
+
+void MainGui::pickApiActionHandler(CTreeItem item)
+{
+	CTreeItem parent = item.GetParent();
+	if(parent.IsNull())
+		return;
+
+	PickApiGui dlgPickApi(processAccessHelp.moduleList);
+	if(dlgPickApi.DoModal())
+	{
+		const ApiInfo* api = dlgPickApi.getSelectedApi();
+		if(api && api->module)
+		{
+			std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
+			std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
+
+			iterator1 = importsHandling.moduleList.begin();
+			while(iterator1 != importsHandling.moduleList.end())
+			{
+				if(iterator1->second.hTreeItem == parent)
+				{
+					iterator2 = iterator1->second.thunkList.begin();
+					while(iterator2 != iterator1->second.thunkList.end())
+					{
+						if(iterator2->second.hTreeItem == item)
+						{
+							ImportThunk &imp = iterator2->second;
+							wcscpy_s(imp.moduleName, MAX_PATH, api->module->getFilename());
+							strcpy_s(imp.name, MAX_PATH, api->name);
+							imp.ordinal = api->ordinal;
+							//imp.apiAddressVA = api->va;
+							imp.hint = api->hint;
+							imp.valid = true;
+							imp.suspect = api->isForwarded;
+
+							importsHandling.updateImportInTreeView(&imp, item);
+							break;
+						}
+						iterator2++;
+					}
+					break;
+				}
+				iterator1++;
+			}
+		}
 	}
 }
 
