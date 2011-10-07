@@ -37,7 +37,8 @@ public:
 	enum { IDD = IDD_DLG_MAIN };
 
 	BEGIN_DDX_MAP(MainGui)
-		DDX_CONTROL_HANDLE(IDC_TREE_IMPORTS, TreeImports)
+		DDX_CONTROL(IDC_TREE_IMPORTS, TreeImportsSubclass) // subclass
+		DDX_CONTROL_HANDLE(IDC_TREE_IMPORTS, TreeImports)  // attach
 		DDX_CONTROL_HANDLE(IDC_CBO_PROCESSLIST, ComboProcessList)
 		DDX_CONTROL_HANDLE(IDC_LIST_LOG, ListLog)
 		DDX_CONTROL_HANDLE(IDC_EDIT_OEPADDRESS, EditOEPAddress)
@@ -94,9 +95,10 @@ public:
 
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnExit)
 
-	ALT_MSG_MAP(IDC_TREE_IMPORTS)
+	ALT_MSG_MAP(IDC_TREE_IMPORTS) // message map for subclassed treeview
 
 		MSG_WM_GETDLGCODE(OnTreeImportsSubclassGetDlgCode)
+		MSG_WM_CHAR(OnTreeImportsSubclassChar)
 
 	END_MSG_MAP()
 
@@ -172,6 +174,7 @@ protected:
 	LRESULT OnTreeImportsOnKey(const NMHDR* pnmh);
 
 	UINT OnTreeImportsSubclassGetDlgCode(const MSG * lpMsg);
+	void OnTreeImportsSubclassChar(UINT nChar, UINT nRepCnt, UINT nFlags);
 
 	void OnProcessListDrop(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnProcessListSelected(UINT uNotifyCode, int nID, CWindow wndCtl);

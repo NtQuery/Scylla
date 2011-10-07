@@ -32,6 +32,13 @@ MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports), TreeImpor
 	NativeWinApi::initialize();
 	SystemInformation::getSystemInformation();
 
+	if(ConfigurationHolder::getConfigObject(DEBUG_PRIVILEGE)->isTrue())
+	{
+		processLister.setDebugPrivileges();
+	}
+
+	processAccessHelp.getProcessModules(GetCurrentProcessId(), processAccessHelp.ownModuleList);
+
 	hIcon.LoadIcon(IDI_ICON_SCYLLA);
 	hMenuImports.LoadMenu(IDR_MENU_IMPORTS);
 	hMenuLog.LoadMenu(IDR_MENU_LOG);
@@ -46,7 +53,16 @@ MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports), TreeImpor
 
 BOOL MainGui::PreTranslateMessage(MSG* pMsg)
 {
-	return accelerators.TranslateAccelerator(m_hWnd, pMsg);
+	if(accelerators.TranslateAccelerator(m_hWnd, pMsg))
+	{
+		return TRUE;
+	}
+	else if(IsDialogMessage(pMsg))
+	{
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
@@ -55,20 +71,12 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	{
 		if(IDCANCEL == MessageBox(L"Operating System is not supported\r\nContinue anyway?", L"Scylla", MB_ICONWARNING | MB_OKCANCEL))
 		{
-			EndDialog(0);
+			SendMessage(WM_CLOSE);
 			return FALSE;
 		}
 	}
 
-	if(ConfigurationHolder::getConfigObject(DEBUG_PRIVILEGE)->isTrue())
-	{
-		processLister.setDebugPrivileges();
-	}
-
-	processAccessHelp.getProcessModules(GetCurrentProcessId(), processAccessHelp.ownModuleList);
-
 	DoDataExchange(); // attach controls
-	TreeImportsSubclass.SubclassWindow(TreeImports);
 
 	CMessageLoop* pLoop = _Module.GetMessageLoop();
 	pLoop->AddMessageFilter(this);
@@ -279,6 +287,10 @@ LRESULT MainGui::OnTreeImportsOnKey(const NMHDR* pnmh)
 
 UINT MainGui::OnTreeImportsSubclassGetDlgCode(const MSG * lpMsg)
 {
+	//TreeImportsSubclass.ProcessWindowMessage();
+
+	//UINT original = 0;
+
 	if(lpMsg)
 	{
 		switch(lpMsg->wParam)
@@ -290,6 +302,18 @@ UINT MainGui::OnTreeImportsSubclassGetDlgCode(const MSG * lpMsg)
 
 	SetMsgHandled(FALSE);
 	return 0;
+}
+
+void MainGui::OnTreeImportsSubclassChar(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	switch(nChar)
+	{
+		case VK_RETURN:
+			break;
+		default:
+			SetMsgHandled(FALSE);
+			break;
+	}
 }
 
 void MainGui::OnProcessListDrop(UINT uNotifyCode, int nID, CWindow wndCtl)
