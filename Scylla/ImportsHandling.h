@@ -5,10 +5,12 @@
 // WTL
 #include <atlbase.h>
 #include <atlapp.h>
-#include <atlctrls.h> // CTreeViewCtrlEx, CTreeItem
+#include <atlctrls.h>
 
 class ImportThunk;
 class ImportModuleThunk;
+
+class CMultiSelectTreeViewCtrl;
 
 class ImportsHandling
 {
@@ -19,7 +21,7 @@ public:
 	//bool addFunction(WCHAR * moduleName, char * name, DWORD_PTR va, DWORD_PTR rva, DWORD_PTR ordinal, bool valid, bool suspect);
 	//bool addModule(WCHAR * moduleName, DWORD_PTR firstThunk);
 
-	ImportsHandling(CTreeViewCtrlEx& TreeImports);
+	ImportsHandling(CMultiSelectTreeViewCtrl& TreeImports);
 	~ImportsHandling();
 
 	void displayAllImports();
@@ -40,7 +42,7 @@ private:
 
 	WCHAR stringBuffer[600];
 
-	CTreeViewCtrlEx& TreeImports;
+	CMultiSelectTreeViewCtrl& TreeImports;
 	CImageList TreeIcons;
 	CIcon hIconCheck;
 	CIcon hIconWarning;
@@ -53,13 +55,13 @@ private:
 		iconError
 	};
 
-	CTreeItem addDllToTreeView(CTreeViewCtrlEx& idTreeView, const ImportModuleThunk * importThunk);
-	CTreeItem addApiToTreeView(CTreeViewCtrlEx& idTreeView, CTreeItem parentDll, const ImportThunk * importThunk);
+	CTreeItem addDllToTreeView(CMultiSelectTreeViewCtrl& idTreeView, const ImportModuleThunk * importThunk);
+	CTreeItem addApiToTreeView(CMultiSelectTreeViewCtrl& idTreeView, CTreeItem parentDll, const ImportThunk * importThunk);
 	
 	bool isItemSelected(CTreeItem hItem);
 	void unselectItem(CTreeItem htItem);
 	bool selectItem(CTreeItem hItem, bool select = true);
-	void setFocus(CTreeViewCtrlEx& hwndTV, CTreeItem htItem);
+	void setFocus(CMultiSelectTreeViewCtrl& hwndTV, CTreeItem htItem);
 	bool findNewModules(std::map<DWORD_PTR, ImportThunk> & thunkList);
 
 	Icon getAppropiateIcon(const ImportThunk * importThunk);

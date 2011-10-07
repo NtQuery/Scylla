@@ -193,6 +193,7 @@
     <ClInclude Include="ImportsHandling.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="MainGui.h" />
+    <ClInclude Include="multitree.h" />
     <ClInclude Include="NativeWinApi.h" />
     <ClInclude Include="OptionsGui.h" />
     <ClInclude Include="PeDump.h" />

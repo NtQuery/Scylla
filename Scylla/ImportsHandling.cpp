@@ -3,11 +3,15 @@
 #include "Thunks.h"
 #include "definitions.h"
 
+#include <atlmisc.h>
+#include <atlcrack.h>
+#include "multitree.h" // CMultiSelectTreeViewCtrl
+
 #include "resource.h"
 
 //#define DEBUG_COMMENTS
 
-ImportsHandling::ImportsHandling(CTreeViewCtrlEx& TreeImports) : TreeImports(TreeImports)
+ImportsHandling::ImportsHandling(CMultiSelectTreeViewCtrl& TreeImports) : TreeImports(TreeImports)
 {
 	hIconCheck.LoadIcon(IDI_ICON_CHECK);
 	hIconWarning.LoadIcon(IDI_ICON_WARNING);
@@ -156,14 +160,14 @@ void ImportsHandling::displayAllImports()
 	 }
 }
 
-CTreeItem ImportsHandling::addDllToTreeView(CTreeViewCtrlEx& idTreeView, const ImportModuleThunk * importThunk)
+CTreeItem ImportsHandling::addDllToTreeView(CMultiSelectTreeViewCtrl& idTreeView, const ImportModuleThunk * importThunk)
 {
 	CTreeItem item = idTreeView.InsertItem(L"", NULL, TVI_ROOT);
 	updateModuleInTreeView(importThunk, item);
 	return item;
 }
 
-CTreeItem ImportsHandling::addApiToTreeView(CTreeViewCtrlEx& idTreeView, CTreeItem parentDll, const ImportThunk * importThunk)
+CTreeItem ImportsHandling::addApiToTreeView(CMultiSelectTreeViewCtrl& idTreeView, CTreeItem parentDll, const ImportThunk * importThunk)
 {
 	CTreeItem item = idTreeView.InsertItem(L"", parentDll, TVI_LAST);
 	updateImportInTreeView(importThunk, item);
@@ -177,8 +181,8 @@ void ImportsHandling::showImports(bool invalid, bool suspect)
 	ImportModuleThunk * moduleThunk;
 	ImportThunk * importThunk;
 
-	TreeImports.SetFocus();
-	TreeImports.SelectItem(NULL); //remove selection
+	TreeImports.SetFocus(); // should be GotoDlgCtrl...
+	TreeImports.SelectAllItems(FALSE); //remove selection
 
 	iterator1 = moduleList.begin();
 
@@ -231,10 +235,10 @@ bool ImportsHandling::selectItem(CTreeItem hItem, bool select)
 	return FALSE != hItem.SetState((select ? state : 0), state);
 }
 
-void ImportsHandling::setFocus(CTreeViewCtrlEx& hwndTV, CTreeItem htItem)
+void ImportsHandling::setFocus(CMultiSelectTreeViewCtrl& hwndTV, CTreeItem htItem)
 {
 	// the current focus
-	CTreeItem htFocus = hwndTV.GetSelectedItem();
+	CTreeItem htFocus = hwndTV.GetFirstSelectedItem();
 
 	if ( htItem )
 	{
@@ -249,7 +253,7 @@ void ImportsHandling::setFocus(CTreeViewCtrlEx& hwndTV, CTreeItem htItem)
 				// prevent the tree from unselecting the old focus which it
 				// would do by default (TreeView_SelectItem unselects the
 				// focused item)
-				hwndTV.SelectItem(NULL);
+				hwndTV.SelectAllItems(FALSE);
 				selectItem(htFocus);
 			}
 

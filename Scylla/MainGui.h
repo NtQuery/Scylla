@@ -11,6 +11,7 @@
 #include <atlcrack.h>      // WTL enhanced msg map macros
 #include <atlctrls.h>      // WTL controls
 #include <atlddx.h>        // WTL dialog data exchange
+#include "multitree.h"
 
 //#define _CRTDBG_MAP_ALLOC
 //#include <cstdlib>
@@ -24,13 +25,6 @@
 #include "PickDllGui.h"
 #include "ImportsHandling.h"
 
-/*
-TODO: Multiselect treeview:
-	- GetSelectedCount(), GetFirstSelected(), GetNextSelected(), GetAllSelected() -> vector, SetSelection(), AddSelection(), ClearSelection()
-	- pass vector of items to cutThunk for 'Cut selected thunks' menu item
-	- otherwise use GetFirstSelected
-*/
-
 class MainGui : public CDialogImpl<MainGui>, public CWinDataExchange<MainGui>, public CMessageFilter
 {
 public:
@@ -38,8 +32,8 @@ public:
 
 	BEGIN_DDX_MAP(MainGui)
 		DDX_CONTROL(IDC_TREE_IMPORTS, TreeImportsSubclass) // subclass
-		DDX_CONTROL_HANDLE(IDC_TREE_IMPORTS, TreeImports)  // attach
-		DDX_CONTROL_HANDLE(IDC_CBO_PROCESSLIST, ComboProcessList)
+		DDX_CONTROL(IDC_TREE_IMPORTS, TreeImports)
+		DDX_CONTROL_HANDLE(IDC_CBO_PROCESSLIST, ComboProcessList) // attach
 		DDX_CONTROL_HANDLE(IDC_LIST_LOG, ListLog)
 		DDX_CONTROL_HANDLE(IDC_EDIT_OEPADDRESS, EditOEPAddress)
 		DDX_CONTROL_HANDLE(IDC_EDIT_IATADDRESS, EditIATAddress)
@@ -95,6 +89,8 @@ public:
 
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnExit)
 
+		REFLECT_NOTIFICATIONS()
+
 	ALT_MSG_MAP(IDC_TREE_IMPORTS) // message map for subclassed treeview
 
 		MSG_WM_GETDLGCODE(OnTreeImportsSubclassGetDlgCode)
@@ -128,7 +124,7 @@ protected:
 
 	// Controls
 
-	CTreeViewCtrlEx TreeImports;
+	CMultiSelectTreeViewCtrl TreeImports;
 	CComboBox ComboProcessList;
 	CEdit EditOEPAddress;
 	CEdit EditIATAddress;

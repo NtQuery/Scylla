@@ -256,7 +256,7 @@ LRESULT MainGui::OnTreeImportsOnKey(const NMHDR* pnmh)
 	{
 	case VK_RETURN:
 		{
-			CTreeItem selected = TreeImports.GetSelectedItem();
+			CTreeItem selected = TreeImports.GetFirstSelectedItem();
 			if(!selected.IsNull() && !selected.GetParent().IsNull())
 			{
 				pickApiActionHandler(selected);
@@ -265,8 +265,8 @@ LRESULT MainGui::OnTreeImportsOnKey(const NMHDR* pnmh)
 		return 1;
 	case VK_DELETE:
 		{
-			CTreeItem selected = TreeImports.GetSelectedItem();
-			if(!selected.IsNull())
+			CTreeItem selected = TreeImports.GetFirstSelectedItem();
+			while(!selected.IsNull())
 			{
 				if(selected.GetParent().IsNull())
 				{
@@ -276,6 +276,7 @@ LRESULT MainGui::OnTreeImportsOnKey(const NMHDR* pnmh)
 				{
 					importsHandling.cutThunk(selected);
 				}
+				selected = TreeImports.GetNextSelectedItem(selected);
 			}
 		}
 		return 1;
@@ -801,7 +802,7 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 	if(pt.x == -1 && pt.y == -1) // invoked by keyboard
 	{
 		CRect pos;
-		over = TreeImports.GetSelectedItem();
+		over = TreeImports.GetFirstSelectedItem();
 		if(over)
 		{
 			over.EnsureVisible();

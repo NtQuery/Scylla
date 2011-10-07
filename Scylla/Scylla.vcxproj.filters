@@ -167,6 +167,9 @@
     <ClInclude Include="PickApiGui.h">
       <Filter>Headerdateien\GUI</Filter>
     </ClInclude>
+    <ClInclude Include="multitree.h">
+      <Filter>Headerdateien\GUI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MainGui.rc">
