@@ -11,8 +11,6 @@
 #include <atlctrls.h>      // WTL controls
 #include <atlddx.h>        // WTL dialog data exchange
 
-class ConfigObject;
-
 class OptionsGui : public CDialogImpl<OptionsGui>, public CWinDataExchange<OptionsGui>
 {
 public:
@@ -20,6 +18,12 @@ public:
 
 	BEGIN_DDX_MAP(OptionsGui)
 		DDX_CONTROL_HANDLE(IDC_OPTIONS_SECTIONNAME, EditSectionName)
+		DDX_TEXT(IDC_OPTIONS_SECTIONNAME, iatSectionName)
+		DDX_CHECK(IDC_CHECK_HEADER_CHECKSUM, updateHeaderChecksum)
+		DDX_CHECK(IDC_CHECK_CREATE_BACKUP, createBackup)
+		DDX_CHECK(IDC_CHECK_UNLOAD_DLL, dllInjectionAutoUnload)
+		DDX_CHECK(IDC_CHECK_PE_HEADER_FROM_DISK, usePEHeaderFromDisk)
+		DDX_CHECK(IDC_CHECK_DEBUG_PRIVILEGES, debugPrivilege)
 	END_DDX_MAP()
 
 	BEGIN_MSG_MAP(OptionsGui)
@@ -30,23 +34,30 @@ public:
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnCancel)
 	END_MSG_MAP()
 
-private:
+protected:
+
+	// Settings (filled by DDX)
+
+	WCHAR iatSectionName[IMAGE_SIZEOF_SHORT_NAME+1];
+	bool updateHeaderChecksum;
+	bool createBackup;
+	bool dllInjectionAutoUnload;
+	bool usePEHeaderFromDisk;
+	bool debugPrivilege;
+
+	// Controls
 
 	CEdit EditSectionName;
+
+	// Message handlers
 
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
 
 	void OnOK(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl);
 
+	// Gui helpers
+
 	void saveOptions();
 	void loadOptions();
-	void setCheckBox( int nIDDlgItem, bool bValue );
-	void displayConfigInDlg( ConfigObject & config );
-	void setEditControl( int nIDDlgItem, const WCHAR * valueString );
-	void getConfigOptionsFromDlg( ConfigObject & config );
-
-	bool getEditControl( int nIDDlgItem, WCHAR * valueString );
-	void getCheckBox( int dialogItemValue, DWORD_PTR * valueNumeric );
-	void getEditControlNumeric( int nIDDlgItem, DWORD_PTR * valueNumeric, int nBase );
 };

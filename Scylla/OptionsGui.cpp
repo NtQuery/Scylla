@@ -1,14 +1,12 @@
 #include "OptionsGui.h"
 #include "ConfigurationHolder.h"
-#include "definitions.h"
 
 BOOL OptionsGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
-	DoDataExchange(); // attach controls
+	loadOptions();
+	DoDataExchange(DDX_LOAD); // show settings
 
 	EditSectionName.LimitText(IMAGE_SIZEOF_SHORT_NAME);
-
-	loadOptions();
 
 	CenterWindow();
 
@@ -17,6 +15,7 @@ BOOL OptionsGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 void OptionsGui::OnOK(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
+	DoDataExchange(DDX_SAVE);
 	saveOptions();
 	ConfigurationHolder::saveConfiguration();
 
@@ -34,7 +33,27 @@ void OptionsGui::saveOptions()
 
 	for (mapIter = ConfigurationHolder::getConfigList().begin() ; mapIter != ConfigurationHolder::getConfigList().end(); mapIter++)
 	{
-		getConfigOptionsFromDlg((*mapIter).second);
+		switch(mapIter->first)
+		{
+		case USE_PE_HEADER_FROM_DISK:
+			usePEHeaderFromDisk ? mapIter->second.setTrue() : mapIter->second.setFalse();
+			break;
+		case DEBUG_PRIVILEGE:
+			debugPrivilege ? mapIter->second.setTrue() : mapIter->second.setFalse();
+			break;
+		case CREATE_BACKUP:
+			createBackup ? mapIter->second.setTrue() : mapIter->second.setFalse();
+			break;
+		case DLL_INJECTION_AUTO_UNLOAD:
+			dllInjectionAutoUnload ? mapIter->second.setTrue() : mapIter->second.setFalse();
+			break;
+		case UPDATE_HEADER_CHECKSUM:
+			updateHeaderChecksum ? mapIter->second.setTrue() : mapIter->second.setFalse();
+			break;
+		case IAT_SECTION_NAME:
+			wcscpy(mapIter->second.valueString, iatSectionName);
+			break;
+		}
 	}
 }
 
@@ -44,116 +63,27 @@ void OptionsGui::loadOptions()
 
 	for (mapIter = ConfigurationHolder::getConfigList().begin() ; mapIter != ConfigurationHolder::getConfigList().end(); mapIter++)
 	{
-		displayConfigInDlg((*mapIter).second);
-	}
-}
-
-void OptionsGui::setCheckBox( int nIDDlgItem, bool bValue )
-{
-	CButton Button(GetDlgItem(nIDDlgItem));
-	Button.SetCheck(bValue ? BST_CHECKED : BST_UNCHECKED);
-}
-
-void OptionsGui::displayConfigInDlg( ConfigObject & config )
-{
-	switch (config.configType)
-	{
-	case String:
+		switch(mapIter->first)
 		{
-			setEditControl(config.dialogItemValue, config.valueString);
+		case USE_PE_HEADER_FROM_DISK:
+			usePEHeaderFromDisk = mapIter->second.isTrue();
+			break;
+		case DEBUG_PRIVILEGE:
+			debugPrivilege = mapIter->second.isTrue();
+			break;
+		case CREATE_BACKUP:
+			createBackup = mapIter->second.isTrue();
+			break;
+		case DLL_INJECTION_AUTO_UNLOAD:
+			dllInjectionAutoUnload = mapIter->second.isTrue();
+			break;
+		case UPDATE_HEADER_CHECKSUM:
+			updateHeaderChecksum = mapIter->second.isTrue();
+			break;
+		case IAT_SECTION_NAME:
+			wcsncpy(iatSectionName, mapIter->second.valueString, _countof(iatSectionName)-1);
+			iatSectionName[_countof(iatSectionName)-1] = L'\0';
+			break;
 		}
-		break;
-	case Boolean:
-		{
-			setCheckBox(config.dialogItemValue, config.isTrue());
-		}
-		break;
-	case Decimal:
-		{
-			swprintf_s(config.valueString, CONFIG_OPTIONS_STRING_LENGTH, TEXT(PRINTF_INTEGER),config.valueNumeric);
-
-			setEditControl(config.dialogItemValue, config.valueString);
-		}
-		break;
-	case Hexadecimal:
-		{
-			swprintf_s(config.valueString, CONFIG_OPTIONS_STRING_LENGTH, TEXT(PRINTF_DWORD_PTR_FULL),config.valueNumeric);
-
-			setEditControl(config.dialogItemValue, config.valueString);
-		}
-		break;
-	}
-}
-
-void OptionsGui::setEditControl( int nIDDlgItem, const WCHAR * valueString )
-{
-	CEdit Edit(GetDlgItem(nIDDlgItem));
-	Edit.SetWindowText(valueString);
-}
-
-void OptionsGui::getConfigOptionsFromDlg( ConfigObject & config )
-{
-	switch (config.configType)
-	{
-	case String:
-		{
-			getEditControl(config.dialogItemValue, config.valueString);
-		}
-		break;
-	case Boolean:
-		{
-			getCheckBox(config.dialogItemValue, &config.valueNumeric);
-		}
-		break;
-	case Decimal:
-		{
-			getEditControlNumeric(config.dialogItemValue, &config.valueNumeric, 10);
-		}
-		break;
-	case Hexadecimal:
-		{
-			getEditControlNumeric(config.dialogItemValue, &config.valueNumeric, 16);
-		}
-		break;
-	}
-}
-
-bool OptionsGui::getEditControl( int nIDDlgItem, WCHAR * valueString )
-{
-	CEdit Edit(GetDlgItem(nIDDlgItem));
-	return (Edit.GetWindowText(valueString, CONFIG_OPTIONS_STRING_LENGTH) > 0);
-}
-
-void OptionsGui::getCheckBox( int nIDDlgItem, DWORD_PTR * valueNumeric )
-{
-	CButton Button(GetDlgItem(nIDDlgItem));
-	switch (Button.GetCheck())
-	{
-	case BST_CHECKED:
-		*valueNumeric = 1;
-		return;
-	case BST_UNCHECKED:
-		*valueNumeric = 0;
-		return;
-	default:
-		*valueNumeric = 0;
-	}
-}
-
-void OptionsGui::getEditControlNumeric( int nIDDlgItem, DWORD_PTR * valueNumeric, int nBase )
-{
-	WCHAR temp[CONFIG_OPTIONS_STRING_LENGTH] = {0};
-
-	if (getEditControl(nIDDlgItem, temp))
-	{
-#ifdef _WIN64
-		*valueNumeric = _wcstoui64(temp, NULL, nBase);
-#else
-		*valueNumeric = wcstoul(temp, NULL, nBase);
-#endif
-	}
-	else
-	{
-		*valueNumeric = 0;
 	}
 }
