@@ -161,9 +161,6 @@
     <ClInclude Include="OptionsGui.h">
       <Filter>Headerdateien\GUI</Filter>
     </ClInclude>
-    <ClInclude Include="WindowDeferrer.h">
-      <Filter>Headerdateien\GUI</Filter>
-    </ClInclude>
     <ClInclude Include="PickApiGui.h">
       <Filter>Headerdateien\GUI</Filter>
     </ClInclude>

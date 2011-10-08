@@ -206,7 +206,6 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="SystemInformation.h" />
     <ClInclude Include="Thunks.h" />
-    <ClInclude Include="WindowDeferrer.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MainGui.rc" />

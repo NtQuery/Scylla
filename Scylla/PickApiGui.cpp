@@ -1,67 +1,21 @@
 #include "PickApiGui.h"
 
 #include <atlconv.h> // string conversion
-#include "WindowDeferrer.h"
 
 PickApiGui::PickApiGui(const std::vector<ModuleInfo> &moduleList) : moduleList(moduleList)
 {
 	selectedApi = 0;
-	hIcon.LoadIcon(IDI_ICON_SCYLLA);
 }
 
 BOOL PickApiGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
 	DoDataExchange(); // attach controls
-
+	DlgResize_Init(true, true);
+	
 	fillDllComboBox(ComboDllSelect);
 
 	CenterWindow();
-
-	SetIcon(hIcon, TRUE);
-	SetIcon(hIcon, FALSE);
-
-	GetWindowRect(&minDlgSize);
-
 	return TRUE;
-}
-
-void PickApiGui::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
-{
-	lpMMI->ptMinTrackSize = CPoint(minDlgSize.Size());
-}
-
-void PickApiGui::OnSizing(UINT fwSide, RECT* pRect)
-{
-	// Get size difference
-	CRect rectOld;
-	GetWindowRect(&rectOld);
-	CRect rectNew = *pRect;
-
-	sizeOffset = rectNew.Size() - rectOld.Size();
-}
-
-void PickApiGui::OnSize(UINT nType, CSize size)
-{
-	const WindowDeferrer::Deferrable controls[] =
-	{
-		{IDC_GROUP_DLL, false, false, true, false},
-		{IDC_CBO_DLLSELECT, false, false, true, false},
-
-		{IDC_GROUP_APIS, false, false, true, true},
-		{IDC_LIST_APISELECT,  false, false, true, true},
-		{IDC_STATIC_APIFILTER, false, true, false, false},
-		{IDC_EDIT_APIFILTER, false, true, true, false},
-
-		{IDC_BTN_PICKAPI_OK, true, true, false, false},
-		{IDC_BTN_PICKAPI_CANCEL, true, true, false, false}
-	};
-
-	if(nType == SIZE_RESTORED)
-	{
-		WindowDeferrer deferrer(m_hWnd, controls, _countof(controls));
-		deferrer.defer(sizeOffset.cx, sizeOffset.cy);
-		sizeOffset.SetSize(0, 0);
-	}
 }
 
 void PickApiGui::OnOK(UINT uNotifyCode, int nID, CWindow wndCtl)

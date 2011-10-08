@@ -5,12 +5,12 @@
 // WTL
 #include <atlbase.h>
 #include <atlapp.h>
-#include <atlctrls.h>
+#include <atlctrls.h> // CTreeItem
+
+class CMultiSelectTreeViewCtrl;
 
 class ImportThunk;
 class ImportModuleThunk;
-
-class CMultiSelectTreeViewCtrl;
 
 class ImportsHandling
 {

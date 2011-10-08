@@ -257,7 +257,7 @@ void ImportsHandling::setFocus(CMultiSelectTreeViewCtrl& hwndTV, CTreeItem htIte
 				selectItem(htFocus);
 			}
 
-			hwndTV.SelectItem(htItem);
+			hwndTV.SelectItem(htItem, FALSE);
 
 			if ( !wasSelected )
 			{
@@ -276,7 +276,7 @@ void ImportsHandling::setFocus(CMultiSelectTreeViewCtrl& hwndTV, CTreeItem htIte
 			bool wasFocusSelected = isItemSelected(htFocus);
 
 			// just clear the focus
-			hwndTV.SelectItem(NULL);
+			hwndTV.SelectItem(NULL, FALSE);
 
 			if ( wasFocusSelected )
 			{

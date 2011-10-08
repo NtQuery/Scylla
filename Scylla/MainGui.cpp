@@ -15,7 +15,6 @@
 #include "SystemInformation.h"
 #include "AboutGui.h"
 #include "OptionsGui.h"
-#include "WindowDeferrer.h"
 
 extern CAppModule _Module; // o_O
 
@@ -76,10 +75,11 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 		}
 	}
 
-	DoDataExchange(); // attach controls
-
 	CMessageLoop* pLoop = _Module.GetMessageLoop();
 	pLoop->AddMessageFilter(this);
+
+	DoDataExchange(); // attach controls
+	DlgResize_Init(true, true);
 
 	EditOEPAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
 	EditIATAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
@@ -91,75 +91,12 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	setIconAndDialogCaption();
 
-	GetWindowRect(&minDlgSize);
-
 	return TRUE;
 }
 
 void MainGui::OnDestroy()
 {
 	PostQuitMessage(0);
-}
-
-void MainGui::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
-{
-	lpMMI->ptMinTrackSize = CPoint(minDlgSize.Size());
-}
-
-void MainGui::OnSizing(UINT fwSide, const RECT* pRect)
-{
-	// Get size difference
-	CRect rectOld;
-	GetWindowRect(&rectOld);
-	CRect rectNew = *pRect;
-
-	sizeOffset = rectNew.Size() - rectOld.Size();
-}
-
-void MainGui::OnSize(UINT nType, CSize size)
-{
-	const WindowDeferrer::Deferrable controls[] =
-	{
-		{IDC_GROUP_ATTACH,    false, false, true, false},
-		{IDC_CBO_PROCESSLIST, false, false, true, false},
-		{IDC_BTN_PICKDLL,     true, false, false, false},
-
-		{IDC_GROUP_IMPORTS, false, false, true, true},
-		{IDC_TREE_IMPORTS,  false, false, true, true},
-		{IDC_BTN_INVALIDIMPORTS, false, true, false, false},
-		{IDC_BTN_SUSPECTIMPORTS, false, true, false, false},
-		{IDC_BTN_SAVETREE,       true, true, false, false},
-		{IDC_BTN_LOADTREE,       true, true, false, false},
-		{IDC_BTN_CLEARIMPORTS,   true, true, false, false},
-
-		{IDC_GROUP_IATINFO,     false, true, false, false},
-		{IDC_STATIC_OEPADDRESS, false, true, false, false},
-		{IDC_STATIC_IATADDRESS, false, true, false, false},
-		{IDC_STATIC_IATSIZE,    false, true, false, false},
-		{IDC_EDIT_OEPADDRESS,   false, true, false, false},
-		{IDC_EDIT_IATADDRESS,   false, true, false, false},
-		{IDC_EDIT_IATSIZE,      false, true, false, false},
-		{IDC_BTN_IATAUTOSEARCH, false, true, false, false},
-		{IDC_BTN_GETIMPORTS,    false, true, false, false},
-
-		{IDC_GROUP_ACTIONS, false, true, false, false},
-		{IDC_BTN_AUTOTRACE, false, true, false, false},
-
-		{IDC_GROUP_DUMP,    false, true, false, false},
-		{IDC_BTN_DUMP,      false, true, false, false},
-		{IDC_BTN_PEREBUILD, false, true, false, false},
-		{IDC_BTN_FIXDUMP,   false, true, false, false},
-
-		{IDC_GROUP_LOG, false, true, true, false},
-		{IDC_LIST_LOG,  false, true, true, false}
-	};
-
-	if(nType == SIZE_RESTORED)
-	{
-		WindowDeferrer deferrer(m_hWnd, controls, _countof(controls));
-		deferrer.defer(sizeOffset.cx, sizeOffset.cy);
-		sizeOffset.SetSize(0, 0);
-	}
 }
 
 void MainGui::OnLButtonDown(UINT nFlags, CPoint point)
@@ -249,7 +186,7 @@ LRESULT MainGui::OnTreeImportsRightDoubleClick(const NMHDR* pnmh)
 	return 0;
 }
 
-LRESULT MainGui::OnTreeImportsOnKey(const NMHDR* pnmh)
+LRESULT MainGui::OnTreeImportsKeyDown(const NMHDR* pnmh)
 {
 	const NMTVKEYDOWN * tkd = (NMTVKEYDOWN *)pnmh;
 	switch(tkd->wVKey)
@@ -288,10 +225,6 @@ LRESULT MainGui::OnTreeImportsOnKey(const NMHDR* pnmh)
 
 UINT MainGui::OnTreeImportsSubclassGetDlgCode(const MSG * lpMsg)
 {
-	//TreeImportsSubclass.ProcessWindowMessage();
-
-	//UINT original = 0;
-
 	if(lpMsg)
 	{
 		switch(lpMsg->wParam)

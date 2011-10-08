@@ -1,63 +1,23 @@
 #include "PickDllGui.h"
 
-#include "WindowDeferrer.h"
-
 PickDllGui::PickDllGui(std::vector<ModuleInfo> &moduleList) : moduleList(moduleList)
 {
+	selectedModule = 0;
+
 	prevColumn = -1;
 	ascending = true;
-
-	selectedModule = 0;
-	hIcon.LoadIcon(IDI_ICON_SCYLLA);
 }
 
 BOOL PickDllGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
 	DoDataExchange(); // attach controls
+	DlgResize_Init(true, true);
 
 	addColumnsToModuleList(ListDLLSelect);
 	displayModuleList(ListDLLSelect);
 
 	CenterWindow();
-
-	SetIcon(hIcon, TRUE);
-	SetIcon(hIcon, FALSE);
-
-	GetWindowRect(&minDlgSize);
-
 	return TRUE;
-}
-
-void PickDllGui::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
-{
-	lpMMI->ptMinTrackSize = CPoint(minDlgSize.Size());
-}
-
-void PickDllGui::OnSizing(UINT fwSide, RECT* pRect)
-{
-	// Get size difference
-	CRect rectOld;
-	GetWindowRect(&rectOld);
-	CRect rectNew = *pRect;
-
-	sizeOffset = rectNew.Size() - rectOld.Size();
-}
-
-void PickDllGui::OnSize(UINT nType, CSize size)
-{
-	const WindowDeferrer::Deferrable controls[] =
-	{
-		{IDC_LIST_DLLSELECT, false, false, true, true},
-		{IDC_BTN_PICKDLL_OK, true, true, false, false},
-		{IDC_BTN_PICKDLL_CANCEL, true, true, false, false},
-	};
-
-	if(nType == SIZE_RESTORED)
-	{
-		WindowDeferrer deferrer(m_hWnd, controls, _countof(controls));
-		deferrer.defer(sizeOffset.cx, sizeOffset.cy);
-		sizeOffset.SetSize(0, 0);
-	}
 }
 
 LRESULT PickDllGui::OnListDllColumnClicked(NMHDR* pnmh)

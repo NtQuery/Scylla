@@ -7,7 +7,8 @@
 #include <atlbase.h>       // base ATL classes
 #include <atlapp.h>        // base WTL classes
 #include <atlwin.h>        // ATL GUI classes
-#include <atlmisc.h>       // WTL utility classes like CString
+#include <atlframe.h>      // WTL window frame helpers
+#include <atlmisc.h>       // WTL utility classes
 #include <atlcrack.h>      // WTL enhanced msg map macros
 #include <atlctrls.h>      // WTL controls
 #include <atlddx.h>        // WTL dialog data exchange
@@ -25,7 +26,7 @@
 #include "PickDllGui.h"
 #include "ImportsHandling.h"
 
-class MainGui : public CDialogImpl<MainGui>, public CWinDataExchange<MainGui>, public CMessageFilter
+class MainGui : public CDialogImpl<MainGui>, public CWinDataExchange<MainGui>, public CDialogResize<MainGui>, public CMessageFilter
 {
 public:
 	enum { IDD = IDD_DLG_MAIN };
@@ -44,9 +45,6 @@ public:
 
 		MSG_WM_INITDIALOG(OnInitDialog)
 		MSG_WM_DESTROY(OnDestroy)
-		MSG_WM_GETMINMAXINFO(OnGetMinMaxInfo)
-		MSG_WM_SIZING(OnSizing)
-		MSG_WM_SIZE(OnSize)
 		MSG_WM_CONTEXTMENU(OnContextMenu)
 		//MSG_WM_LBUTTONDOWN(OnLButtonDown)
 		MSG_WM_COMMAND(OnCommand)
@@ -55,11 +53,10 @@ public:
 		NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_DBLCLK, OnTreeImportsDoubleClick)
 		//NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_RCLICK, OnTreeImportsRightClick)
 		//NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_RDBLCLK, OnTreeImportsRightDoubleClick)
-		NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, TVN_KEYDOWN, OnTreeImportsOnKey)
+		NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, TVN_KEYDOWN, OnTreeImportsKeyDown)
 
 		COMMAND_HANDLER_EX(IDC_CBO_PROCESSLIST, CBN_DROPDOWN, OnProcessListDrop)
 		COMMAND_HANDLER_EX(IDC_CBO_PROCESSLIST, CBN_SELENDOK, OnProcessListSelected)
-
 		COMMAND_ID_HANDLER_EX(IDC_BTN_PICKDLL, OnPickDLL)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_OPTIONS, OnOptions)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_DUMP, OnDump)
@@ -70,7 +67,6 @@ public:
 		COMMAND_ID_HANDLER_EX(IDC_BTN_INVALIDIMPORTS, OnInvalidImports)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_SUSPECTIMPORTS, OnSuspectImports)
 		COMMAND_ID_HANDLER_EX(IDC_BTN_CLEARIMPORTS, OnClearImports)
-
 		COMMAND_ID_HANDLER_EX(ID_FILE_DUMP, OnDump)
 		COMMAND_ID_HANDLER_EX(ID_FILE_PEREBUILD, OnPERebuild)
 		COMMAND_ID_HANDLER_EX(ID_FILE_FIXDUMP, OnFixDump)
@@ -86,10 +82,10 @@ public:
 		COMMAND_ID_HANDLER_EX(ID_MISC_DLLINJECTION, OnDLLInject)
 		COMMAND_ID_HANDLER_EX(ID_MISC_OPTIONS, OnOptions)
 		COMMAND_ID_HANDLER_EX(ID_HELP_ABOUT, OnAbout)
-
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnExit)
 
 		REFLECT_NOTIFICATIONS()
+		CHAIN_MSG_MAP(CDialogResize<MainGui>)
 
 	ALT_MSG_MAP(IDC_TREE_IMPORTS) // message map for subclassed treeview
 
@@ -97,6 +93,41 @@ public:
 		MSG_WM_CHAR(OnTreeImportsSubclassChar)
 
 	END_MSG_MAP()
+
+	BEGIN_DLGRESIZE_MAP(MainGui)
+		DLGRESIZE_CONTROL(IDC_GROUP_ATTACH,    DLSZ_SIZE_X)
+		DLGRESIZE_CONTROL(IDC_CBO_PROCESSLIST, DLSZ_SIZE_X)
+		DLGRESIZE_CONTROL(IDC_BTN_PICKDLL,     DLSZ_MOVE_X)
+
+		DLGRESIZE_CONTROL(IDC_GROUP_IMPORTS, DLSZ_SIZE_X | DLSZ_SIZE_Y)
+		DLGRESIZE_CONTROL(IDC_TREE_IMPORTS,  DLSZ_SIZE_X | DLSZ_SIZE_Y)
+		DLGRESIZE_CONTROL(IDC_BTN_INVALIDIMPORTS, DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_BTN_SUSPECTIMPORTS, DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_BTN_SAVETREE,       DLSZ_MOVE_X | DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_BTN_LOADTREE,       DLSZ_MOVE_X | DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_BTN_CLEARIMPORTS,   DLSZ_MOVE_X | DLSZ_MOVE_Y)
+
+		DLGRESIZE_CONTROL(IDC_GROUP_IATINFO,     DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_STATIC_OEPADDRESS, DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_STATIC_IATADDRESS, DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_STATIC_IATSIZE,    DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_EDIT_OEPADDRESS,   DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_EDIT_IATADDRESS,   DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_EDIT_IATSIZE,      DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_BTN_IATAUTOSEARCH, DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_BTN_GETIMPORTS,    DLSZ_MOVE_Y)
+
+		DLGRESIZE_CONTROL(IDC_GROUP_ACTIONS, DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_BTN_AUTOTRACE, DLSZ_MOVE_Y)
+
+		DLGRESIZE_CONTROL(IDC_GROUP_DUMP,    DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_BTN_DUMP,      DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_BTN_PEREBUILD, DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_BTN_FIXDUMP,   DLSZ_MOVE_Y)
+
+		DLGRESIZE_CONTROL(IDC_GROUP_LOG, DLSZ_MOVE_Y | DLSZ_SIZE_X)
+		DLGRESIZE_CONTROL(IDC_LIST_LOG,  DLSZ_MOVE_Y | DLSZ_SIZE_X)
+	END_DLGRESIZE_MAP()
 
 	MainGui();
 
@@ -133,16 +164,12 @@ protected:
 
 	CContainedWindow TreeImportsSubclass;
 
-	CRect minDlgSize;
-	CSize sizeOffset;
-
-	CAccelerator accelerators;
-
 	// Handles
 
 	CIcon hIcon;
 	CMenu hMenuImports;
 	CMenu hMenuLog;
+	CAccelerator accelerators;
 
 	static const int MenuImportsOffsetTrace = 2;
 	static const int MenuImportsTraceOffsetScylla = 2;
@@ -156,9 +183,6 @@ protected:
 
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
 	void OnDestroy();
-	void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
-	void OnSizing(UINT fwSide, const RECT* pRect);
-	void OnSize(UINT nType, CSize size);
 	void OnLButtonDown(UINT nFlags, CPoint point);
 	void OnContextMenu(CWindow wnd, CPoint point);
 	void OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl);
@@ -167,7 +191,7 @@ protected:
 	LRESULT OnTreeImportsDoubleClick(const NMHDR* pnmh);
 	LRESULT OnTreeImportsRightClick(const NMHDR* pnmh);
 	LRESULT OnTreeImportsRightDoubleClick(const NMHDR* pnmh);
-	LRESULT OnTreeImportsOnKey(const NMHDR* pnmh);
+	LRESULT OnTreeImportsKeyDown(const NMHDR* pnmh);
 
 	UINT OnTreeImportsSubclassGetDlgCode(const MSG * lpMsg);
 	void OnTreeImportsSubclassChar(UINT nChar, UINT nRepCnt, UINT nFlags);
