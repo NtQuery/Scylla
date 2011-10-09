@@ -103,7 +103,7 @@ public:
 
 		for( int i = 0; i < m_aData.GetSize(); i++ )
 		{
-			_SelectItem(i, bSelect);
+			_SelectItem(i, bSelect == TRUE);
 		}
 	}
 
@@ -286,7 +286,7 @@ public:
    // Message map and handlers
 
 	BEGIN_MSG_MAP_EX(CMultiSelectTreeViewImpl)
-		MSG_WM_CREATE(OnCreate)
+		MESSAGE_HANDLER_EX(WM_CREATE, OnCreate)
 		MSG_WM_DESTROY(OnDestroy)
 		MSG_WM_KEYDOWN(OnKeyDown)
 		MSG_WM_KEYUP(OnKeyUp)
@@ -301,7 +301,7 @@ public:
 		CHAIN_MSG_MAP_ALT( CCustomDraw< T >, 1 )
 	END_MSG_MAP()
 
-	int OnCreate(CREATESTRUCT* lpCreateStruct)
+	LRESULT OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		LRESULT lRes = DefWindowProc();
 		_Init();
