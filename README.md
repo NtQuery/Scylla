@@ -1,5 +1,5 @@
 Scylla - x64/x86 Imports Reconstruction
-===========================
+=======================================
 
 ImpREC, CHimpREC, Imports Fixer... this are all great tools to rebuild an import table, 
 but they all have some major disadvantages, so I decided to create my own tool for this job.
@@ -19,7 +19,7 @@ Source code is licensed under GNU GENERAL PUBLIC LICENSE v3.0
 
 
 Known Bugs
---------
+----------
 
 ### Only Windows XP x64:
 
@@ -35,8 +35,21 @@ If you still want to use XP x64, here are some hints:
 Some ImpREC Plugins don't work with Windows Vista/7 because they don't "return 1" in the DllMain function.
 
 
+Keyboard Shortcuts
+------------------
+
+- CTRL + D: [D]ump
+- CTRL + F: [F]ix Dump
+- CTRL + R: PE [R]ebuild
+- CTRL + O: L[o]ad Tree
+- CTRL + S: [S]ave Tree
+- CTRL + T: Auto[t]race
+- CTRL + G: [G]et Imports
+- CTRL + I: [I]AT Autosearch
+
+
 Changelog
-----------
+---------
 
 Version 0.4:
 
