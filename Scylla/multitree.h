@@ -248,6 +248,13 @@ public:
 		return true;
 	}
 
+	/*
+	TODO: keep list of 'temporary' selected items
+	if you select an item with the mouse and it gets
+	out of the selection rectangle it stays selected.
+	it should unselect it but keep old selected items
+	(when holding CTRL)
+	*/
 	void _SelectBox(CRect rc)
 	{
 		CTreeItem hItem = GetFirstVisibleItem();
@@ -267,20 +274,13 @@ public:
 
 	void _DrawDragRect(CPoint pt)
 	{
-		CClientDC dc = m_hWnd;
+		CClientDC dc(m_hWnd);
 		CSize szFrame(1, 1);
 		CRect rect(m_ptDragStart, pt);
 		rect.NormalizeRect();
-		CBrush brush = CDCHandle::GetHalftoneBrush();
-		if( !brush.IsNull() )
-		{
-			CBrushHandle hOldBrush = dc.SelectBrush(brush);
-			dc.PatBlt(rect.left, rect.top, rect.Width(), szFrame.cy, PATINVERT);
-			dc.PatBlt(rect.left, rect.bottom - szFrame.cy, rect.Width(), szFrame.cy, PATINVERT);
-			dc.PatBlt(rect.left, rect.top + szFrame.cy, szFrame.cx, rect.Height() - (szFrame.cy * 2), PATINVERT);
-			dc.PatBlt(rect.right - szFrame.cx, rect.top + szFrame.cy, szFrame.cx, rect.Height() - (szFrame.cy * 2), PATINVERT);
-			dc.SelectBrush(hOldBrush);
-		}
+		//CRect rectOld(m_ptDragStart, m_ptDragOld);
+		//rectOld.NormalizeRect();
+		dc.DrawDragRect(&rect, szFrame, NULL/*&rectOld*/, szFrame);	
 	}
 
    // Message map and handlers
@@ -305,7 +305,7 @@ public:
 	{
 		LRESULT lRes = DefWindowProc();
 		_Init();
-		return (int)lRes;
+		return lRes;
 	}
 
 	void OnDestroy()
@@ -319,7 +319,7 @@ public:
 		if( nChar == VK_SHIFT )
 			m_hExtSelStart = GetFocusItem();
 
-		if( ::GetAsyncKeyState(VK_SHIFT) < 0 && m_hExtSelStart == GetFocusItem() ) 
+		if( ::GetKeyState(VK_SHIFT) < 0 && m_hExtSelStart == GetFocusItem() ) 
 		{
 			switch( nChar )
 			{
@@ -340,7 +340,7 @@ public:
 
 	void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 	{
-		if( ::GetAsyncKeyState(VK_SHIFT) < 0 )
+		if( ::GetKeyState(VK_SHIFT) < 0 )
 		{
 			switch( nChar )
 			{
@@ -399,7 +399,7 @@ public:
 			{
 				// Great we're dragging a rubber-band
 				// Clear selection of CTRL is not down
-				if( ::GetAsyncKeyState(VK_CONTROL) >= 0 )
+				if( ::GetKeyState(VK_CONTROL) >= 0 )
 				{
 					for( int i = 0; i < m_aData.GetSize(); i++ )
 					{
@@ -448,7 +448,7 @@ public:
 			parent.SendMessage(WM_NOTIFY, nmtv.hdr.idFrom, (LPARAM) &nmtv);
 		}
 		bool bSelected = m_aData.GetValueAt(iIndex);
-		if( ::GetAsyncKeyState(VK_SHIFT) < 0 )
+		if( ::GetKeyState(VK_SHIFT) < 0 )
 		{
 			// Is current or first-shift-item the upper item?
 			CRect rcItem1, rcItem2;
@@ -460,7 +460,7 @@ public:
 			else
 				_SelectTree(m_hExtSelStart, hItem, TVC_BYMOUSE);
 		}
-		else if( ::GetAsyncKeyState(VK_CONTROL) < 0 )
+		else if( ::GetKeyState(VK_CONTROL) < 0 )
 		{
 			// Just toggle item
 			_SelectItem(iIndex, !bSelected, TVC_BYMOUSE);
