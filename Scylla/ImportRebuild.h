@@ -28,13 +28,17 @@ private:
 	PIMAGE_THUNK_DATA pThunkData;
 	PIMAGE_IMPORT_BY_NAME pImportByName;
 
+	size_t numberOfImportDescriptors;
+	size_t sizeOfImportSection;
+	size_t sizeOfApiAndModuleNames;
+	size_t importSectionIndex;
+
 	DWORD getOffsetLastSection();
 
 	void clearAllData();
 	void updatePeHeader();
-	DWORD fillImportSection( std::map<DWORD_PTR, ImportModuleThunk> & moduleList, size_t lastSectionIndex );
+	DWORD fillImportSection( std::map<DWORD_PTR, ImportModuleThunk> & moduleList );
 	bool splitTargetFile();
-	DWORD calculateMinSize(std::map<DWORD_PTR, ImportModuleThunk> & moduleList);
 
 	DWORD convertRVAToOffsetVector(DWORD dwRVA);
 	DWORD_PTR convertOffsetToRVAVector(DWORD dwOffset);
@@ -51,4 +55,10 @@ private:
 	bool createNewImportSection(std::map<DWORD_PTR, ImportModuleThunk> & moduleList);
 	bool buildNewImportTable(std::map<DWORD_PTR, ImportModuleThunk> & moduleList);
 	void setFlagToIATSection( DWORD_PTR iatAddress );
+	size_t addImportToImportTable( ImportThunk * pImport, PIMAGE_THUNK_DATA pThunk, PIMAGE_IMPORT_BY_NAME pImportByName, DWORD sectionOffset);
+	size_t addImportDescriptor(ImportModuleThunk * pImportModule, DWORD sectionOffset);
+
+	void calculateImportSizes(std::map<DWORD_PTR, ImportModuleThunk> & moduleList);
+
+	void addSpecialImportDescriptor(DWORD_PTR rvaFirstThunk);
 };
