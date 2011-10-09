@@ -94,10 +94,10 @@ inline bool ApiReader::isApiForwarded(DWORD_PTR rva, PIMAGE_NT_HEADERS pNtHeader
 	}
 }
 
-void ApiReader::handleForwardedApi(DWORD_PTR vaStringPointer,char * functionNameParent, DWORD_PTR rvaParent, DWORD_PTR ordinalParent, ModuleInfo *moduleParent)
+void ApiReader::handleForwardedApi(DWORD_PTR vaStringPointer,char * functionNameParent, DWORD_PTR rvaParent, WORD ordinalParent, ModuleInfo *moduleParent)
 {
 	size_t dllNameLength = 0;
-	DWORD_PTR ordinal = 0;
+	WORD ordinal = 0;
 	ModuleInfo *module = 0;
 	DWORD_PTR vaApi = 0;
 	DWORD_PTR rvaApi = 0;
@@ -175,7 +175,7 @@ void ApiReader::handleForwardedApi(DWORD_PTR vaStringPointer,char * functionName
 		{
 			//forwarding by ordinal
 			searchFunctionName++;
-			ordinal = atoi(searchFunctionName);
+			ordinal = (WORD)atoi(searchFunctionName);
 			findApiByModuleAndOrdinal(module, ordinal, &vaApi, &rvaApi);
 		}
 		else
@@ -209,12 +209,12 @@ ModuleInfo * ApiReader::findModuleByName(WCHAR *name)
 	return 0;
 }
 
-void ApiReader::addApiWithoutName(DWORD_PTR ordinal, DWORD_PTR va, DWORD_PTR rva,bool isForwarded, ModuleInfo *moduleInfo)
+void ApiReader::addApiWithoutName(WORD ordinal, DWORD_PTR va, DWORD_PTR rva,bool isForwarded, ModuleInfo *moduleInfo)
 {
 	addApi(0, 0, ordinal, va, rva, isForwarded, moduleInfo);
 }
 
-void ApiReader::addApi(char *functionName, WORD hint, DWORD_PTR ordinal, DWORD_PTR va, DWORD_PTR rva, bool isForwarded, ModuleInfo *moduleInfo)
+void ApiReader::addApi(char *functionName, WORD hint, WORD ordinal, DWORD_PTR va, DWORD_PTR rva, bool isForwarded, ModuleInfo *moduleInfo)
 {
 	ApiInfo *apiInfo = new ApiInfo();
 
@@ -345,8 +345,9 @@ void ApiReader::parseExportTable(ModuleInfo *module, PIMAGE_NT_HEADERS pNtHeader
 	DWORD *addressOfFunctionsArray = 0,*addressOfNamesArray = 0;
 	WORD *addressOfNameOrdinalsArray = 0;
 	char *functionName = 0;
-	DWORD_PTR RVA = 0, VA = 0, ordinal = 0;
-	DWORD i = 0, j = 0;
+	DWORD_PTR RVA = 0, VA = 0;
+	WORD ordinal = 0;
+	WORD i = 0, j = 0;
 	bool withoutName;
 
 
@@ -361,7 +362,7 @@ void ApiReader::parseExportTable(ModuleInfo *module, PIMAGE_NT_HEADERS pNtHeader
 	for (i = 0; i < pExportDir->NumberOfNames; i++)
 	{
 		functionName = (char*)(addressOfNamesArray[i] + deltaAddress);
-		ordinal = (addressOfNameOrdinalsArray[i] + pExportDir->Base);
+		ordinal = (WORD)(addressOfNameOrdinalsArray[i] + pExportDir->Base);
 		RVA = addressOfFunctionsArray[addressOfNameOrdinalsArray[i]];
 		VA = addressOfFunctionsArray[addressOfNameOrdinalsArray[i]] + module->modBaseAddr;
 
@@ -372,7 +373,7 @@ void ApiReader::parseExportTable(ModuleInfo *module, PIMAGE_NT_HEADERS pNtHeader
 		{
 			if (!isApiForwarded(RVA,pNtHeader))
 			{
-				addApi(functionName, (WORD)i, ordinal,VA,RVA,false,module);
+				addApi(functionName, i, ordinal,VA,RVA,false,module);
 			}
 			else
 			{
@@ -399,7 +400,7 @@ void ApiReader::parseExportTable(ModuleInfo *module, PIMAGE_NT_HEADERS pNtHeader
 			}
 			if (withoutName && addressOfFunctionsArray[i] != 0)
 			{
-				ordinal = (i+pExportDir->Base);
+				ordinal = (WORD)(i+pExportDir->Base);
 				RVA = addressOfFunctionsArray[i];
 				VA = (addressOfFunctionsArray[i] + module->modBaseAddr);
 
@@ -418,7 +419,7 @@ void ApiReader::parseExportTable(ModuleInfo *module, PIMAGE_NT_HEADERS pNtHeader
 	}
 }
 
-void ApiReader::findApiByModuleAndOrdinal(ModuleInfo * module, DWORD_PTR ordinal, DWORD_PTR * vaApi, DWORD_PTR * rvaApi)
+void ApiReader::findApiByModuleAndOrdinal(ModuleInfo * module, WORD ordinal, DWORD_PTR * vaApi, DWORD_PTR * rvaApi)
 {
 	findApiByModule(module,0,ordinal,vaApi,rvaApi);
 }
@@ -428,7 +429,7 @@ void ApiReader::findApiByModuleAndName(ModuleInfo * module, char * searchFunctio
 	findApiByModule(module,searchFunctionName,0,vaApi,rvaApi);
 }
 
-void ApiReader::findApiByModule(ModuleInfo * module, char * searchFunctionName, DWORD_PTR ordinal, DWORD_PTR * vaApi, DWORD_PTR * rvaApi)
+void ApiReader::findApiByModule(ModuleInfo * module, char * searchFunctionName, WORD ordinal, DWORD_PTR * vaApi, DWORD_PTR * rvaApi)
 {
 	if (isModuleLoadedInOwnProcess(module))
 	{
@@ -527,7 +528,7 @@ bool ApiReader::isPeAndExportTableValid(PIMAGE_NT_HEADERS pNtHeader)
 	}
 }
 
-void ApiReader::findApiInProcess(ModuleInfo * module, char * searchFunctionName, DWORD_PTR ordinal, DWORD_PTR * vaApi, DWORD_PTR * rvaApi)
+void ApiReader::findApiInProcess(ModuleInfo * module, char * searchFunctionName, WORD ordinal, DWORD_PTR * vaApi, DWORD_PTR * rvaApi)
 {
 	PIMAGE_NT_HEADERS pNtHeader = 0;
 	PIMAGE_DOS_HEADER pDosHeader = 0;
@@ -557,7 +558,7 @@ void ApiReader::findApiInProcess(ModuleInfo * module, char * searchFunctionName,
 	delete[] bufferHeader;
 }
 
-bool ApiReader::findApiInExportTable(ModuleInfo *module, PIMAGE_EXPORT_DIRECTORY pExportDir, DWORD_PTR deltaAddress, char * searchFunctionName, DWORD_PTR ordinal, DWORD_PTR * vaApi, DWORD_PTR * rvaApi)
+bool ApiReader::findApiInExportTable(ModuleInfo *module, PIMAGE_EXPORT_DIRECTORY pExportDir, DWORD_PTR deltaAddress, char * searchFunctionName, WORD ordinal, DWORD_PTR * vaApi, DWORD_PTR * rvaApi)
 {
 	DWORD *addressOfFunctionsArray = 0,*addressOfNamesArray = 0;
 	WORD *addressOfNameOrdinalsArray = 0;
@@ -910,7 +911,7 @@ void ApiReader::addUnknownModuleToModuleList(DWORD_PTR firstThunk)
 	(*moduleThunkList).insert(std::pair<DWORD_PTR,ImportModuleThunk>(firstThunk,module));
 }
 
-bool ApiReader::addFunctionToModuleList(ApiInfo * apiFound, DWORD_PTR va, DWORD_PTR rva, DWORD_PTR ordinal, bool valid, bool suspect)
+bool ApiReader::addFunctionToModuleList(ApiInfo * apiFound, DWORD_PTR va, DWORD_PTR rva, WORD ordinal, bool valid, bool suspect)
 {
 	ImportThunk import;
 	ImportModuleThunk  * module = 0;
