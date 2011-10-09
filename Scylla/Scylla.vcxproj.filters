@@ -84,9 +84,6 @@
     <ClCompile Include="OptionsGui.cpp">
       <Filter>Quelldateien\GUI</Filter>
     </ClCompile>
-    <ClCompile Include="WindowDeferrer.cpp">
-      <Filter>Quelldateien\GUI</Filter>
-    </ClCompile>
     <ClCompile Include="PickApiGui.cpp">
       <Filter>Quelldateien\GUI</Filter>
     </ClCompile>

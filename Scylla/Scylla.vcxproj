@@ -178,7 +178,6 @@
     <ClCompile Include="ProcessAccessHelp.cpp" />
     <ClCompile Include="ProcessLister.cpp" />
     <ClCompile Include="SystemInformation.cpp" />
-    <ClCompile Include="WindowDeferrer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AboutGui.h" />
