@@ -67,10 +67,10 @@ public:
 class ApiInfo {
 	public:
 		char name[MAX_PATH];
-		DWORD hint;
+		WORD hint;
 		DWORD_PTR va;
 		DWORD_PTR rva;
-		DWORD_PTR ordinal;
+		WORD ordinal;
 		bool isForwarded;
 		ModuleInfo * module;
 };

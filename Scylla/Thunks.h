@@ -9,22 +9,26 @@
 #include <atlapp.h>
 #include <atlctrls.h> //CTreeItem
 
-class ImportThunk {
+class ImportThunk
+{
 public:
 	WCHAR moduleName[MAX_PATH];
 	char name[MAX_PATH];
 	DWORD_PTR va;
 	DWORD_PTR rva;
-	DWORD_PTR ordinal;
+	WORD ordinal;
 	DWORD_PTR apiAddressVA;
 	WORD hint;
 	bool valid;
 	bool suspect;
 
 	CTreeItem hTreeItem;
+
+	void invalidate();
 };
 
-class ImportModuleThunk {
+class ImportModuleThunk
+{
 public:
 	WCHAR moduleName[MAX_PATH];
 	std::map<DWORD_PTR, ImportThunk> thunkList;

@@ -251,6 +251,8 @@ protected:
 	void processSelectedActionHandler(int index);
 	void showInvalidImportsActionHandler();
 	void showSuspectImportsActionHandler();
+	void deleteSelectedImportsActionHandler();
+	void invalidateSelectedImportsActionHandler();
 	void iatAutosearchActionHandler();
 	void getImportsActionHandler();
 	void dumpActionHandler();

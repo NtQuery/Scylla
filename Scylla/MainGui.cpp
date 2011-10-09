@@ -213,27 +213,44 @@ LRESULT MainGui::OnTreeImportsKeyDown(const NMHDR* pnmh)
 		}
 		return 1;
 	case VK_DELETE:
-		{
-			CTreeItem selected = TreeImports.GetFirstSelectedItem();
-			while(!selected.IsNull())
-			{
-				if(selected.GetParent().IsNull())
-				{
-					importsHandling.deleteTreeNode(selected);
-				}
-				else
-				{
-					importsHandling.cutThunk(selected);
-				}
-				selected = TreeImports.GetNextSelectedItem(selected);
-			}
-			fillStatusBar();
-		}
+		deleteSelectedImportsActionHandler();
 		return 1;
 	}
 
 	SetMsgHandled(FALSE);
 	return 0;
+}
+
+void MainGui::deleteSelectedImportsActionHandler()
+{
+	CTreeItem selected = TreeImports.GetFirstSelectedItem();
+	while(!selected.IsNull())
+	{
+		if(importsHandling.isModule(selected))
+		{
+			importsHandling.cutModule(selected);
+		}
+		else
+		{
+			importsHandling.cutImport(selected);
+		}
+		selected = TreeImports.GetNextSelectedItem(selected);
+	}
+	fillStatusBar();
+}
+
+void MainGui::invalidateSelectedImportsActionHandler()
+{
+	CTreeItem selected = TreeImports.GetFirstSelectedItem();
+	while(!selected.IsNull())
+	{
+		if(importsHandling.isImport(selected))
+		{
+			importsHandling.invalidateImport(selected);
+		}
+		selected = TreeImports.GetNextSelectedItem(selected);
+	}
+	fillStatusBar();
 }
 
 UINT MainGui::OnTreeImportsSubclassGetDlgCode(const MSG * lpMsg)
@@ -330,12 +347,12 @@ void MainGui::OnClearImports(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void MainGui::OnInvalidateSelected(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	// TODO
+	invalidateSelectedImportsActionHandler();
 }
 
 void MainGui::OnCutSelected(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	// TODO
+	deleteSelectedImportsActionHandler();
 }
 
 void MainGui::OnSaveTree(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -365,7 +382,7 @@ void MainGui::OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void MainGui::setupStatusBar()
 {
-	StatusBar.Create(m_hWnd, NULL, L"", WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SBARS_TOOLTIPS, NULL, ATL_IDW_STATUS_BAR);
+	StatusBar.Create(m_hWnd, NULL, L"", WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SBARS_TOOLTIPS, NULL, IDC_STATUS_BAR);
 
 	CRect rcMain, rcStatus;
 	GetClientRect(&rcMain);
@@ -387,8 +404,8 @@ void MainGui::setupStatusBar()
 void MainGui::fillStatusBar()
 {
 	// Rewrite ImportsHandling so we get these easily
-	unsigned int totalImports = 0;
-	unsigned int invalidImports = 0;
+	unsigned int totalImports = importsHandling.thunkCount();
+	unsigned int invalidImports = importsHandling.invalidThunkCount();
 
 	// \t = center, \t\t = right-align
 	swprintf_s(stringBuffer, _countof(stringBuffer), TEXT("\tImports: %u"), totalImports);
@@ -508,8 +525,7 @@ void MainGui::pickDllActionHandler()
 
 void MainGui::pickApiActionHandler(CTreeItem item)
 {
-	CTreeItem parent = item.GetParent();
-	if(parent.IsNull())
+	if(!importsHandling.isImport(item))
 		return;
 
 	// TODO: new node when user picked an API from another DLL?
@@ -520,37 +536,7 @@ void MainGui::pickApiActionHandler(CTreeItem item)
 		const ApiInfo* api = dlgPickApi.getSelectedApi();
 		if(api && api->module)
 		{
-			std::map<DWORD_PTR, ImportModuleThunk>::iterator iterator1;
-			std::map<DWORD_PTR, ImportThunk>::iterator iterator2;
-
-			iterator1 = importsHandling.moduleList.begin();
-			while(iterator1 != importsHandling.moduleList.end())
-			{
-				if(iterator1->second.hTreeItem == parent)
-				{
-					iterator2 = iterator1->second.thunkList.begin();
-					while(iterator2 != iterator1->second.thunkList.end())
-					{
-						if(iterator2->second.hTreeItem == item)
-						{
-							ImportThunk &imp = iterator2->second;
-							wcscpy_s(imp.moduleName, MAX_PATH, api->module->getFilename());
-							strcpy_s(imp.name, MAX_PATH, api->name);
-							imp.ordinal = api->ordinal;
-							//imp.apiAddressVA = api->va; //??
-							imp.hint = (WORD)api->hint;
-							imp.valid = true;
-							imp.suspect = api->isForwarded;
-
-							importsHandling.updateImportInTreeView(&imp, item);
-							break;
-						}
-						iterator2++;
-					}
-					break;
-				}
-				iterator1++;
-			}
+			importsHandling.setImport(item, api->module->getFilename(), api->name, api->ordinal, api->hint, true, api->isForwarded);
 		}
 	}
 
@@ -708,12 +694,12 @@ bool MainGui::saveLogToFile(const WCHAR * file)
 
 void MainGui::showInvalidImportsActionHandler()
 {
-	importsHandling.showImports(true, false);
+	importsHandling.selectImports(true, false);
 }
 
 void MainGui::showSuspectImportsActionHandler()
 {
-	importsHandling.showImports(false, true);
+	importsHandling.selectImports(false, true);
 }
 
 void MainGui::iatAutosearchActionHandler()
@@ -854,15 +840,10 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 		}
 	}
 
-	if(over)
-	{
-		parent = over.GetParent();
-	}
-
 	if (hMenuImports)
 	{
 		// Prepare hmenuImports
-		SetupImportsMenuItems(!over.IsNull(), !parent.IsNull());
+		SetupImportsMenuItems(!over.IsNull(), importsHandling.isImport(over));
 
 		CMenuHandle hSub = hMenuImports.GetSubMenu(0);
 
@@ -880,7 +861,7 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 			switch (menuItem)
 			{
 			case ID__INVALIDATEFUNCTION:
-				importsHandling.invalidateFunction(over);
+				importsHandling.invalidateImport(over);
 				break;
 			case ID__DISASSEMBLE:
 				startDisassemblerGui(over);
@@ -892,10 +873,10 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 				importsHandling.collapseAllTreeNodes();
 				break;
 			case ID__CUTTHUNK:
-				importsHandling.cutThunk(over);
+				importsHandling.cutImport(over);
 				break;
 			case ID__DELETETREENODE:
-				importsHandling.deleteTreeNode(parent ? parent : over);
+				importsHandling.cutModule(importsHandling.isImport(over) ? over.GetParent() : over);
 				break;
 			}
 		}
@@ -1138,31 +1119,34 @@ void MainGui::dumpFixActionHandler()
 
 void MainGui::enableDialogControls(BOOL value)
 {
-	GetDlgItem(IDC_BTN_PICKDLL).EnableWindow(value);
-	GetDlgItem(IDC_BTN_DUMP).EnableWindow(value);
-	GetDlgItem(IDC_BTN_FIXDUMP).EnableWindow(value);
-	GetDlgItem(IDC_BTN_IATAUTOSEARCH).EnableWindow(value);
-	GetDlgItem(IDC_BTN_GETIMPORTS).EnableWindow(value);
-	GetDlgItem(IDC_BTN_SUSPECTIMPORTS).EnableWindow(value);
-	GetDlgItem(IDC_BTN_INVALIDIMPORTS).EnableWindow(value);
-	GetDlgItem(IDC_BTN_CLEARIMPORTS).EnableWindow(value);
+	BOOL valButton = value ? TRUE : FALSE;
+
+	GetDlgItem(IDC_BTN_PICKDLL).EnableWindow(valButton);
+	GetDlgItem(IDC_BTN_DUMP).EnableWindow(valButton);
+	GetDlgItem(IDC_BTN_FIXDUMP).EnableWindow(valButton);
+	GetDlgItem(IDC_BTN_IATAUTOSEARCH).EnableWindow(valButton);
+	GetDlgItem(IDC_BTN_GETIMPORTS).EnableWindow(valButton);
+	GetDlgItem(IDC_BTN_SUSPECTIMPORTS).EnableWindow(valButton);
+	GetDlgItem(IDC_BTN_INVALIDIMPORTS).EnableWindow(valButton);
+	GetDlgItem(IDC_BTN_CLEARIMPORTS).EnableWindow(valButton);
 
 	CMenuHandle menu = GetMenu();
 
-	menu.EnableMenuItem(ID_FILE_DUMP, value ? MF_ENABLED : MF_GRAYED);
-	menu.EnableMenuItem(ID_FILE_FIXDUMP, value ? MF_ENABLED : MF_GRAYED);
-	menu.EnableMenuItem(ID_MISC_DLLINJECTION, value ? MF_ENABLED : MF_GRAYED);
-	menu.GetSubMenu(MenuImportsOffsetTrace).EnableMenuItem(MenuImportsTraceOffsetScylla, MF_BYPOSITION | (value ? MF_ENABLED : MF_GRAYED));
-	menu.GetSubMenu(MenuImportsOffsetTrace).EnableMenuItem(MenuImportsTraceOffsetImpRec, MF_BYPOSITION | (value ? MF_ENABLED : MF_GRAYED));
+	UINT valMenu = value ? MF_ENABLED : MF_GRAYED;
+
+	menu.EnableMenuItem(ID_FILE_DUMP, valMenu);
+	menu.EnableMenuItem(ID_FILE_FIXDUMP, valMenu);
+	menu.EnableMenuItem(ID_IMPORTS_INVALIDATESELECTED, valMenu);
+	menu.EnableMenuItem(ID_IMPORTS_CUTSELECTED, valMenu);
+	menu.EnableMenuItem(ID_MISC_DLLINJECTION, valMenu);
+	menu.GetSubMenu(MenuImportsOffsetTrace).EnableMenuItem(MenuImportsTraceOffsetScylla, MF_BYPOSITION | valMenu);
+	menu.GetSubMenu(MenuImportsOffsetTrace).EnableMenuItem(MenuImportsTraceOffsetImpRec, MF_BYPOSITION | valMenu);
 
 	//not yet implemented
-	GetDlgItem(IDC_BTN_AUTOTRACE).EnableWindow(FALSE);
 	GetDlgItem(IDC_BTN_SAVETREE).EnableWindow(FALSE);
 	GetDlgItem(IDC_BTN_LOADTREE).EnableWindow(FALSE);
+	GetDlgItem(IDC_BTN_AUTOTRACE).EnableWindow(FALSE);
 
-	menu.EnableMenuItem(ID_IMPORTS_INVALIDATESELECTED, MF_GRAYED);
-	menu.EnableMenuItem(ID_IMPORTS_CUTSELECTED, MF_GRAYED);
-	menu.EnableMenuItem(ID_IMPORTS_SAVETREE, MF_GRAYED);
 	menu.EnableMenuItem(ID_IMPORTS_SAVETREE, MF_GRAYED);
 	menu.EnableMenuItem(ID_IMPORTS_LOADTREE, MF_GRAYED);
 	menu.EnableMenuItem(ID_TRACE_AUTOTRACE, MF_GRAYED);
@@ -1213,8 +1197,7 @@ void MainGui::optionsActionHandler()
 
 void MainGui::clearImportsActionHandler()
 {
-	TreeImports.DeleteAllItems();
-	importsHandling.moduleList.clear();
+	importsHandling.clearAllImports();
 	fillStatusBar();
 }
 

@@ -44,9 +44,9 @@ static const DWORD MTVS_EX_NOMARQUEE = 0x00000001;
 static const UINT TVN_ITEMSELECTING = 0x0001;
 static const UINT TVN_ITEMSELECTED  = 0x0002;
 
-static bool operator==(CTreeItem ti1, CTreeItem ti2)
+static bool operator==(const CTreeItem& ti1, const CTreeItem& ti2)
 {
-	return ti1.m_hTreeItem == ti2.m_hTreeItem && ti1.m_pTreeView == ti2.m_pTreeView;
+	return ti1.m_hTreeItem == ti2.m_hTreeItem;
 }
 
 template< class T, class TBase = CTreeViewCtrlEx, class TWinTraits = CControlWinTraits >
@@ -69,12 +69,18 @@ public:
 	{
 	}
 
+	CTreeItem _MakeItem(HTREEITEM hItem) const
+	{
+		return CTreeItem(hItem, (CTreeViewCtrlEx*)this);
+	}
+
 	// Operations
 
 	BOOL SubclassWindow(HWND hWnd)
 	{
 		ATLASSERT(m_hWnd == NULL);
 		ATLASSERT(::IsWindow(hWnd));
+
 		BOOL bRet = CWindowImpl< T, TBase, TWinTraits >::SubclassWindow(hWnd);
 		if( bRet )
 			_Init();
@@ -84,20 +90,23 @@ public:
 	DWORD SetExtendedTreeStyle(DWORD dwStyle)
 	{
 		ATLASSERT(!m_ctrlTree.IsWindow());   // Before control is created, please!
+
 		DWORD dwOldStyle = m_dwTreeStyle;
 		m_dwTreeStyle = dwStyle;
 		return dwOldStyle;
 	}
 
-	void SelectItem(HTREEITEM hItem, BOOL bSelect)
+	BOOL SelectItem(HTREEITEM hItem, BOOL bSelect)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
+
 		_SelectItem(hItem, bSelect == TRUE);
 		if( bSelect )
 			TBase::SelectItem(hItem);
+		return TRUE;
 	}
 
-	void SelectAllItems(BOOL bSelect)
+	BOOL SelectAllItems(BOOL bSelect)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 
@@ -105,6 +114,19 @@ public:
 		{
 			_SelectItem(i, bSelect == TRUE);
 		}
+		return TRUE;
+	}
+
+	BOOL IsItemSelected(HTREEITEM hItem)
+	{
+		ATLASSERT(::IsWindow(m_hWnd));
+
+		int iIndex = m_aData.FindKey(_MakeItem(hItem));
+		if( iIndex >= 0 )
+		{
+			return m_aData.GetValueAt(iIndex) ? TRUE : FALSE;
+		}
+		return FALSE;
 	}
 
 	CTreeItem GetSelectedItem() const
@@ -123,7 +145,7 @@ public:
 		UINT nRes = TBase::GetItemState(hItem, nStateMask);
 		if( (nStateMask & TVIS_SELECTED) != 0 )
 		{
-			int iIndex = m_aData.FindKey(CTreeItem(hItem, (CTreeViewCtrlEx*)this));
+			int iIndex = m_aData.FindKey(_MakeItem(hItem));
 			if( iIndex >= 0 )
 			{
 				nRes &= ~TVIS_SELECTED;
@@ -136,29 +158,29 @@ public:
 
 	CTreeItem GetFirstSelectedItem() const
 	{
-		if( m_aData.GetSize() == 0 )
-			return NULL;
-
-		for( int i = 0; i < m_aData.GetSize(); i++ )
+		if( m_aData.GetSize() > 0 )
 		{
-			if( m_aData.GetValueAt(i) )
-				return m_aData.GetKeyAt(i);
+			for( int i = 0; i < m_aData.GetSize(); i++ )
+			{
+				if( m_aData.GetValueAt(i) )
+					return m_aData.GetKeyAt(i);
+			}
 		}
-		return NULL;
+		return _MakeItem(NULL);
 	}
 
 	CTreeItem GetNextSelectedItem(HTREEITEM hItem) const
 	{
-		int iIndex = m_aData.FindKey(CTreeItem(hItem, (CTreeViewCtrlEx*)this));
-		if( iIndex < 0 )
-			return NULL;
-
-		for( int i = iIndex + 1; i < m_aData.GetSize(); i++ )
+		int iIndex = m_aData.FindKey(_MakeItem(hItem));
+		if( iIndex >= 0 )
 		{
-			if( m_aData.GetValueAt(i) )
-				return m_aData.GetKeyAt(i);
+			for( int i = iIndex + 1; i < m_aData.GetSize(); i++ )
+			{
+				if( m_aData.GetValueAt(i) )
+					return m_aData.GetKeyAt(i);
+			}
 		}
-		return NULL;
+		return _MakeItem(NULL);
 	}
 
 	int GetSelectedCount() const
@@ -216,7 +238,7 @@ public:
 
 	void _SelectItem(HTREEITEM hItem, bool bSelect, int action = TVC_UNKNOWN)
 	{
-		_SelectItem(m_aData.FindKey(CTreeItem(hItem, (CTreeViewCtrlEx*)this)), bSelect, action);
+		_SelectItem(m_aData.FindKey(_MakeItem(hItem)), bSelect, action);
 	}
 
 	void _SelectTree(HTREEITEM hItem, HTREEITEM hGoal, int action)
@@ -257,11 +279,10 @@ public:
 	*/
 	void _SelectBox(CRect rc)
 	{
-		CTreeItem hItem = GetFirstVisibleItem();
+		HTREEITEM hItem = GetFirstVisibleItem();
 		while( hItem != NULL )
 		{
-			CTreeItem cItem(hItem, (CTreeViewCtrlEx*)this);
-			int i = m_aData.FindKey(cItem);
+			int i = m_aData.FindKey(_MakeItem(hItem));
 			if(i >= 0 && !m_aData.GetValueAt(i)) // ignore already selected
 			{
 				CRect rcItem, rcTemp;
@@ -432,7 +453,7 @@ public:
 			}
 			return;
 		}
-		int iIndex = m_aData.FindKey(CTreeItem(hItem, (CTreeViewCtrlEx*)this));
+		int iIndex = m_aData.FindKey(_MakeItem(hItem));
 		if( iIndex < 0 )
 			return;
 		// Simulate drag'n'drop?
@@ -512,18 +533,17 @@ public:
 		HTREEITEM hItem = (HTREEITEM) DefWindowProc(uMsg, wParam, lParam);
 		if( hItem == NULL )
 			return (LRESULT) hItem;
-		CTreeItem cItem(hItem, (CTreeViewCtrlEx*)this);
 		// We manage a bit of extra information for each item. We'll store
 		// this in an ATL::CSimpleMap. Not a particular speedy structure for lookups.
 		// Don't keep too many items around in the tree!
-		m_aData.Add(cItem, false);
+		m_aData.Add(_MakeItem(hItem), false);
 		return (LRESULT) hItem;
 	}
 
 	LRESULT OnDeleteItem(NMHDR* pnmh)
 	{
 		const NMTREEVIEW* lpNMTV = (NMTREEVIEW*) pnmh;
-		m_aData.Remove(CTreeItem(lpNMTV->itemNew.hItem, (CTreeViewCtrlEx*)this));
+		m_aData.Remove(_MakeItem(lpNMTV->itemNew.hItem));
 		return 0;
 	}
 
@@ -538,7 +558,7 @@ public:
 	{
 		NMTVCUSTOMDRAW* lpTVCD = (NMTVCUSTOMDRAW*) lpNMCustomDraw;
 		HTREEITEM hItem = (HTREEITEM) lpTVCD->nmcd.dwItemSpec;
-		int iIndex = m_aData.FindKey(CTreeItem(hItem, (CTreeViewCtrlEx*)this));
+		int iIndex = m_aData.FindKey(_MakeItem(hItem));
 		if( iIndex >= 0 )
 		{
 			bool bSelected = m_aData.GetValueAt(iIndex);
