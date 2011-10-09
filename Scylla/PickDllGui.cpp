@@ -121,7 +121,7 @@ int PickDllGui::listviewCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lPara
 	const ModuleInfo * module2 = (ModuleInfo *)lParam2;
 
 	int column = LOBYTE(lParamSort);
-	bool ascending = HIBYTE(lParamSort) != 0;
+	bool ascending = (HIBYTE(lParamSort) == TRUE);
 
 	int diff = 0;
 

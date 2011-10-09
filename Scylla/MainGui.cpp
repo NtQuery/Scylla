@@ -489,7 +489,7 @@ void MainGui::pickApiActionHandler(CTreeItem item)
 							strcpy_s(imp.name, MAX_PATH, api->name);
 							imp.ordinal = api->ordinal;
 							//imp.apiAddressVA = api->va; //??
-							imp.hint = api->hint;
+							imp.hint = (WORD)api->hint;
 							imp.valid = true;
 							imp.suspect = api->isForwarded;
 

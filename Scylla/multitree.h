@@ -305,7 +305,7 @@ public:
 	{
 		LRESULT lRes = DefWindowProc();
 		_Init();
-		return lRes;
+		return (int)lRes;
 	}
 
 	void OnDestroy()
