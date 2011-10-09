@@ -2,7 +2,7 @@
 
 WindowDeferrer::WindowDeferrer(HWND parent, const Deferrable* deferrables, size_t count) : parent(parent), deferrables(deferrables), count(count)
 {
-	hdwp = BeginDeferWindowPos(count);
+	hdwp = BeginDeferWindowPos((int)count);
 }
 
 WindowDeferrer::~WindowDeferrer()

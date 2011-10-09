@@ -51,7 +51,7 @@ void OptionsGui::saveOptions()
 			updateHeaderChecksum ? mapIter->second.setTrue() : mapIter->second.setFalse();
 			break;
 		case IAT_SECTION_NAME:
-			wcscpy(mapIter->second.valueString, iatSectionName);
+			wcscpy_s(mapIter->second.valueString, 100, iatSectionName);
 			break;
 		}
 	}
@@ -81,7 +81,7 @@ void OptionsGui::loadOptions()
 			updateHeaderChecksum = mapIter->second.isTrue();
 			break;
 		case IAT_SECTION_NAME:
-			wcsncpy(iatSectionName, mapIter->second.valueString, _countof(iatSectionName)-1);
+			wcsncpy_s(iatSectionName,9, mapIter->second.valueString, _countof(iatSectionName)-1);
 			iatSectionName[_countof(iatSectionName)-1] = L'\0';
 			break;
 		}

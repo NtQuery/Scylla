@@ -103,7 +103,7 @@ public:
 
 		for( int i = 0; i < m_aData.GetSize(); i++ )
 		{
-			_SelectItem(i, bSelect);
+			_SelectItem(i, bSelect == TRUE);
 		}
 	}
 
@@ -305,7 +305,7 @@ public:
 	{
 		LRESULT lRes = DefWindowProc();
 		_Init();
-		return lRes;
+		return (int)lRes;
 	}
 
 	void OnDestroy()
