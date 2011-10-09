@@ -165,9 +165,9 @@ protected:
 	CStatusBarCtrl StatusBar;
 
 	enum StatusParts {
-		PART_ICON = 0,
-		PART_COUNT,
+		PART_COUNT = 0,
 		PART_INVALID,
+		PART_IMAGEBASE,
 		PART_MODULE
 	};
 
@@ -236,8 +236,10 @@ protected:
 
 	// GUI functions
 
-	void setupStatusBar();
 	bool showFileDialog(WCHAR * selectedFile, bool save, const WCHAR * defFileName, const WCHAR * filter = NULL, const WCHAR * defExtension = NULL, const WCHAR * directory = NULL);
+
+	void setupStatusBar();
+	void fillStatusBar();
 	void fillProcessListComboBox(CComboBox& hCombo);
 	void setIconAndDialogCaption();
 	void enableDialogControls(BOOL value);

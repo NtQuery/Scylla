@@ -43,9 +43,9 @@ MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports), TreeImpor
 	hMenuLog.LoadMenu(IDR_MENU_LOG);
 	accelerators.LoadAccelerators(IDR_ACCELERATOR_MAIN);
 
-	hIconCheck.LoadIcon(IDI_ICON_CHECK);
-	hIconWarning.LoadIcon(IDI_ICON_WARNING);
-	hIconError.LoadIcon(IDI_ICON_ERROR);
+	hIconCheck.LoadIcon(IDI_ICON_CHECK, 16, 16);
+	hIconWarning.LoadIcon(IDI_ICON_WARNING, 16, 16);
+	hIconError.LoadIcon(IDI_ICON_ERROR, 16, 16);
 
 	if(hMenuImports)
 	{
@@ -81,7 +81,8 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	CMessageLoop* pLoop = _Module.GetMessageLoop();
 	pLoop->AddMessageFilter(this);
 
-	//setupStatusBar();
+	setupStatusBar();
+	fillStatusBar();
 
 	DoDataExchange(); // attach controls
 	DlgResize_Init(true, true);
@@ -226,6 +227,7 @@ LRESULT MainGui::OnTreeImportsKeyDown(const NMHDR* pnmh)
 				}
 				selected = TreeImports.GetNextSelectedItem(selected);
 			}
+			fillStatusBar();
 		}
 		return 1;
 	}
@@ -362,28 +364,74 @@ void MainGui::OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl)
 }
 
 void MainGui::setupStatusBar()
-{	
-	StatusBar = CreateStatusWindow(WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, L"", m_hWnd, ATL_IDW_STATUS_BAR);
+{
+	StatusBar.Create(m_hWnd, NULL, L"", WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SBARS_TOOLTIPS, NULL, ATL_IDW_STATUS_BAR);
 
 	CRect rcMain, rcStatus;
 	GetClientRect(&rcMain);
-	StatusBar.GetClientRect(&rcStatus);
-
-	const int widthIcon = 16 + 2;
-	int widthTexts = (rcMain.Width() - widthIcon) / 3;
+	StatusBar.GetWindowRect(&rcStatus);
 
 	const int PARTS = 4;
 	int widths[PARTS];
 
-	widths[PART_ICON]    = widthIcon;
-	widths[PART_COUNT]   = widths[PART_ICON] + widthTexts;
-	widths[PART_INVALID] = widths[PART_COUNT] + widthTexts;
-	widths[PART_MODULE]  = -1;
+	widths[PART_COUNT]     = rcMain.Width() / 5;
+	widths[PART_INVALID]   = widths[PART_COUNT] + rcMain.Width() / 5;
+	widths[PART_IMAGEBASE] = widths[PART_INVALID] + rcMain.Width() / 3;
+	widths[PART_MODULE]    = -1;
 
 	StatusBar.SetParts(PARTS, widths);
-	StatusBar.SetMinHeight(widthIcon);
 
 	ResizeClient(rcMain.Width(), rcMain.Height() + rcStatus.Height(), FALSE);
+}
+
+void MainGui::fillStatusBar()
+{
+	// Rewrite ImportsHandling so we get these easily
+	unsigned int totalImports = 0;
+	unsigned int invalidImports = 0;
+
+	// \t = center, \t\t = right-align
+	swprintf_s(stringBuffer, _countof(stringBuffer), TEXT("\tImports: %u"), totalImports);
+	StatusBar.SetText(PART_COUNT, stringBuffer);
+
+	if(invalidImports > 0)
+	{
+		StatusBar.SetIcon(PART_INVALID, hIconError);
+	}
+	else
+	{
+		StatusBar.SetIcon(PART_INVALID, hIconCheck);
+	}
+
+	swprintf_s(stringBuffer, _countof(stringBuffer), TEXT("\tInvalid: %u"), invalidImports);
+	StatusBar.SetText(PART_INVALID, stringBuffer);
+
+	if(selectedProcess)
+	{
+		DWORD_PTR imageBase = 0;
+		const WCHAR * fileName = 0;
+
+		if(processAccessHelp.selectedModule)
+		{
+			imageBase = processAccessHelp.selectedModule->modBaseAddr;
+			fileName = processAccessHelp.selectedModule->getFilename();
+		}
+		else
+		{
+			imageBase = selectedProcess->imageBase;
+			fileName = selectedProcess->filename;
+		}
+
+		swprintf_s(stringBuffer, _countof(stringBuffer), TEXT("\tImagebase: ")TEXT(PRINTF_DWORD_PTR_FULL), imageBase);
+		StatusBar.SetText(PART_IMAGEBASE, stringBuffer);
+		StatusBar.SetText(PART_MODULE, fileName);
+		StatusBar.SetTipText(PART_MODULE, fileName);
+	}
+	else
+	{
+		StatusBar.SetText(PART_IMAGEBASE, L"");
+		StatusBar.SetText(PART_MODULE, L"");
+	}
 }
 
 bool MainGui::showFileDialog(WCHAR * selectedFile, bool save, const WCHAR * defFileName, const WCHAR * filter, const WCHAR * defExtension, const WCHAR * directory)
@@ -449,12 +497,13 @@ void MainGui::pickDllActionHandler()
 		processAccessHelp.selectedModule = dlgPickDll.getSelectedModule();
 		Logger::printfDialog(TEXT("->>> Module %s selected."), processAccessHelp.selectedModule->getFilename());
 		Logger::printfDialog(TEXT("Imagebase: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size: %08X"),processAccessHelp.selectedModule->modBaseAddr,processAccessHelp.selectedModule->modBaseSize);
-		StatusBar.SetText(PART_MODULE, processAccessHelp.selectedModule->getFilename());
 	}
 	else
 	{
 		processAccessHelp.selectedModule = 0;
 	}
+
+	fillStatusBar();
 }
 
 void MainGui::pickApiActionHandler(CTreeItem item)
@@ -504,6 +553,8 @@ void MainGui::pickApiActionHandler(CTreeItem item)
 			}
 		}
 	}
+
+	fillStatusBar();
 }
 
 void MainGui::startDisassemblerGui(CTreeItem selectedTreeNode)
@@ -548,6 +599,7 @@ void MainGui::processSelectedActionHandler(int index)
 	{
 		enableDialogControls(FALSE);
 		Logger::printfDialog(TEXT("Error: Cannot open process handle."));
+		fillStatusBar();
 		return;
 	}
 
@@ -578,7 +630,7 @@ void MainGui::processSelectedActionHandler(int index)
 	selectedProcess = &process;
 	enableDialogControls(TRUE);
 
-	StatusBar.SetText(PART_MODULE, process.filename);
+	fillStatusBar();
 }
 
 void MainGui::fillProcessListComboBox(CComboBox& hCombo)
@@ -723,6 +775,8 @@ void MainGui::getImportsActionHandler()
 		apiReader.readAndParseIAT(addressIAT, sizeIAT,importsHandling.moduleList);
 		importsHandling.displayAllImports();
 	}
+
+	fillStatusBar();
 }
 
 DWORD_PTR MainGui::stringToDwordPtr(const WCHAR * hexString)
@@ -846,6 +900,8 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 			}
 		}
 	}
+
+	fillStatusBar(); // ?
 }
 
 void MainGui::DisplayContextMenuLog(CWindow hwnd, CPoint pt)
@@ -1159,6 +1215,7 @@ void MainGui::clearImportsActionHandler()
 {
 	TreeImports.DeleteAllItems();
 	importsHandling.moduleList.clear();
+	fillStatusBar();
 }
 
 void MainGui::pluginActionHandler( int menuItem )
@@ -1194,4 +1251,5 @@ void MainGui::pluginActionHandler( int menuItem )
 
 	importsHandling.scanAndFixModuleList();
 	importsHandling.displayAllImports();
+	fillStatusBar();
 }
