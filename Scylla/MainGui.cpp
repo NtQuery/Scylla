@@ -41,13 +41,16 @@ MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports), TreeImpor
 	hIcon.LoadIcon(IDI_ICON_SCYLLA);
 	hMenuImports.LoadMenu(IDR_MENU_IMPORTS);
 	hMenuLog.LoadMenu(IDR_MENU_LOG);
+	accelerators.LoadAccelerators(IDR_ACCELERATOR_MAIN);
+
+	hIconCheck.LoadIcon(IDI_ICON_CHECK);
+	hIconWarning.LoadIcon(IDI_ICON_WARNING);
+	hIconError.LoadIcon(IDI_ICON_ERROR);
 
 	if(hMenuImports)
 	{
 		appendPluginListToMenu(hMenuImports.GetSubMenu(0));
 	}
-
-	accelerators.LoadAccelerators(IDR_ACCELERATOR_MAIN);
 }
 
 BOOL MainGui::PreTranslateMessage(MSG* pMsg)
@@ -78,6 +81,8 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	CMessageLoop* pLoop = _Module.GetMessageLoop();
 	pLoop->AddMessageFilter(this);
 
+	//setupStatusBar();
+
 	DoDataExchange(); // attach controls
 	DlgResize_Init(true, true);
 
@@ -97,6 +102,12 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 void MainGui::OnDestroy()
 {
 	PostQuitMessage(0);
+}
+
+void MainGui::OnSize(UINT nType, CSize size)
+{
+	StatusBar.SendMessage(WM_SIZE);
+	SetMsgHandled(FALSE);
 }
 
 void MainGui::OnLButtonDown(UINT nFlags, CPoint point)
@@ -350,6 +361,31 @@ void MainGui::OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl)
 	showAboutDialog();
 }
 
+void MainGui::setupStatusBar()
+{	
+	StatusBar = CreateStatusWindow(WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, L"", m_hWnd, ATL_IDW_STATUS_BAR);
+
+	CRect rcMain, rcStatus;
+	GetClientRect(&rcMain);
+	StatusBar.GetClientRect(&rcStatus);
+
+	const int widthIcon = 16 + 2;
+	int widthTexts = (rcMain.Width() - widthIcon) / 3;
+
+	const int PARTS = 4;
+	int widths[PARTS];
+
+	widths[PART_ICON]    = widthIcon;
+	widths[PART_COUNT]   = widths[PART_ICON] + widthTexts;
+	widths[PART_INVALID] = widths[PART_COUNT] + widthTexts;
+	widths[PART_MODULE]  = -1;
+
+	StatusBar.SetParts(PARTS, widths);
+	StatusBar.SetMinHeight(widthIcon);
+
+	ResizeClient(rcMain.Width(), rcMain.Height() + rcStatus.Height(), FALSE);
+}
+
 bool MainGui::showFileDialog(WCHAR * selectedFile, bool save, const WCHAR * defFileName, const WCHAR * filter, const WCHAR * defExtension, const WCHAR * directory)
 {
 OPENFILENAME ofn = {0};
@@ -413,6 +449,7 @@ void MainGui::pickDllActionHandler()
 		processAccessHelp.selectedModule = dlgPickDll.getSelectedModule();
 		Logger::printfDialog(TEXT("->>> Module %s selected."), processAccessHelp.selectedModule->getFilename());
 		Logger::printfDialog(TEXT("Imagebase: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size: %08X"),processAccessHelp.selectedModule->modBaseAddr,processAccessHelp.selectedModule->modBaseSize);
+		StatusBar.SetText(PART_MODULE, processAccessHelp.selectedModule->getFilename());
 	}
 	else
 	{
@@ -540,6 +577,8 @@ void MainGui::processSelectedActionHandler(int index)
 
 	selectedProcess = &process;
 	enableDialogControls(TRUE);
+
+	StatusBar.SetText(PART_MODULE, process.filename);
 }
 
 void MainGui::fillProcessListComboBox(CComboBox& hCombo)

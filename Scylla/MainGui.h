@@ -45,6 +45,7 @@ public:
 
 		MSG_WM_INITDIALOG(OnInitDialog)
 		MSG_WM_DESTROY(OnDestroy)
+		MSG_WM_SIZE(OnSize)
 		MSG_WM_CONTEXTMENU(OnContextMenu)
 		//MSG_WM_LBUTTONDOWN(OnLButtonDown)
 		MSG_WM_COMMAND(OnCommand)
@@ -84,7 +85,7 @@ public:
 		COMMAND_ID_HANDLER_EX(ID_HELP_ABOUT, OnAbout)
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnExit)
 
-		REFLECT_NOTIFICATIONS()
+		REFLECT_NOTIFY_ID(IDC_TREE_IMPORTS)
 		CHAIN_MSG_MAP(CDialogResize<MainGui>)
 
 	ALT_MSG_MAP(IDC_TREE_IMPORTS) // message map for subclassed treeview
@@ -161,6 +162,14 @@ protected:
 	CEdit EditIATAddress;
 	CEdit EditIATSize;
 	CListBox ListLog;
+	CStatusBarCtrl StatusBar;
+
+	enum StatusParts {
+		PART_ICON = 0,
+		PART_COUNT,
+		PART_INVALID,
+		PART_MODULE
+	};
 
 	CContainedWindow TreeImportsSubclass;
 
@@ -170,6 +179,9 @@ protected:
 	CMenu hMenuImports;
 	CMenu hMenuLog;
 	CAccelerator accelerators;
+	CIcon hIconCheck;
+	CIcon hIconWarning;
+	CIcon hIconError;
 
 	static const int MenuImportsOffsetTrace = 2;
 	static const int MenuImportsTraceOffsetScylla = 2;
@@ -183,6 +195,7 @@ protected:
 
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
 	void OnDestroy();
+	void OnSize(UINT nType, CSize size);
 	void OnLButtonDown(UINT nFlags, CPoint point);
 	void OnContextMenu(CWindow wnd, CPoint point);
 	void OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl);
@@ -223,6 +236,7 @@ protected:
 
 	// GUI functions
 
+	void setupStatusBar();
 	bool showFileDialog(WCHAR * selectedFile, bool save, const WCHAR * defFileName, const WCHAR * filter = NULL, const WCHAR * defExtension = NULL, const WCHAR * directory = NULL);
 	void fillProcessListComboBox(CComboBox& hCombo);
 	void setIconAndDialogCaption();
