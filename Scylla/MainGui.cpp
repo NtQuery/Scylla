@@ -512,6 +512,9 @@ void MainGui::pickDllActionHandler()
 	{
 		//get selected module
 		processAccessHelp.selectedModule = dlgPickDll.getSelectedModule();
+
+		processAccessHelp.targetImageBase = processAccessHelp.selectedModule->modBaseAddr;
+
 		Logger::printfDialog(TEXT("->>> Module %s selected."), processAccessHelp.selectedModule->getFilename());
 		Logger::printfDialog(TEXT("Imagebase: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size: %08X"),processAccessHelp.selectedModule->modBaseAddr,processAccessHelp.selectedModule->modBaseSize);
 	}

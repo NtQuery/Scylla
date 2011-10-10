@@ -2,7 +2,8 @@
 
 #include "Logger.h"
 #include "ConfigurationHolder.h"
-//#define DEBUG_COMMENTS
+
+#define DEBUG_COMMENTS
 
 
 bool ImportRebuild::splitTargetFile()
@@ -410,6 +411,11 @@ bool ImportRebuild::buildNewImportTable(std::map<DWORD_PTR, ImportModuleThunk> &
 
 	DWORD dwSize = fillImportSection(moduleList);
 
+	if (!dwSize)
+	{
+		return false;
+	}
+
 	setFlagToIATSection((*moduleList.begin()).second.firstThunk);
 
 	pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress = vecSectionHeaders[importSectionIndex].VirtualAddress;
@@ -525,6 +531,15 @@ DWORD ImportRebuild::fillImportSection( std::map<DWORD_PTR, ImportModuleThunk> &
 
 			pThunk = (PIMAGE_THUNK_DATA)(getMemoryPointerFromRVA(importThunk->rva));
 
+			//check wrong iat pointer
+			if (!pThunk)
+			{
+#ifdef DEBUG_COMMENTS
+				Logger::debugLog(TEXT("fillImportSection :: Failed to get pThunk RVA: %X\n"), importThunk->rva);
+#endif
+				return 0;
+			}
+
 			if ((lastRVA + sizeof(DWORD_PTR)) != importThunk->rva)
 			{
 				//add additional import desc
@@ -532,6 +547,9 @@ DWORD ImportRebuild::fillImportSection( std::map<DWORD_PTR, ImportModuleThunk> &
 			}
 			lastRVA = importThunk->rva;
 
+#ifdef DEBUG_COMMENTS
+			Logger::debugLog(TEXT("fillImportSection :: importThunk %X pThunk %X pImportByName %X offset %X\n"), importThunk,pThunk,pImportByName,offset);
+#endif
 			stringLength = addImportToImportTable(importThunk, pThunk, pImportByName, offset);
 
 			offset += (DWORD)stringLength; //is 0 bei import by ordinal
@@ -552,9 +570,12 @@ bool ImportRebuild::rebuildImportTable(const WCHAR * targetFilePath, const WCHAR
 	{
 		splitTargetFile();
 
-		buildNewImportTable(moduleList);
+		retValue = buildNewImportTable(moduleList);
 
-		retValue = saveNewFile(newFilePath);
+		if (retValue)
+		{
+			retValue = saveNewFile(newFilePath);
+		}
 
 		clearAllData();
 
@@ -598,8 +619,15 @@ size_t ImportRebuild::addImportToImportTable( ImportThunk * pImport, PIMAGE_THUN
 
 		pThunk->u1.AddressOfData = convertOffsetToRVAVector(vecSectionHeaders[importSectionIndex].PointerToRawData + sectionOffset);
 
+		if (!pThunk->u1.AddressOfData)
+		{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("pThunk->u1.AddressOfData %X %X %X\n",pThunk->u1.AddressOfData, pThunk,  vecSectionHeaders[importSectionIndex].PointerToRawData + offset);
+			Logger::debugLog("addImportToImportTable :: failed to get AddressOfData %X %X\n",vecSectionHeaders[importSectionIndex].PointerToRawData, sectionOffset);
+#endif
+		}
+
+#ifdef DEBUG_COMMENTS
+		Logger::debugLog("addImportToImportTable :: pThunk->u1.AddressOfData %X %X %X\n",pThunk->u1.AddressOfData, pThunk,  vecSectionHeaders[importSectionIndex].PointerToRawData + sectionOffset);
 #endif
 		stringLength += sizeof(WORD);
 	}
