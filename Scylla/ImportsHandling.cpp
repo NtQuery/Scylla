@@ -356,8 +356,8 @@ bool ImportsHandling::setImport(CTreeItem item, const WCHAR * moduleName, const 
 			const ImportModuleThunk * module = getModuleThunk(parent);
 			if(module)
 			{
-				wcscpy_s(import->moduleName, MAX_PATH, moduleName);
-				strcpy_s(import->name, MAX_PATH, apiName);
+				wcscpy_s(import->moduleName, _countof(import->moduleName), moduleName);
+				strcpy_s(import->name, _countof(import->name), apiName);
 				import->ordinal = ordinal;
 				//import->apiAddressVA = api->va; //??
 				import->hint = hint;
@@ -470,7 +470,7 @@ bool ImportsHandling::cutImport(CTreeItem item)
 					if (module->isValid() && module->moduleName[0] == L'?')
 					{
 						//update module name
-						wcscpy_s(module->moduleName,260,(*module->thunkList.begin()).second.moduleName);
+						wcscpy_s(module->moduleName,_countof(module->moduleName),(*module->thunkList.begin()).second.moduleName);
 					}
 
 					module->firstThunk = (*module->thunkList.begin()).second.rva;
@@ -573,7 +573,7 @@ bool ImportsHandling::addModuleToModuleList(const WCHAR * moduleName, DWORD_PTR 
 	ImportModuleThunk module;
 
 	module.firstThunk = firstThunk;
-	wcscpy_s(module.moduleName, MAX_PATH, moduleName);
+	wcscpy_s(module.moduleName, _countof(module.moduleName), moduleName);
 
 	moduleListNew.insert(std::pair<DWORD_PTR,ImportModuleThunk>(firstThunk,module));
 
@@ -603,7 +603,7 @@ void ImportsHandling::addUnknownModuleToModuleList(DWORD_PTR firstThunk)
 	ImportModuleThunk module;
 
 	module.firstThunk = firstThunk;
-	wcscpy_s(module.moduleName, MAX_PATH, L"?");
+	wcscpy_s(module.moduleName, _countof(module.moduleName), L"?");
 
 	moduleListNew.insert(std::pair<DWORD_PTR,ImportModuleThunk>(firstThunk,module));
 }
@@ -678,8 +678,8 @@ bool ImportsHandling::addNotFoundApiToModuleList(const ImportThunk * apiNotFound
 	import.apiAddressVA = apiNotFound->apiAddressVA;
 	import.ordinal = 0;
 
-	wcscpy_s(import.moduleName, MAX_PATH, L"?");
-	strcpy_s(import.name, MAX_PATH, "?");
+	wcscpy_s(import.moduleName, _countof(import.moduleName), L"?");
+	strcpy_s(import.name, _countof(import.name), "?");
 
 	module->thunkList.insert(std::pair<DWORD_PTR,ImportThunk>(import.rva, import));
 
@@ -745,8 +745,8 @@ bool ImportsHandling::addFunctionToModuleList(const ImportThunk * apiFound)
 	import.ordinal = apiFound->ordinal;
 	import.hint = apiFound->hint;
 
-	wcscpy_s(import.moduleName, MAX_PATH, apiFound->moduleName);
-	strcpy_s(import.name, MAX_PATH, apiFound->name);
+	wcscpy_s(import.moduleName, _countof(import.moduleName), apiFound->moduleName);
+	strcpy_s(import.name, _countof(import.name), apiFound->name);
 
 	module->thunkList.insert(std::pair<DWORD_PTR,ImportThunk>(import.rva, import));
 
