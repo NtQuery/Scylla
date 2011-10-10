@@ -65,7 +65,7 @@ private:
 		};
 	};
 
-	std::hash_map<HTREEITEM, TreeItemData> itemData;
+	stdext::hash_map<HTREEITEM, TreeItemData> itemData;
 
 	void setItemData(CTreeItem item, const TreeItemData& data);
 	TreeItemData * getItemData(CTreeItem item);
