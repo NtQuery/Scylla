@@ -467,6 +467,14 @@ bool ImportsHandling::cutImport(CTreeItem item)
 				}
 				else
 				{
+					if (module->isValid() && module->moduleName[0] == L'?')
+					{
+						//update module name
+						wcscpy_s(module->moduleName,260,(*module->thunkList.begin()).second.moduleName);
+					}
+
+					module->firstThunk = (*module->thunkList.begin()).second.rva;
+
 					updateModuleInTreeView(module, module->hTreeItem);
 				}
 
