@@ -55,10 +55,17 @@ ImportsHandling::ImportsHandling(CMultiSelectTreeViewCtrl& TreeImports) : TreeIm
 	hIconWarning.LoadIcon(IDI_ICON_WARNING, 16, 16);
 	hIconError.LoadIcon(IDI_ICON_ERROR, 16, 16);
 
-	TreeIcons.Create(16, 16, ILC_COLOR32, 3, 1);
+	CDCHandle dc = TreeImports.GetDC();
+	int bits = dc.GetDeviceCaps(BITSPIXEL);
+
+	const UINT FLAGS = bits > 16 ? ILC_COLOR32 : (ILC_COLOR24 | ILC_MASK);
+
+	TreeIcons.Create(16, 16, FLAGS, 3, 1);
 	TreeIcons.AddIcon(hIconCheck);
 	TreeIcons.AddIcon(hIconWarning);
 	TreeIcons.AddIcon(hIconError);
+
+	m_thunkCount = m_invalidThunkCount = m_suspectThunkCount = 0;
 }
 
 ImportsHandling::~ImportsHandling()

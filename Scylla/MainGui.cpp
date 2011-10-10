@@ -205,7 +205,7 @@ LRESULT MainGui::OnTreeImportsKeyDown(const NMHDR* pnmh)
 	{
 	case VK_RETURN:
 		{
-			CTreeItem selected = TreeImports.GetFirstSelectedItem();
+			CTreeItem selected = TreeImports.GetFocusItem();
 			if(!selected.IsNull() && !selected.GetParent().IsNull())
 			{
 				pickApiActionHandler(selected);
@@ -698,11 +698,13 @@ bool MainGui::saveLogToFile(const WCHAR * file)
 void MainGui::showInvalidImportsActionHandler()
 {
 	importsHandling.selectImports(true, false);
+	GotoDlgCtrl(TreeImports);
 }
 
 void MainGui::showSuspectImportsActionHandler()
 {
 	importsHandling.selectImports(false, true);
+	GotoDlgCtrl(TreeImports);
 }
 
 void MainGui::iatAutosearchActionHandler()
@@ -730,7 +732,7 @@ void MainGui::iatAutosearchActionHandler()
 				swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("%08X"),sizeIAT);
 				EditIATSize.SetWindowText(stringBuffer);
 
-				swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("IAT found! Start Address ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size 0x%04X (%d) "),addressIAT,sizeIAT,sizeIAT);
+				swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("IAT found:\r\n\r\nStart: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("\r\nSize: 0x%04X (%d) "),addressIAT,sizeIAT,sizeIAT);
 				MessageBox(stringBuffer, L"IAT found", MB_ICONINFORMATION);
 			}
 			else
@@ -817,7 +819,7 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 	if(pt.x == -1 && pt.y == -1) // invoked by keyboard
 	{
 		CRect pos;
-		over = TreeImports.GetFirstSelectedItem();
+		over = TreeImports.GetFocusItem();
 		if(over)
 		{
 			over.EnsureVisible();
@@ -885,7 +887,7 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 		}
 	}
 
-	fillStatusBar(); // ?
+	fillStatusBar();
 }
 
 void MainGui::DisplayContextMenuLog(CWindow hwnd, CPoint pt)

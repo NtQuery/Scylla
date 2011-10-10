@@ -419,7 +419,7 @@ public:
 			if( (m_dwExStyle & MTVS_EX_NOMARQUEE) == 0 && ::DragDetect(m_hWnd, point) )
 			{
 				// Great we're dragging a rubber-band
-				// Clear selection of CTRL is not down
+				// Clear selection if CTRL is not down
 				if( ::GetKeyState(VK_CONTROL) >= 0 )
 				{
 					for( int i = 0; i < m_aData.GetSize(); i++ )
@@ -433,7 +433,7 @@ public:
 				m_ptDragStart = m_ptDragOld = point;
 				_DrawDragRect(point);
 				m_bMarquee = true;
-				SetMsgHandled(TRUE);
+				SetMsgHandled(FALSE); //SetMsgHandled(TRUE);
 				return;
 			}
 		}
