@@ -604,9 +604,10 @@ void ApiReader::setModulePriority(ModuleInfo * module)
 {
 	const WCHAR *moduleFileName = module->getFilename();
 
+	//imports by kernelbase don't exist
 	if (!_wcsicmp(moduleFileName, TEXT("kernelbase.dll")))
 	{
-		module->priority = 0;
+		module->priority = -1;
 	}
 	else if (!_wcsicmp(moduleFileName, TEXT("ntdll.dll")))
 	{
@@ -659,6 +660,92 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 	else
 	{
 		it1 = apiList.find(virtualAddress); // Find first match.
+
+		//any high priority with a name
+		apiFound = getScoredApi(it1,countDuplicates,true,false,false,true,false,false,false,false);
+
+		if (apiFound)
+			return apiFound;
+
+		*isSuspect = true;
+
+		//high priority with a name and ansi/unicode name
+		apiFound = getScoredApi(it1,countDuplicates,true,true,false,true,false,false,false,false);
+
+		if (apiFound)
+			return apiFound;
+
+		//priority 2 with no underline in name
+		apiFound = getScoredApi(it1,countDuplicates,true,false,true,false,false,false,true,false);
+
+		if (apiFound)
+			return apiFound;
+
+		//priority 1 with a name
+		apiFound = getScoredApi(it1,countDuplicates,true,false,false,false,false,true,false,false);
+
+		if (apiFound)
+			return apiFound;
+
+		//With a name
+		apiFound = getScoredApi(it1,countDuplicates,true,false,false,false,false,false,false,false);
+
+		if (apiFound)
+			return apiFound;
+
+		//any with priority, name, ansi/unicode
+		apiFound = getScoredApi(it1,countDuplicates,true,true,false,true,false,false,false,true);
+
+		if (apiFound)
+			return apiFound;
+
+		//any with priority
+		apiFound = getScoredApi(it1,countDuplicates,false,false,false,true,false,false,false,true);
+
+		if (apiFound)
+			return apiFound;
+
+		//has prio 0 and name
+		apiFound = getScoredApi(it1,countDuplicates,false,false,false,false,true,false,false,true);
+
+		if (apiFound)
+			return apiFound;
+	}
+
+	//is never reached
+	Logger::printfDialog(TEXT("getApiByVirtualAddress :: There is a api resolving bug, VA: ")TEXT(PRINTF_DWORD_PTR_FULL),virtualAddress);
+	for (size_t c = 0; c < countDuplicates; c++, it1++)
+	{
+		apiFound = (ApiInfo *)((*it1).second);
+		Logger::printfDialog(TEXT("-> Possible API: %S ord: %d "),apiFound->name,apiFound->ordinal);
+	}
+	return (ApiInfo *) 1; 
+}
+
+/*ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isSuspect)
+{
+	stdext::hash_multimap<DWORD_PTR, ApiInfo *>::iterator it1, it2;
+	size_t c = 0;
+	size_t countDuplicates = apiList.count(virtualAddress);
+	int countHighPriority = 0;
+	ApiInfo *apiFound = 0;
+
+
+	if (countDuplicates == 0)
+	{
+		Logger::printfDialog(TEXT("getApiByVirtualAddress :: No Api found ")TEXT(PRINTF_DWORD_PTR_FULL),virtualAddress);
+		return 0;
+	}
+	else if (countDuplicates == 1)
+	{
+		//API is 100% correct
+		*isSuspect = false;
+		it1 = apiList.find(virtualAddress); // Find first match.
+		return (ApiInfo *)((*it1).second);
+	}
+	else
+	{
+		it1 = apiList.find(virtualAddress); // Find first match.
 		it2 = it1;
 		for (c = 0; c < countDuplicates; c++, it1++)
 		{
@@ -672,14 +759,14 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 
 		it1 = it2;
 
-		/*
+		
 		  This is flawed:
 		  It chooses api(prio:1, name:no) over api(prio:0, name:yes)
 		  (e.g. SHLWAPI.PathCombineW vs SHELL32.#25)
 
 		  Maybe there should be a check higher up in the code, to see if this API is surrounded
 		  by APIs of a DLL and pick the duplicate from that DLL
-		 */
+		 
 
 		if (countHighPriority == 0)
 		{
@@ -711,12 +798,12 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 			Logger::debugLog(TEXT("getApiByVirtualAddress :: countHighPriority == %d ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("\r\n"),countHighPriority,virtualAddress);
 #endif
 			*isSuspect = true;
-			/*for (c = 0; c < countDuplicates; c++, it1++)
+			for (c = 0; c < countDuplicates; c++, it1++)
 			{
 				apiFound = (ApiInfo *)((*it1).second);
 				Logger::printfDialog("%s - %s %X %X\n",apiFound->name,apiFound->module->getFilename(),apiFound->rva, apiFound->ordinal);
 			}
-			it1 = it2;*/
+			it1 = it2;
 
 			for (c = 0; c < countDuplicates; c++, it1++)
 			{
@@ -774,6 +861,128 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 	//is never reached
 	Logger::printfDialog(TEXT("getApiByVirtualAddress :: There is a big bug"));
 	return (ApiInfo *) 1; 
+}*/
+
+ApiInfo * ApiReader::getScoredApi(stdext::hash_multimap<DWORD_PTR, ApiInfo *>::iterator it1,size_t countDuplicates, bool hasName, bool hasUnicodeAnsiName, bool hasNoUnderlineInName, bool hasPrioDll,bool hasPrio0Dll,bool hasPrio1Dll, bool hasPrio2Dll, bool firstWin )
+{
+	ApiInfo * foundApi = 0;
+	ApiInfo * foundMatchingApi = 0;
+	int countFoundApis = 0;
+	int scoreNeeded = 0;
+	int scoreValue = 0;
+	size_t apiNameLength = 0;
+
+	if (hasUnicodeAnsiName || hasNoUnderlineInName)
+	{
+		hasName = true;
+	}
+
+	if (hasName)
+		scoreNeeded++;
+
+	if (hasUnicodeAnsiName)
+		scoreNeeded++;
+
+	if (hasNoUnderlineInName)
+		scoreNeeded++;
+
+	if (hasPrioDll)
+		scoreNeeded++;
+
+	if (hasPrio0Dll)
+		scoreNeeded++;
+
+	if (hasPrio1Dll)
+		scoreNeeded++;
+
+	if (hasPrio2Dll)
+		scoreNeeded++;
+
+	for (size_t c = 0; c < countDuplicates; c++, it1++)
+	{
+		foundApi = (ApiInfo *)((*it1).second);
+		scoreValue = 0;
+
+		if (hasName)
+		{
+			if (foundApi->name[0] != 0x00)
+			{
+				scoreValue++;
+
+				if (hasUnicodeAnsiName)
+				{
+					apiNameLength = strlen(foundApi->name);
+
+					if ((foundApi->name[apiNameLength - 1] == 'W') || (foundApi->name[apiNameLength - 1] == 'A'))
+					{
+						scoreValue++;
+					}
+				}
+
+				if (hasNoUnderlineInName)
+				{
+					if (!strrchr(foundApi->name,TEXT('_')))
+					{
+						scoreValue++;
+					}
+				}
+			}
+		}
+
+		if (hasPrioDll)
+		{
+			if (foundApi->module->priority >= 1)
+			{
+				scoreValue++;
+			}
+		}
+
+		if (hasPrio0Dll)
+		{
+			if (foundApi->module->priority == 0)
+			{
+				scoreValue++;
+			}
+		}
+
+		if (hasPrio1Dll)
+		{
+			if (foundApi->module->priority == 1)
+			{
+				scoreValue++;
+			}
+		}
+
+		if (hasPrio2Dll)
+		{
+			if (foundApi->module->priority == 2)
+			{
+				scoreValue++;
+			}
+		}
+
+
+		if (scoreValue == scoreNeeded)
+		{
+			foundMatchingApi = foundApi;
+			countFoundApis++;
+
+			if (firstWin)
+			{
+				return foundMatchingApi;
+			}
+		}
+	}
+
+	if (countFoundApis == 1)
+	{
+		return foundMatchingApi;
+	}
+	else
+	{
+		return (ApiInfo *)0;
+	}
+
 }
 
 void ApiReader::setMinMaxApiAddress(DWORD_PTR virtualAddress)
