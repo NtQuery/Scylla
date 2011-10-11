@@ -644,7 +644,7 @@ size_t ImportRebuild::addImportDescriptor(ImportModuleThunk * pImportModule, DWO
 	char dllName[MAX_PATH];
 	size_t stringLength = 0;
 
-	wcstombs_s(&stringLength, dllName, (size_t)MAX_PATH, pImportModule->moduleName, (size_t)MAX_PATH);
+	wcstombs_s(&stringLength, dllName, (size_t)_countof(dllName), pImportModule->moduleName, (size_t)_countof(pImportModule->moduleName));
 
 	memcpy((vecSectionData[importSectionIndex] + sectionOffset), dllName, stringLength); //copy module name to section
 

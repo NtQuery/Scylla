@@ -99,8 +99,8 @@ void DllInjectionPlugin::injectImprecPlugin(Plugin & plugin, std::map<DWORD_PTR,
 	UnmapViewOfFile(lpImprecViewOfFile);
 
 	newPlugin.fileSize = plugin.fileSize;
-	wcscpy_s(newPlugin.pluginName, plugin.pluginName);
-	wcscpy_s(newPlugin.fullpath, PluginLoader::imprecWrapperDllPath);
+	wcscpy_s(newPlugin.pluginName, _countof(newPlugin.pluginName), plugin.pluginName);
+	wcscpy_s(newPlugin.fullpath, _countof(newPlugin.fullpath), PluginLoader::imprecWrapperDllPath);
 
 	injectPlugin(newPlugin,moduleList,imageBase,imageSize);
 
@@ -283,12 +283,12 @@ void DllInjectionPlugin::updateImportsWithPluginResult( PUNRESOLVED_IMPORT first
 					importThunk->apiAddressVA = firstUnresImp->InvalidApiAddress;
 					importThunk->hint = (WORD)apiInfo->hint;
 					importThunk->ordinal = apiInfo->ordinal;
-					strcpy_s(importThunk->name, MAX_PATH,apiInfo->name);
-					wcscpy_s(importThunk->moduleName, MAX_PATH, apiInfo->module->getFilename());
+					strcpy_s(importThunk->name, _countof(importThunk->name),apiInfo->name);
+					wcscpy_s(importThunk->moduleName, _countof(importThunk->moduleName), apiInfo->module->getFilename());
 
 					if (moduleThunk->moduleName[0] == TEXT('?'))
 					{
-						wcscpy_s(moduleThunk->moduleName, MAX_PATH, apiInfo->module->getFilename());
+						wcscpy_s(moduleThunk->moduleName, _countof(importThunk->moduleName), apiInfo->module->getFilename());
 					}
 				}
 				

@@ -987,7 +987,7 @@ void MainGui::dumpActionHandler()
 			peDump.sizeOfImage = processAccessHelp.selectedModule->modBaseSize;
 			//get it from gui
 			peDump.entryPoint = getOEPFromGui();
-			wcscpy_s(peDump.fullpath, MAX_PATH, processAccessHelp.selectedModule->fullPath);
+			wcscpy_s(peDump.fullpath, _countof(peDump.fullpath), processAccessHelp.selectedModule->fullPath);
 		}
 		else
 		{
@@ -995,7 +995,7 @@ void MainGui::dumpActionHandler()
 			peDump.sizeOfImage = (DWORD)ProcessAccessHelp::targetSizeOfImage;
 			//get it from gui
 			peDump.entryPoint = getOEPFromGui();
-			wcscpy_s(peDump.fullpath, MAX_PATH, selectedProcess->fullPath);
+			wcscpy_s(peDump.fullpath, _countof(peDump.fullpath), selectedProcess->fullPath);
 		}
 
 		peDump.useHeaderFromDisk = ConfigurationHolder::getConfigObject(USE_PE_HEADER_FROM_DISK)->isTrue();
@@ -1090,7 +1090,7 @@ void MainGui::dumpFixActionHandler()
 
 	if (showFileDialog(selectedFilePath, false, NULL, fileFilter))
 	{
-		wcscpy_s(newFilePath,MAX_PATH,selectedFilePath);
+		wcscpy_s(newFilePath,_countof(newFilePath),selectedFilePath);
 
 		const WCHAR * extension = 0;
 
@@ -1101,11 +1101,11 @@ void MainGui::dumpFixActionHandler()
 			extension = selectedFilePath + (dot - newFilePath); //wcsrchr(selectedFilePath, L'.');
 		}
 
-		wcscat_s(newFilePath, MAX_PATH, L"_SCY");
+		wcscat_s(newFilePath, _countof(newFilePath), L"_SCY");
 
 		if(extension)
 		{
-			wcscat_s(newFilePath, MAX_PATH, extension);
+			wcscat_s(newFilePath, _countof(newFilePath), extension);
 		}
 
 		if (importRebuild.rebuildImportTable(selectedFilePath,newFilePath,importsHandling.moduleList))

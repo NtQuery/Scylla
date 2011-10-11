@@ -218,9 +218,9 @@ void ApiReader::addApi(char *functionName, WORD hint, WORD ordinal, DWORD_PTR va
 {
 	ApiInfo *apiInfo = new ApiInfo();
 
-	if ((functionName != 0) && (strlen(functionName) < MAX_PATH))
+	if ((functionName != 0) && (strlen(functionName) < _countof(apiInfo->name)))
 	{
-		strcpy_s(apiInfo->name, MAX_PATH, functionName);
+		strcpy_s(apiInfo->name, _countof(apiInfo->name), functionName);
 	}
 	else
 	{
@@ -921,7 +921,7 @@ ApiInfo * ApiReader::getScoredApi(stdext::hash_multimap<DWORD_PTR, ApiInfo *>::i
 
 				if (hasNoUnderlineInName)
 				{
-					if (!strrchr(foundApi->name,TEXT('_')))
+					if (!strrchr(foundApi->name, '_'))
 					{
 						scoreValue++;
 					}
@@ -1103,7 +1103,7 @@ bool ApiReader::addModuleToModuleList(const WCHAR * moduleName, DWORD_PTR firstT
 	ImportModuleThunk module;
 
 	module.firstThunk = firstThunk;
-	wcscpy_s(module.moduleName, MAX_PATH, moduleName);
+	wcscpy_s(module.moduleName, _countof(module.moduleName), moduleName);
 
 	(*moduleThunkList).insert(std::pair<DWORD_PTR,ImportModuleThunk>(firstThunk,module));
 
@@ -1115,7 +1115,7 @@ void ApiReader::addUnknownModuleToModuleList(DWORD_PTR firstThunk)
 	ImportModuleThunk module;
 
 	module.firstThunk = firstThunk;
-	wcscpy_s(module.moduleName, MAX_PATH, TEXT("?"));
+	wcscpy_s(module.moduleName, _countof(module.moduleName), TEXT("?"));
 
 	(*moduleThunkList).insert(std::pair<DWORD_PTR,ImportModuleThunk>(firstThunk,module));
 }
@@ -1179,8 +1179,8 @@ bool ApiReader::addFunctionToModuleList(ApiInfo * apiFound, DWORD_PTR va, DWORD_
 	import.ordinal = ordinal;
 	import.hint = (WORD)apiFound->hint;
 
-	wcscpy_s(import.moduleName, MAX_PATH, apiFound->module->getFilename());
-	strcpy_s(import.name, MAX_PATH, apiFound->name);
+	wcscpy_s(import.moduleName, _countof(import.moduleName), apiFound->module->getFilename());
+	strcpy_s(import.name, _countof(import.name), apiFound->name);
 
 	module->thunkList.insert(std::pair<DWORD_PTR,ImportThunk>(import.rva, import));
 
@@ -1274,8 +1274,8 @@ bool ApiReader::addNotFoundApiToModuleList(DWORD_PTR iatAddressVA, DWORD_PTR api
 	import.apiAddressVA = apiAddress;
 	import.ordinal = 0;
 
-	wcscpy_s(import.moduleName, MAX_PATH, TEXT("?"));
-	strcpy_s(import.name, MAX_PATH, "?");
+	wcscpy_s(import.moduleName, _countof(import.moduleName), TEXT("?"));
+	strcpy_s(import.name, _countof(import.name), "?");
 
 	module->thunkList.insert(std::pair<DWORD_PTR,ImportThunk>(import.rva, import));
 
