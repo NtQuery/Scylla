@@ -3,7 +3,7 @@
 #include "Logger.h"
 #include "ConfigurationHolder.h"
 
-#define DEBUG_COMMENTS
+//#define DEBUG_COMMENTS
 
 
 bool ImportRebuild::splitTargetFile()
@@ -625,6 +625,10 @@ size_t ImportRebuild::addImportToImportTable( ImportThunk * pImport, PIMAGE_THUN
 			Logger::debugLog("addImportToImportTable :: failed to get AddressOfData %X %X\n",vecSectionHeaders[importSectionIndex].PointerToRawData, sectionOffset);
 #endif
 		}
+
+		//next import should be nulled
+		pThunk++;
+		pThunk->u1.AddressOfData = 0;
 
 #ifdef DEBUG_COMMENTS
 		Logger::debugLog("addImportToImportTable :: pThunk->u1.AddressOfData %X %X %X\n",pThunk->u1.AddressOfData, pThunk,  vecSectionHeaders[importSectionIndex].PointerToRawData + sectionOffset);
