@@ -25,6 +25,7 @@ public:
 		DDX_CONTROL_HANDLE(IDC_SYSLINK_DISTORM, LinkDistorm)
 		DDX_CONTROL_HANDLE(IDC_SYSLINK_WTL, LinkWTL)
 		DDX_CONTROL_HANDLE(IDC_SYSLINK_SILK, LinkSilk)
+		DDX_CONTROL_HANDLE(IDC_SYSLINK_TINYXML, LinkTinyxml)
 		DDX_CONTROL_HANDLE(IDC_SYSLINK_LICENSE, LinkLicense)
 	END_DDX_MAP()
 
@@ -38,9 +39,12 @@ public:
 		NOTIFY_HANDLER_EX(IDC_SYSLINK_WTL, NM_RETURN, OnLink)
 		NOTIFY_HANDLER_EX(IDC_SYSLINK_SILK, NM_CLICK, OnLink)
 		NOTIFY_HANDLER_EX(IDC_SYSLINK_SILK, NM_RETURN, OnLink)
+		NOTIFY_HANDLER_EX(IDC_SYSLINK_TINYXML, NM_CLICK, OnLink)
+		NOTIFY_HANDLER_EX(IDC_SYSLINK_TINYXML, NM_RETURN, OnLink)
 		NOTIFY_HANDLER_EX(IDC_SYSLINK_VISIT, NM_CLICK, OnLink)
 		NOTIFY_HANDLER_EX(IDC_SYSLINK_VISIT, NM_RETURN, OnLink)
-
+		NOTIFY_HANDLER_EX(IDC_SYSLINK_LICENSE, NM_CLICK, OnLink)
+		NOTIFY_HANDLER_EX(IDC_SYSLINK_LICENSE, NM_RETURN, OnLink)
 		COMMAND_ID_HANDLER_EX(IDOK, OnExit)
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnExit)
 	END_MSG_MAP()
@@ -58,11 +62,13 @@ protected:
 	CLinkCtrl LinkDistorm;
 	CLinkCtrl LinkWTL;
 	CLinkCtrl LinkSilk;
+	CLinkCtrl LinkTinyxml;
 	CLinkCtrl LinkLicense;
 
 	CToolTipCtrl TooltipDistorm;
 	CToolTipCtrl TooltipWTL;
 	CToolTipCtrl TooltipSilk;
+	CToolTipCtrl TooltipTinyxml;
 	CToolTipCtrl TooltipLicense;
 
 	// Handles
@@ -79,6 +85,7 @@ protected:
 	static const WCHAR TEXT_CREDIT_SILK[];
 	static const WCHAR TEXT_GREETINGS[];
 	static const WCHAR TEXT_LICENSE[];
+	static const WCHAR TEXT_TINYXML[];
 
 	// URLs
 
@@ -88,6 +95,7 @@ protected:
 	static const WCHAR URL_WTL[];
 	static const WCHAR URL_SILK[];
 	static const WCHAR URL_LICENSE[];
+	static const WCHAR URL_TINYXML[];
 
 protected:
 

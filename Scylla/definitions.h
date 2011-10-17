@@ -23,6 +23,6 @@
 
 #endif
 
-#define APPVERSION "v0.5 Beta"
+#define APPVERSION "v0.5"
 
 #define PLUGIN_MENU_BASE_ID 0x10

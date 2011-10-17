@@ -1235,4 +1235,6 @@ bool MainGui::getCurrentModulePath(TCHAR * buffer, size_t bufferSize)
 	{
 		*(slash+1) = L'\0';
 	}
+
+	return true;
 }

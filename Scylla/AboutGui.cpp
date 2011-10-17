@@ -10,6 +10,7 @@ const WCHAR AboutGui::TEXT_CREDIT_SILK[]    = L"The small icons are taken from t
 const WCHAR AboutGui::TEXT_CREDIT_WTL[]     = L"<a>Windows Template Library</a> v8 is used for the GUI";
 const WCHAR AboutGui::TEXT_GREETINGS[]      = L"Greetz: metr0, G36KV and all from the gRn Team";
 const WCHAR AboutGui::TEXT_LICENSE[]        = L"Scylla is licensed under the <a>GNU General Public License v3</a>";
+const WCHAR AboutGui::TEXT_TINYXML[]        = L"XML support is provided by <a>TinyXML</a>";
 
 const WCHAR AboutGui::URL_VISIT1[]  = L"http://kickme.to/grn";
 const WCHAR AboutGui::URL_VISIT2[]  = L"http://forum.tuts4you.com";
@@ -17,6 +18,7 @@ const WCHAR AboutGui::URL_DISTORM[] = L"http://code.google.com/p/distorm/";
 const WCHAR AboutGui::URL_WTL[]     = L"http://wtl.sourceforge.net";
 const WCHAR AboutGui::URL_SILK[]    = L"http://www.famfamfam.com";
 const WCHAR AboutGui::URL_LICENSE[] = L"http://www.gnu.org/licenses/gpl-3.0.html";
+const WCHAR AboutGui::URL_TINYXML[] = L"http://sourceforge.net/projects/tinyxml/";
 
 BOOL AboutGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
@@ -74,6 +76,7 @@ void AboutGui::setupLinks()
 	LinkDistorm.SetWindowText(TEXT_CREDIT_DISTORM);
 	LinkWTL.SetWindowText(TEXT_CREDIT_WTL);
 	LinkSilk.SetWindowText(TEXT_CREDIT_SILK);
+	LinkTinyxml.SetWindowText(TEXT_TINYXML);
 	LinkLicense.SetWindowText(TEXT_LICENSE);
 
 	// Assign URLs to anchors in the link text
@@ -82,18 +85,21 @@ void AboutGui::setupLinks()
 	setLinkURL(LinkDistorm, URL_DISTORM);
 	setLinkURL(LinkWTL, URL_WTL);
 	setLinkURL(LinkSilk, URL_SILK);
+	setLinkURL(LinkTinyxml, URL_TINYXML);
 	setLinkURL(LinkLicense, URL_LICENSE);
 
 	// Create tooltips for the links
 	TooltipDistorm.Create(m_hWnd, NULL, NULL, TTS_NOPREFIX, WS_EX_TOPMOST);
 	TooltipWTL.Create(m_hWnd, NULL, NULL, TTS_NOPREFIX, WS_EX_TOPMOST);
 	TooltipSilk.Create(m_hWnd, NULL, NULL, TTS_NOPREFIX, WS_EX_TOPMOST);
+	TooltipTinyxml.Create(m_hWnd, NULL, NULL, TTS_NOPREFIX, WS_EX_TOPMOST);
 	TooltipLicense.Create(m_hWnd, NULL, NULL, TTS_NOPREFIX, WS_EX_TOPMOST);
 
 	// Assign control and text to the tooltips
 	setupTooltip(TooltipDistorm, LinkDistorm, URL_DISTORM);
 	setupTooltip(TooltipWTL, LinkWTL, URL_WTL);
 	setupTooltip(TooltipSilk, LinkSilk, URL_SILK);
+	setupTooltip(TooltipTinyxml, LinkTinyxml, URL_TINYXML);
 	setupTooltip(TooltipLicense, LinkLicense, URL_LICENSE);
 }
 

@@ -51,6 +51,18 @@ Keyboard Shortcuts
 Changelog
 ---------
 
+Version 0.5:
+
+- added save/load import tree feature
+- multi-select in tree view
+- fixed black icons problem in tree view
+- added keyboard shortcuts
+- dll dump + dll dump fix now working
+- added support for scattered IATs
+- pre select target path in open file dialogs
+- improved import resolving engine with api scoring
+- minor bug fixes and improvements
+
 Version 0.4:
 
  - GUI code improvements
