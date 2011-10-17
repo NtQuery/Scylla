@@ -664,7 +664,8 @@ void MainGui::loadTreeActionHandler()
 	DWORD_PTR addrIAT = 0;
 	DWORD sizeIAT = 0;
 
-	if(showFileDialog(selectedFilePath, false, NULL, filterXml))
+	getCurrentModulePath(stringBuffer, _countof(stringBuffer));
+	if(showFileDialog(selectedFilePath, false, NULL, filterXml, NULL, stringBuffer))
 	{
 		if(!treeIO.importTreeList(selectedFilePath, importsHandling.moduleList, &addrOEP, &addrIAT, &sizeIAT))
 		{
@@ -698,7 +699,8 @@ void MainGui::saveTreeActionHandler()
 	DWORD_PTR addrIAT;
 	DWORD sizeIAT;
 
-	if(showFileDialog(selectedFilePath, true, NULL, filterXml, L"xml"))
+	getCurrentModulePath(stringBuffer, _countof(stringBuffer));
+	if(showFileDialog(selectedFilePath, true, NULL, filterXml, L"xml", stringBuffer))
 	{
 		addrOEP = EditOEPAddress.GetValue();
 		addrIAT = EditIATAddress.GetValue();
@@ -876,7 +878,8 @@ void MainGui::DisplayContextMenuLog(CWindow hwnd, CPoint pt)
 		{
 		case ID__SAVE:
 			WCHAR selectedFilePath[MAX_PATH];
-			if(showFileDialog(selectedFilePath, true, NULL, filterTxt, L"txt"))
+			getCurrentModulePath(stringBuffer, _countof(stringBuffer));
+			if(showFileDialog(selectedFilePath, true, NULL, filterTxt, L"txt", stringBuffer))
 			{
 				saveLogToFile(selectedFilePath);
 			}
@@ -943,7 +946,8 @@ void MainGui::dumpActionHandler()
 		defExtension = L"exe";
 	}
 
-	if(showFileDialog(selectedFilePath, true, NULL, fileFilter, defExtension))
+	getCurrentModulePath(stringBuffer, _countof(stringBuffer));
+	if(showFileDialog(selectedFilePath, true, NULL, fileFilter, defExtension, stringBuffer))
 	{
 		if (processAccessHelp.selectedModule)
 		{
@@ -983,7 +987,8 @@ void MainGui::peRebuildActionHandler()
 	WCHAR selectedFilePath[MAX_PATH];
 	PeRebuild peRebuild;
 
-	if(showFileDialog(selectedFilePath, false, NULL, filterExeDll))
+	getCurrentModulePath(stringBuffer, _countof(stringBuffer));
+	if(showFileDialog(selectedFilePath, false, NULL, filterExeDll, NULL, stringBuffer))
 	{
 		if (ConfigurationHolder::getConfigObject(CREATE_BACKUP)->isTrue())
 		{
@@ -1040,7 +1045,8 @@ void MainGui::dumpFixActionHandler()
 		fileFilter = filterExe;
 	}
 
-	if (showFileDialog(selectedFilePath, false, NULL, fileFilter))
+	getCurrentModulePath(stringBuffer, _countof(stringBuffer));
+	if (showFileDialog(selectedFilePath, false, NULL, fileFilter, NULL, stringBuffer))
 	{
 		wcscpy_s(newFilePath,_countof(newFilePath),selectedFilePath);
 
@@ -1139,7 +1145,8 @@ void MainGui::dllInjectActionHandler()
 	HMODULE hMod = 0;
 	DllInjection dllInjection;
 
-	if (showFileDialog(selectedFilePath, false, NULL, filterDll))
+	getCurrentModulePath(stringBuffer, _countof(stringBuffer));
+	if (showFileDialog(selectedFilePath, false, NULL, filterDll, NULL, stringBuffer))
 	{
 		hMod = dllInjection.dllInjection(ProcessAccessHelp::hProcess, selectedFilePath);
 		if (hMod && ConfigurationHolder::getConfigObject(DLL_INJECTION_AUTO_UNLOAD)->isTrue())
@@ -1207,4 +1214,25 @@ void MainGui::pluginActionHandler( int menuItem )
 	importsHandling.scanAndFixModuleList();
 	importsHandling.displayAllImports();
 	updateStatusBar();
+}
+
+bool MainGui::getCurrentModulePath(TCHAR * buffer, size_t bufferSize)
+{
+	if(!selectedProcess)
+		return false;
+
+	if(processAccessHelp.selectedModule)
+	{
+		wcscpy_s(buffer, bufferSize, processAccessHelp.selectedModule->fullPath);
+	}
+	else
+	{
+		wcscpy_s(buffer, bufferSize, selectedProcess->fullPath);
+	}
+
+	WCHAR * slash = wcsrchr(buffer, L'\\');
+	if(slash)
+	{
+		*(slash+1) = L'\0';
+	}
 }

@@ -290,4 +290,8 @@ protected:
 
 	void clearOutputLog();
 	bool saveLogToFile(const WCHAR * file);
+
+	// Misc
+
+	bool getCurrentModulePath(TCHAR * buffer, size_t bufferSize);
 };
