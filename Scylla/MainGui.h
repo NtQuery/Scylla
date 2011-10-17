@@ -19,7 +19,7 @@
 //#include <cstdlib>
 //#include <crtdbg.h>
 
-#include <cstdio>
+//#include <cstdio>
 
 #include "Logger.h"
 #include "ProcessLister.h"
@@ -32,6 +32,7 @@ class MainGui : public CDialogImpl<MainGui>, public CWinDataExchange<MainGui>, p
 public:
 	enum { IDD = IDD_DLG_MAIN };
 
+	// Dialog Data eXchange, attaches/subclasses child controls to wrappers
 	// DDX_CONTROL : subclass
 	// DDX_CONTROL_HANDLE : attach
 	BEGIN_DDX_MAP(MainGui)
@@ -44,19 +45,20 @@ public:
 		DDX_CONTROL(IDC_EDIT_IATSIZE, EditIATSize)
 	END_DDX_MAP()
 
+	// Our message map
+	// Messages are passed from top to bottom
+	// The first handler that doesn't call SetMsgHandled(FALSE) aborts the chain
+	// If none signals the message as handled, it will be passed to mixins (CHAIN_MSG_MAP)
+	// or ultimately passed to DefWindowProc
 	BEGIN_MSG_MAP_EX(MainGui)
 
 		MSG_WM_INITDIALOG(OnInitDialog)
 		MSG_WM_DESTROY(OnDestroy)
 		MSG_WM_SIZE(OnSize)
 		MSG_WM_CONTEXTMENU(OnContextMenu)
-		//MSG_WM_LBUTTONDOWN(OnLButtonDown)
 		MSG_WM_COMMAND(OnCommand)
 
-		//NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_CLICK, OnTreeImportsClick)
 		NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_DBLCLK, OnTreeImportsDoubleClick)
-		//NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_RCLICK, OnTreeImportsRightClick)
-		//NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, NM_RDBLCLK, OnTreeImportsRightDoubleClick)
 		NOTIFY_HANDLER_EX(IDC_TREE_IMPORTS, TVN_KEYDOWN, OnTreeImportsKeyDown)
 
 		COMMAND_HANDLER_EX(IDC_CBO_PROCESSLIST, CBN_DROPDOWN, OnProcessListDrop)
@@ -88,16 +90,21 @@ public:
 		COMMAND_ID_HANDLER_EX(ID_HELP_ABOUT, OnAbout)
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnExit)
 
-		REFLECT_NOTIFY_ID(IDC_TREE_IMPORTS)
+		REFLECT_NOTIFY_ID(IDC_TREE_IMPORTS) // pass WM_NOTIFY to child control
 		CHAIN_MSG_MAP(CDialogResize<MainGui>)
 
-	ALT_MSG_MAP(IDC_TREE_IMPORTS) // message map for subclassed treeview
+		// Message map for subclassed treeview
+		// CContainedWindow forwards all messages to this map
+	ALT_MSG_MAP(IDC_TREE_IMPORTS)
 
 		MSG_WM_GETDLGCODE(OnTreeImportsSubclassGetDlgCode)
 		MSG_WM_CHAR(OnTreeImportsSubclassChar)
 
 	END_MSG_MAP()
 
+	// Dialog resize 'table'
+	// States if child controls move or resize or center in a specific direction
+	// when the parent dialog is resized
 	BEGIN_DLGRESIZE_MAP(MainGui)
 		DLGRESIZE_CONTROL(IDC_GROUP_ATTACH,    DLSZ_SIZE_X)
 		DLGRESIZE_CONTROL(IDC_CBO_PROCESSLIST, DLSZ_SIZE_X)
@@ -148,7 +155,7 @@ protected:
 
 	Process * selectedProcess;
 
-	// File selection stuff
+	// File selection filters
 
 	static const WCHAR filterExe[];
 	static const WCHAR filterDll[];
@@ -198,18 +205,19 @@ protected:
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
 	void OnDestroy();
 	void OnSize(UINT nType, CSize size);
-	void OnLButtonDown(UINT nFlags, CPoint point);
 	void OnContextMenu(CWindow wnd, CPoint point);
 	void OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl);
 
-	LRESULT OnTreeImportsClick(const NMHDR* pnmh);
+	// WM_NOTIFY handlers
+
 	LRESULT OnTreeImportsDoubleClick(const NMHDR* pnmh);
-	LRESULT OnTreeImportsRightClick(const NMHDR* pnmh);
-	LRESULT OnTreeImportsRightDoubleClick(const NMHDR* pnmh);
 	LRESULT OnTreeImportsKeyDown(const NMHDR* pnmh);
 
+	// Forwarded messages from subclassed treeview
 	UINT OnTreeImportsSubclassGetDlgCode(const MSG * lpMsg);
 	void OnTreeImportsSubclassChar(UINT nChar, UINT nRepCnt, UINT nFlags);
+
+	// WM_COMMAND handlers
 
 	void OnProcessListDrop(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnProcessListSelected(UINT uNotifyCode, int nID, CWindow wndCtl);
@@ -241,10 +249,12 @@ protected:
 	bool showFileDialog(WCHAR * selectedFile, bool save, const WCHAR * defFileName, const WCHAR * filter = NULL, const WCHAR * defExtension = NULL, const WCHAR * directory = NULL);
 
 	void setupStatusBar();
-	void fillStatusBar();
+	void updateStatusBar();
 	void fillProcessListComboBox(CComboBox& hCombo);
 	void setIconAndDialogCaption();
 	void enableDialogControls(BOOL value);
+
+	CTreeItem findTreeItem(CPoint pt, bool screenCoordinates);
 
 	// Actions
 

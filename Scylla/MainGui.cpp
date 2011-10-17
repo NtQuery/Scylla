@@ -47,21 +47,18 @@ MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports), TreeImpor
 	hIconWarning.LoadIcon(IDI_ICON_WARNING, 16, 16);
 	hIconError.LoadIcon(IDI_ICON_ERROR, 16, 16);
 
-	if(hMenuImports)
-	{
-		appendPluginListToMenu(hMenuImports.GetSubMenu(0));
-	}
+	appendPluginListToMenu(hMenuImports.GetSubMenu(0));
 }
 
 BOOL MainGui::PreTranslateMessage(MSG* pMsg)
 {
 	if(accelerators.TranslateAccelerator(m_hWnd, pMsg))
 	{
-		return TRUE;
+		return TRUE; // handled keyboard shortcuts
 	}
 	else if(IsDialogMessage(pMsg))
 	{
-		return TRUE;
+		return TRUE; // handled dialog messages
 	}
 
 	return FALSE;
@@ -78,21 +75,19 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 		}
 	}
 
+	// register ourselves to receive PreTranslateMessage
 	CMessageLoop* pLoop = _Module.GetMessageLoop();
 	pLoop->AddMessageFilter(this);
 
 	setupStatusBar();
-	fillStatusBar();
 
 	DoDataExchange(); // attach controls
-	DlgResize_Init(true, true);
+	DlgResize_Init(true, true); // init CDialogResize
 
 	appendPluginListToMenu(CMenuHandle(GetMenu()).GetSubMenu(MenuImportsOffsetTrace));
 
 	enableDialogControls(FALSE);
-
 	setIconAndDialogCaption();
-
 	return TRUE;
 }
 
@@ -107,14 +102,8 @@ void MainGui::OnSize(UINT nType, CSize size)
 	SetMsgHandled(FALSE);
 }
 
-void MainGui::OnLButtonDown(UINT nFlags, CPoint point)
-{
-	SetMsgHandled(FALSE);
-}
-
 void MainGui::OnContextMenu(CWindow wnd, CPoint point)
 { 
-	// point = -1, -1 for keyboard invoked shortcut!
 	switch(wnd.GetDlgCtrlID())
 	{
 	case IDC_TREE_IMPORTS:
@@ -123,9 +112,6 @@ void MainGui::OnContextMenu(CWindow wnd, CPoint point)
 	case IDC_LIST_LOG:
 		DisplayContextMenuLog(wnd, point);
 		return;
-	//default: // wnd == m_hWnd?
-	//	DisplayContextMenu(wnd, point); 
-	//	return;
 	}
 
 	SetMsgHandled(FALSE);
@@ -133,8 +119,8 @@ void MainGui::OnContextMenu(CWindow wnd, CPoint point)
 
 void MainGui::OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	// Make sure it's a menu
-	if(uNotifyCode == 0 && !wndCtl.IsWindow())
+	// Handle plugin trace menu selection
+	if(uNotifyCode == 0 && !wndCtl.IsWindow()) // make sure it's a menu
 	{
 		if ((nID >= PLUGIN_MENU_BASE_ID) && (nID <= (int)(PluginLoader::getScyllaPluginList().size() + PluginLoader::getImprecPluginList().size() + PLUGIN_MENU_BASE_ID)))
 		{
@@ -145,52 +131,18 @@ void MainGui::OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl)
 	SetMsgHandled(FALSE);
 }
 
-LRESULT MainGui::OnTreeImportsClick(const NMHDR* pnmh)
-{
-	SetMsgHandled(FALSE);
-	return 0;
-}
-
 LRESULT MainGui::OnTreeImportsDoubleClick(const NMHDR* pnmh)
 {
 	if(TreeImports.GetCount() < 1)
 		return 0;
 
 	// Get item under cursor
-	CPoint client = GetMessagePos();
-	TreeImports.ScreenToClient(&client);
-	UINT flags;
-	CTreeItem over = TreeImports.HitTest(client, &flags);
-	CTreeItem parent;
-	if(over)
-	{
-		if(!(flags & TVHT_ONITEM))
-		{
-			over = NULL;
-		}
-		else
-		{
-			parent = over.GetParent();
-		}
-	}
-
-	if(!over.IsNull() && !parent.IsNull())
+	CTreeItem over = findTreeItem(CPoint(GetMessagePos()), true);
+	if(over && importsHandling.isImport(over))
 	{
 		pickApiActionHandler(over);
 	}
 
-	return 0;
-}
-
-LRESULT MainGui::OnTreeImportsRightClick(const NMHDR* pnmh)
-{
-	SetMsgHandled(FALSE);
-	return 0;
-}
-
-LRESULT MainGui::OnTreeImportsRightDoubleClick(const NMHDR* pnmh)
-{
-	SetMsgHandled(FALSE);
 	return 0;
 }
 
@@ -365,7 +317,7 @@ void MainGui::setupStatusBar()
 	ResizeClient(rcMain.Width(), rcMain.Height() + rcStatus.Height(), FALSE);
 }
 
-void MainGui::fillStatusBar()
+void MainGui::updateStatusBar()
 {
 	// Rewrite ImportsHandling so we get these easily
 	unsigned int totalImports = importsHandling.thunkCount();
@@ -487,7 +439,7 @@ void MainGui::pickDllActionHandler()
 		processAccessHelp.selectedModule = 0;
 	}
 
-	fillStatusBar();
+	updateStatusBar();
 }
 
 void MainGui::pickApiActionHandler(CTreeItem item)
@@ -507,7 +459,7 @@ void MainGui::pickApiActionHandler(CTreeItem item)
 		}
 	}
 
-	fillStatusBar();
+	updateStatusBar();
 }
 
 void MainGui::startDisassemblerGui(CTreeItem selectedTreeNode)
@@ -552,7 +504,7 @@ void MainGui::processSelectedActionHandler(int index)
 	{
 		enableDialogControls(FALSE);
 		Logger::printfDialog(TEXT("Error: Cannot open process handle."));
-		fillStatusBar();
+		updateStatusBar();
 		return;
 	}
 
@@ -581,7 +533,7 @@ void MainGui::processSelectedActionHandler(int index)
 	selectedProcess = &process;
 	enableDialogControls(TRUE);
 
-	fillStatusBar();
+	updateStatusBar();
 }
 
 void MainGui::fillProcessListComboBox(CComboBox& hCombo)
@@ -684,7 +636,7 @@ void MainGui::deleteSelectedImportsActionHandler()
 		}
 		selected = TreeImports.GetNextSelectedItem(selected);
 	}
-	fillStatusBar();
+	updateStatusBar();
 }
 
 void MainGui::invalidateSelectedImportsActionHandler()
@@ -698,7 +650,7 @@ void MainGui::invalidateSelectedImportsActionHandler()
 		}
 		selected = TreeImports.GetNextSelectedItem(selected);
 	}
-	fillStatusBar();
+	updateStatusBar();
 }
 
 void MainGui::loadTreeActionHandler()
@@ -726,7 +678,7 @@ void MainGui::loadTreeActionHandler()
 			EditIATSize.SetValue(sizeIAT);
 
 			importsHandling.displayAllImports();
-			fillStatusBar();
+			updateStatusBar();
 
 			Logger::printfDialog(TEXT("Loaded tree file %s"), selectedFilePath);
 			Logger::printfDialog(TEXT("-> OEP: ")TEXT(PRINTF_DWORD_PTR_FULL), addrOEP);
@@ -799,29 +751,19 @@ void MainGui::iatAutosearchActionHandler()
 
 void MainGui::getImportsActionHandler()
 {
-	DWORD_PTR addressIAT = 0;
-	DWORD sizeIAT = 0;
-
 	if(!selectedProcess)
 		return;
 
-	if (EditIATAddress.GetWindowTextLength() > 0)
-	{
-		addressIAT = EditIATAddress.GetValue();
-	}
-
-	if (EditIATSize.GetWindowTextLength() > 0)
-	{
-		sizeIAT = EditIATSize.GetValue();
-	}
+	DWORD_PTR addressIAT = EditIATAddress.GetValue();
+	DWORD sizeIAT = EditIATSize.GetValue();
 
 	if (addressIAT && sizeIAT)
 	{
 		apiReader.readAndParseIAT(addressIAT, sizeIAT,importsHandling.moduleList);
 		importsHandling.displayAllImports();
-	}
 
-	fillStatusBar();
+		updateStatusBar();
+	}
 }
 
 void MainGui::SetupImportsMenuItems(CTreeItem item)
@@ -871,91 +813,77 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 	else
 	{
 		// Get item under cursor
-		CPoint client = pt;
-		TreeImports.ScreenToClient(&client);
-		UINT flags;
-		over = TreeImports.HitTest(client, &flags);
-		if(over && !(flags & TVHT_ONITEM))
-		{
-			over = NULL;
-		}
+		over = findTreeItem(pt, true);
 	}
 
-	if (hMenuImports)
+	SetupImportsMenuItems(over);
+
+	CMenuHandle hSub = hMenuImports.GetSubMenu(0);
+	BOOL menuItem = hSub.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
+	if (menuItem)
 	{
-		SetupImportsMenuItems(over);
-
-		CMenuHandle hSub = hMenuImports.GetSubMenu(0);
-
-		BOOL menuItem = hSub.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
-		if (menuItem)
+		if ((menuItem >= PLUGIN_MENU_BASE_ID) && (menuItem <= (int)(PluginLoader::getScyllaPluginList().size() + PluginLoader::getImprecPluginList().size() + PLUGIN_MENU_BASE_ID)))
 		{
-			if ((menuItem >= PLUGIN_MENU_BASE_ID) && (menuItem <= (int)(PluginLoader::getScyllaPluginList().size() + PluginLoader::getImprecPluginList().size() + PLUGIN_MENU_BASE_ID)))
-			{
-				//wsprintf(stringBuffer, L"%d %s\n",menuItem,pluginList[menuItem - PLUGIN_MENU_BASE_ID].pluginName);
-				//MessageBox(stringBuffer, L"plugin selection");
+			//wsprintf(stringBuffer, L"%d %s\n",menuItem,pluginList[menuItem - PLUGIN_MENU_BASE_ID].pluginName);
+			//MessageBox(stringBuffer, L"plugin selection");
 
-				pluginActionHandler(menuItem);
-				return;
-			}
-			switch (menuItem)
-			{
-			case ID__INVALIDATE:
-				if(importsHandling.isModule(over))
-					importsHandling.invalidateModule(over);
-				else
-					importsHandling.invalidateImport(over);
-				break;
-			case ID__DISASSEMBLE:
-				startDisassemblerGui(over);
-				break;
-			case ID__EXPANDALLNODES:
-				importsHandling.expandAllTreeNodes();
-				break;
-			case ID__COLLAPSEALLNODES:
-				importsHandling.collapseAllTreeNodes();
-				break;
-			case ID__CUTTHUNK:
-				importsHandling.cutImport(over);
-				break;
-			case ID__DELETETREENODE:
-				importsHandling.cutModule(importsHandling.isImport(over) ? over.GetParent() : over);
-				break;
-			}
+			pluginActionHandler(menuItem);
+			return;
+		}
+		switch (menuItem)
+		{
+		case ID__INVALIDATE:
+			if(importsHandling.isModule(over))
+				importsHandling.invalidateModule(over);
+			else
+				importsHandling.invalidateImport(over);
+			break;
+		case ID__DISASSEMBLE:
+			startDisassemblerGui(over);
+			break;
+		case ID__EXPANDALLNODES:
+			importsHandling.expandAllTreeNodes();
+			break;
+		case ID__COLLAPSEALLNODES:
+			importsHandling.collapseAllTreeNodes();
+			break;
+		case ID__CUTTHUNK:
+			importsHandling.cutImport(over);
+			break;
+		case ID__DELETETREENODE:
+			importsHandling.cutModule(importsHandling.isImport(over) ? over.GetParent() : over);
+			break;
 		}
 	}
 
-	fillStatusBar();
+	updateStatusBar();
 }
 
 void MainGui::DisplayContextMenuLog(CWindow hwnd, CPoint pt)
 {
-	if (hMenuLog)
+	if(pt.x == -1 && pt.y == -1) // invoked by keyboard
 	{
-		if(pt.x == -1 && pt.y == -1) // invoked by keyboard
-		{
-			CRect pos;
-			ListLog.GetWindowRect(&pos);
-			pt = pos.TopLeft();
-		}
+		CRect pos;
+		ListLog.GetWindowRect(&pos);
+		pt = pos.TopLeft();
+	}
 
-		CMenuHandle hSub = hMenuLog.GetSubMenu(0);
-		BOOL menuItem = hSub.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
-		if (menuItem)
+	CMenuHandle hSub = hMenuLog.GetSubMenu(0);
+	BOOL menuItem = hSub.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
+	if (menuItem)
+	{
+		switch (menuItem)
 		{
-			switch (menuItem)
+		case ID__SAVE:
+			WCHAR selectedFilePath[MAX_PATH];
+			if(showFileDialog(selectedFilePath, true, NULL, filterTxt, L"txt"))
 			{
-			case ID__SAVE:
-				WCHAR selectedFilePath[MAX_PATH];
-				if(showFileDialog(selectedFilePath, true, NULL, filterTxt, L"txt"))
-				{
-					saveLogToFile(selectedFilePath);
-				}
-				break;
-			case ID__CLEAR:
-				clearOutputLog();
-				break;
+				saveLogToFile(selectedFilePath);
 			}
+			break;
+		case ID__CLEAR:
+			clearOutputLog();
+			break;
 		}
 	}
 }
@@ -1040,7 +968,6 @@ void MainGui::dumpActionHandler()
 		if (peDump.dumpCompleteProcessToDisk(selectedFilePath))
 		{
 			Logger::printfDialog(TEXT("Dump success %s"),selectedFilePath);
-			//MessageBox(L"Image dumped successfully.", L"Success");
 		}
 		else
 		{
@@ -1083,7 +1010,6 @@ void MainGui::peRebuildActionHandler()
 
 			Logger::printfDialog(TEXT("Rebuild success %s"), selectedFilePath);
 			Logger::printfDialog(TEXT("-> Old file size 0x%08X new file size 0x%08X (%d %%)"), (DWORD)fileSize, newSize, (DWORD)((newSize * 100) / (DWORD)fileSize) );
-			//MessageBox(L"Image rebuilded successfully.", L"Success", MB_ICONINFORMATION);
 		}
 	}
 }
@@ -1136,14 +1062,12 @@ void MainGui::dumpFixActionHandler()
 
 		if (importRebuild.rebuildImportTable(selectedFilePath,newFilePath,importsHandling.moduleList))
 		{
-			//MessageBox(L"Imports rebuilding successful", L"Success", MB_ICONINFORMATION);
-
 			Logger::printfDialog(TEXT("Import Rebuild success %s"), newFilePath);
 		}
 		else
 		{
-			Logger::printfDialog(TEXT("Import Rebuild failed, target %s"), selectedFilePath);
-			MessageBox(L"Imports rebuilding failed", L"Failure", MB_ICONERROR);
+			Logger::printfDialog(TEXT("Import Rebuild failed %s"), selectedFilePath);
+			MessageBox(L"Import Rebuild failed", L"Failure", MB_ICONERROR);
 		}
 	}
 }
@@ -1178,6 +1102,26 @@ void MainGui::enableDialogControls(BOOL value)
 	//not yet implemented
 	GetDlgItem(IDC_BTN_AUTOTRACE).EnableWindow(FALSE);
 	menu.EnableMenuItem(ID_TRACE_AUTOTRACE, MF_GRAYED);
+}
+
+CTreeItem MainGui::findTreeItem(CPoint pt, bool screenCoordinates)
+{
+	if(screenCoordinates)
+	{
+		TreeImports.ScreenToClient(&pt);
+	}
+
+	UINT flags;
+	CTreeItem over = TreeImports.HitTest(pt, &flags);
+	if(over)
+	{
+		if(!(flags & TVHT_ONITEM))
+		{
+			over.m_hTreeItem = NULL;
+		}
+	}
+
+	return over;
 }
 
 void MainGui::showAboutDialog()
@@ -1226,7 +1170,7 @@ void MainGui::optionsActionHandler()
 void MainGui::clearImportsActionHandler()
 {
 	importsHandling.clearAllImports();
-	fillStatusBar();
+	updateStatusBar();
 }
 
 void MainGui::pluginActionHandler( int menuItem )
@@ -1262,5 +1206,5 @@ void MainGui::pluginActionHandler( int menuItem )
 
 	importsHandling.scanAndFixModuleList();
 	importsHandling.displayAllImports();
-	fillStatusBar();
+	updateStatusBar();
 }

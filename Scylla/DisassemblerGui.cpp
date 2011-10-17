@@ -27,42 +27,38 @@ void DisassemblerGui::OnContextMenu(CWindow wnd, CPoint point)
 		if(selection == -1) // no item selected
 			return;
 
-		if(hMenuDisassembler)
+		if(point.x == -1 && point.y == -1) // invoked by keyboard
 		{
-			if(point.x == -1 && point.y == -1) // invoked by keyboard
+			ListDisassembler.EnsureVisible(selection, TRUE);
+			ListDisassembler.GetItemPosition(selection, &point);
+			ListDisassembler.ClientToScreen(&point);
+		}
+
+		CMenuHandle hSub = hMenuDisassembler.GetSubMenu(0);
+		BOOL menuItem = hSub.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, point.x, point.y, wnd);
+		if (menuItem)
+		{
+			int column = -1;
+			switch (menuItem)
 			{
-				ListDisassembler.EnsureVisible(selection, TRUE);
-				ListDisassembler.GetItemPosition(selection, &point);
-				ListDisassembler.ClientToScreen(&point);
+			case ID__DIS_ADDRESS:
+				column = COL_ADDRESS;
+				break;
+			case ID__DIS_SIZE:
+				column = COL_INSTRUCTION_SIZE;
+				break;
+			case ID__DIS_OPCODES:
+				column = COL_OPCODES;
+				break;
+			case ID__DIS_INSTRUCTIONS:
+				column = COL_INSTRUCTION;
+				break;
 			}
-
-			CMenuHandle hSub = hMenuDisassembler.GetSubMenu(0);
-
-			BOOL menuItem = hSub.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, point.x, point.y, wnd);
-			if (menuItem)
+			if(column != -1)
 			{
-				int column = -1;
-				switch (menuItem)
-				{
-				case ID__DIS_ADDRESS:
-					column = COL_ADDRESS;
-					break;
-				case ID__DIS_SIZE:
-					column = COL_INSTRUCTION_SIZE;
-					break;
-				case ID__DIS_OPCODES:
-					column = COL_OPCODES;
-					break;
-				case ID__DIS_INSTRUCTIONS:
-					column = COL_INSTRUCTION;
-					break;
-				}
-				if(column != -1)
-				{
-					tempBuffer[0] = '\0';
-					ListDisassembler.GetItemText(selection, column, tempBuffer, _countof(tempBuffer));
-					copyToClipboard(tempBuffer);
-				}
+				tempBuffer[0] = '\0';
+				ListDisassembler.GetItemText(selection, column, tempBuffer, _countof(tempBuffer));
+				copyToClipboard(tempBuffer);
 			}
 		}
 	}
