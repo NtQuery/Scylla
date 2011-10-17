@@ -1,3 +1,5 @@
+//#include <vld.h> // Visual Leak Detector
+
 #include <atlbase.h>       // base ATL classes
 #include <atlapp.h>        // base WTL classes
 

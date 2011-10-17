@@ -37,6 +37,7 @@ public:
 	void selectImports(bool invalid, bool suspect);
 
 	bool invalidateImport(CTreeItem item);
+	bool invalidateModule(CTreeItem item);
 	bool setImport(CTreeItem item, const WCHAR * moduleName, const CHAR * apiName, WORD ordinal = 0, WORD hint = 0, bool valid = true, bool suspect = false);
 	bool cutImport(CTreeItem item);
 	bool cutModule(CTreeItem item);
@@ -67,7 +68,7 @@ private:
 
 	stdext::hash_map<HTREEITEM, TreeItemData> itemData;
 
-	void setItemData(CTreeItem item, const TreeItemData& data);
+	void setItemData(CTreeItem item, const TreeItemData * data);
 	TreeItemData * getItemData(CTreeItem item);
 
 	WCHAR stringBuffer[600];

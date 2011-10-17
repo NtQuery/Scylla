@@ -13,6 +13,7 @@
 #include <atlctrls.h>      // WTL controls
 #include <atlddx.h>        // WTL dialog data exchange
 #include "multitree.h"
+#include "hexedit.h"
 
 //#define _CRTDBG_MAP_ALLOC
 //#include <cstdlib>
@@ -31,14 +32,16 @@ class MainGui : public CDialogImpl<MainGui>, public CWinDataExchange<MainGui>, p
 public:
 	enum { IDD = IDD_DLG_MAIN };
 
+	// DDX_CONTROL : subclass
+	// DDX_CONTROL_HANDLE : attach
 	BEGIN_DDX_MAP(MainGui)
-		DDX_CONTROL(IDC_TREE_IMPORTS, TreeImportsSubclass) // subclass
+		DDX_CONTROL(IDC_TREE_IMPORTS, TreeImportsSubclass) // needed for message reflection
 		DDX_CONTROL(IDC_TREE_IMPORTS, TreeImports)
-		DDX_CONTROL_HANDLE(IDC_CBO_PROCESSLIST, ComboProcessList) // attach
+		DDX_CONTROL_HANDLE(IDC_CBO_PROCESSLIST, ComboProcessList)
 		DDX_CONTROL_HANDLE(IDC_LIST_LOG, ListLog)
-		DDX_CONTROL_HANDLE(IDC_EDIT_OEPADDRESS, EditOEPAddress)
-		DDX_CONTROL_HANDLE(IDC_EDIT_IATADDRESS, EditIATAddress)
-		DDX_CONTROL_HANDLE(IDC_EDIT_IATSIZE, EditIATSize)
+		DDX_CONTROL(IDC_EDIT_OEPADDRESS, EditOEPAddress)
+		DDX_CONTROL(IDC_EDIT_IATADDRESS, EditIATAddress)
+		DDX_CONTROL(IDC_EDIT_IATSIZE, EditIATSize)
 	END_DDX_MAP()
 
 	BEGIN_MSG_MAP_EX(MainGui)
@@ -104,8 +107,6 @@ public:
 		DLGRESIZE_CONTROL(IDC_TREE_IMPORTS,  DLSZ_SIZE_X | DLSZ_SIZE_Y)
 		DLGRESIZE_CONTROL(IDC_BTN_INVALIDIMPORTS, DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDC_BTN_SUSPECTIMPORTS, DLSZ_MOVE_Y)
-		DLGRESIZE_CONTROL(IDC_BTN_SAVETREE,       DLSZ_MOVE_X | DLSZ_MOVE_Y)
-		DLGRESIZE_CONTROL(IDC_BTN_LOADTREE,       DLSZ_MOVE_X | DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDC_BTN_CLEARIMPORTS,   DLSZ_MOVE_X | DLSZ_MOVE_Y)
 
 		DLGRESIZE_CONTROL(IDC_GROUP_IATINFO,     DLSZ_MOVE_Y)
@@ -153,14 +154,15 @@ protected:
 	static const WCHAR filterDll[];
 	static const WCHAR filterExeDll[];
 	static const WCHAR filterTxt[];
+	static const WCHAR filterXml[];
 
 	// Controls
 
 	CMultiSelectTreeViewCtrl TreeImports;
 	CComboBox ComboProcessList;
-	CEdit EditOEPAddress;
-	CEdit EditIATAddress;
-	CEdit EditIATSize;
+	CHexEdit<DWORD_PTR> EditOEPAddress;
+	CHexEdit<DWORD_PTR> EditIATAddress;
+	CHexEdit<DWORD> EditIATSize;
 	CListBox ListLog;
 	CStatusBarCtrl StatusBar;
 
@@ -253,6 +255,8 @@ protected:
 	void showSuspectImportsActionHandler();
 	void deleteSelectedImportsActionHandler();
 	void invalidateSelectedImportsActionHandler();
+	void loadTreeActionHandler();
+	void saveTreeActionHandler();
 	void iatAutosearchActionHandler();
 	void getImportsActionHandler();
 	void dumpActionHandler();
@@ -267,7 +271,7 @@ protected:
 
 	// Popup menu functions
 
-	void SetupImportsMenuItems(bool isItem, bool isThunk);
+	void SetupImportsMenuItems(CTreeItem item);
 	void appendPluginListToMenu(CMenuHandle hMenuTrackPopup);
 	void DisplayContextMenuImports(CWindow, CPoint);
 	void DisplayContextMenuLog(CWindow, CPoint);
@@ -276,9 +280,4 @@ protected:
 
 	void clearOutputLog();
 	bool saveLogToFile(const WCHAR * file);
-
-	// Misc
-
-	DWORD_PTR getOEPFromGui();
-	static DWORD_PTR stringToDwordPtr(const WCHAR * hexString);
 };

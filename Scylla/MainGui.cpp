@@ -1,7 +1,5 @@
 #include "MainGui.h"
 
-#include <atldlgs.h> // WTL common dialogs
-
 #include "definitions.h"
 #include "PluginLoader.h"
 #include "ConfigurationHolder.h"
@@ -15,6 +13,7 @@
 #include "SystemInformation.h"
 #include "AboutGui.h"
 #include "OptionsGui.h"
+#include "TreeImportExport.h"
 
 extern CAppModule _Module; // o_O
 
@@ -22,6 +21,7 @@ const WCHAR MainGui::filterExe[] = L"Executable (*.exe)\0*.exe\0All files\0*.*\0
 const WCHAR MainGui::filterDll[] = L"Dynamic Link Library (*.dll)\0*.dll\0All files\0*.*\0";
 const WCHAR MainGui::filterExeDll[] = L"Executable (*.exe)\0*.exe\0Dynamic Link Library (*.dll)\0*.dll\0All files\0*.*\0";
 const WCHAR MainGui::filterTxt[] = L"Text file (*.txt)\0*.txt\0All files\0*.*\0";
+const WCHAR MainGui::filterXml[] = L"XML file (*.xml)\0*.xml\0All files\0*.*\0";
 
 MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports), TreeImportsSubclass(this, IDC_TREE_IMPORTS)
 {
@@ -86,10 +86,6 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	DoDataExchange(); // attach controls
 	DlgResize_Init(true, true);
-
-	EditOEPAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
-	EditIATAddress.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
-	EditIATSize.LimitText(MAX_HEX_VALUE_EDIT_LENGTH);
 
 	appendPluginListToMenu(CMenuHandle(GetMenu()).GetSubMenu(MenuImportsOffsetTrace));
 
@@ -206,7 +202,7 @@ LRESULT MainGui::OnTreeImportsKeyDown(const NMHDR* pnmh)
 	case VK_RETURN:
 		{
 			CTreeItem selected = TreeImports.GetFocusItem();
-			if(!selected.IsNull() && !selected.GetParent().IsNull())
+			if(!selected.IsNull() && importsHandling.isImport(selected))
 			{
 				pickApiActionHandler(selected);
 			}
@@ -219,38 +215,6 @@ LRESULT MainGui::OnTreeImportsKeyDown(const NMHDR* pnmh)
 
 	SetMsgHandled(FALSE);
 	return 0;
-}
-
-void MainGui::deleteSelectedImportsActionHandler()
-{
-	CTreeItem selected = TreeImports.GetFirstSelectedItem();
-	while(!selected.IsNull())
-	{
-		if(importsHandling.isModule(selected))
-		{
-			importsHandling.cutModule(selected);
-		}
-		else
-		{
-			importsHandling.cutImport(selected);
-		}
-		selected = TreeImports.GetNextSelectedItem(selected);
-	}
-	fillStatusBar();
-}
-
-void MainGui::invalidateSelectedImportsActionHandler()
-{
-	CTreeItem selected = TreeImports.GetFirstSelectedItem();
-	while(!selected.IsNull())
-	{
-		if(importsHandling.isImport(selected))
-		{
-			importsHandling.invalidateImport(selected);
-		}
-		selected = TreeImports.GetNextSelectedItem(selected);
-	}
-	fillStatusBar();
 }
 
 UINT MainGui::OnTreeImportsSubclassGetDlgCode(const MSG * lpMsg)
@@ -357,12 +321,12 @@ void MainGui::OnCutSelected(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void MainGui::OnSaveTree(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	// TODO
+	saveTreeActionHandler();
 }
 
 void MainGui::OnLoadTree(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	// TODO
+	loadTreeActionHandler();
 }
 
 void MainGui::OnAutotrace(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -612,9 +576,7 @@ void MainGui::processSelectedActionHandler(int index)
 
 	process.entryPoint = ProcessAccessHelp::getEntryPointFromFile(process.fullPath);
 
-	swprintf_s(stringBuffer, _countof(stringBuffer),TEXT(PRINTF_DWORD_PTR_FULL),process.entryPoint + process.imageBase);
-
-	EditOEPAddress.SetWindowText(stringBuffer);
+	EditOEPAddress.SetValue(process.entryPoint + process.imageBase);
 
 	selectedProcess = &process;
 	enableDialogControls(TRUE);
@@ -663,10 +625,10 @@ bool MainGui::saveLogToFile(const WCHAR * file)
 		ProcessAccessHelp::writeMemoryToFileEnd(hFile, sizeof(BOM), BOM);
 
 		WCHAR * buffer = 0;
-		int bufsize = 0;
+		size_t bufsize = 0;
 		for(int i = 0; i < ListLog.GetCount(); i++)
 		{
-			int size = ListLog.GetTextLen(i);
+			size_t size = ListLog.GetTextLen(i);
 			size += _countof(newLine)-1;
 			if(size+1 > bufsize)
 			{
@@ -687,7 +649,7 @@ bool MainGui::saveLogToFile(const WCHAR * file)
 			ListLog.GetText(i, buffer);
 			wcscat_s(buffer, bufsize, newLine);
 
-			ProcessAccessHelp::writeMemoryToFileEnd(hFile, size * sizeof(WCHAR), buffer);
+			ProcessAccessHelp::writeMemoryToFileEnd(hFile, (DWORD)(size * sizeof(WCHAR)), buffer);
 		}
 		delete[] buffer;
 		CloseHandle(hFile);
@@ -707,6 +669,101 @@ void MainGui::showSuspectImportsActionHandler()
 	GotoDlgCtrl(TreeImports);
 }
 
+void MainGui::deleteSelectedImportsActionHandler()
+{
+	CTreeItem selected = TreeImports.GetFirstSelectedItem();
+	while(!selected.IsNull())
+	{
+		if(importsHandling.isModule(selected))
+		{
+			importsHandling.cutModule(selected);
+		}
+		else
+		{
+			importsHandling.cutImport(selected);
+		}
+		selected = TreeImports.GetNextSelectedItem(selected);
+	}
+	fillStatusBar();
+}
+
+void MainGui::invalidateSelectedImportsActionHandler()
+{
+	CTreeItem selected = TreeImports.GetFirstSelectedItem();
+	while(!selected.IsNull())
+	{
+		if(importsHandling.isImport(selected))
+		{
+			importsHandling.invalidateImport(selected);
+		}
+		selected = TreeImports.GetNextSelectedItem(selected);
+	}
+	fillStatusBar();
+}
+
+void MainGui::loadTreeActionHandler()
+{
+	if(!selectedProcess)
+		return;
+
+	WCHAR selectedFilePath[MAX_PATH];
+	TreeImportExport treeIO;
+	DWORD_PTR addrOEP = 0;
+	DWORD_PTR addrIAT = 0;
+	DWORD sizeIAT = 0;
+
+	if(showFileDialog(selectedFilePath, false, NULL, filterXml))
+	{
+		if(!treeIO.importTreeList(selectedFilePath, importsHandling.moduleList, &addrOEP, &addrIAT, &sizeIAT))
+		{
+			Logger::printfDialog(TEXT("Loading tree file failed %s"), selectedFilePath);
+			MessageBox(L"Loading tree file failed.", L"Failure", MB_ICONERROR);
+		}
+		else
+		{
+			EditOEPAddress.SetValue(addrOEP);
+			EditIATAddress.SetValue(addrIAT);
+			EditIATSize.SetValue(sizeIAT);
+
+			importsHandling.displayAllImports();
+			fillStatusBar();
+
+			Logger::printfDialog(TEXT("Loaded tree file %s"), selectedFilePath);
+			Logger::printfDialog(TEXT("-> OEP: ")TEXT(PRINTF_DWORD_PTR_FULL), addrOEP);
+			Logger::printfDialog(TEXT("-> IAT: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size: ")TEXT(PRINTF_DWORD_PTR), addrIAT, sizeIAT);
+		}
+	}
+}
+
+void MainGui::saveTreeActionHandler()
+{
+	if(!selectedProcess)
+		return;
+
+	WCHAR selectedFilePath[MAX_PATH];
+	TreeImportExport treeIO;
+	DWORD_PTR addrOEP;
+	DWORD_PTR addrIAT;
+	DWORD sizeIAT;
+
+	if(showFileDialog(selectedFilePath, true, NULL, filterXml, L"xml"))
+	{
+		addrOEP = EditOEPAddress.GetValue();
+		addrIAT = EditIATAddress.GetValue();
+		sizeIAT = EditIATSize.GetValue();
+
+		if(!treeIO.exportTreeList(selectedFilePath, importsHandling.moduleList, selectedProcess, addrOEP, addrIAT, sizeIAT))
+		{
+			Logger::printfDialog(TEXT("Saving tree file failed %s"), selectedFilePath);
+			MessageBox(L"Saving tree file failed.", L"Failure", MB_ICONERROR);
+		}
+		else
+		{
+			Logger::printfDialog(TEXT("Saved tree file %s"), selectedFilePath);
+		}
+	}
+}
+
 void MainGui::iatAutosearchActionHandler()
 {
 	DWORD_PTR searchAddress = 0;
@@ -717,20 +774,17 @@ void MainGui::iatAutosearchActionHandler()
 	if(!selectedProcess)
 		return;
 
-	if(EditOEPAddress.GetWindowText(stringBuffer, _countof(stringBuffer)) > 1)
+	if(EditOEPAddress.GetWindowTextLength() > 0)
 	{
-		searchAddress = stringToDwordPtr(stringBuffer);
+		searchAddress = EditOEPAddress.GetValue();
 		if (searchAddress)
 		{
 			if (iatSearch.searchImportAddressTableInProcess(searchAddress, &addressIAT, &sizeIAT))
 			{
 				Logger::printfDialog(TEXT("IAT found at VA ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" RVA ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size 0x%04X (%d)"),addressIAT, addressIAT - processAccessHelp.targetImageBase,sizeIAT,sizeIAT);
 
-				swprintf_s(stringBuffer, _countof(stringBuffer),TEXT(PRINTF_DWORD_PTR_FULL),addressIAT);
-				EditIATAddress.SetWindowText(stringBuffer);
-
-				swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("%08X"),sizeIAT);
-				EditIATSize.SetWindowText(stringBuffer);
+				EditIATAddress.SetValue(addressIAT);
+				EditIATSize.SetValue(sizeIAT);
 
 				swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("IAT found:\r\n\r\nStart: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("\r\nSize: 0x%04X (%d) "),addressIAT,sizeIAT,sizeIAT);
 				MessageBox(stringBuffer, L"IAT found", MB_ICONINFORMATION);
@@ -751,14 +805,14 @@ void MainGui::getImportsActionHandler()
 	if(!selectedProcess)
 		return;
 
-	if (EditIATAddress.GetWindowText(stringBuffer, _countof(stringBuffer)) > 0)
+	if (EditIATAddress.GetWindowTextLength() > 0)
 	{
-		addressIAT = stringToDwordPtr(stringBuffer);
+		addressIAT = EditIATAddress.GetValue();
 	}
 
-	if (EditIATSize.GetWindowText(stringBuffer, _countof(stringBuffer)) > 0)
+	if (EditIATSize.GetWindowTextLength() > 0)
 	{
-		sizeIAT = wcstoul(stringBuffer, NULL, 16);
+		sizeIAT = EditIATSize.GetValue();
 	}
 
 	if (addressIAT && sizeIAT)
@@ -770,41 +824,23 @@ void MainGui::getImportsActionHandler()
 	fillStatusBar();
 }
 
-DWORD_PTR MainGui::stringToDwordPtr(const WCHAR * hexString)
+void MainGui::SetupImportsMenuItems(CTreeItem item)
 {
-	DWORD_PTR address = 0;
-
-#ifdef _WIN64
-	address = _wcstoui64(hexString, NULL, 16);
-#else
-	address = wcstoul(hexString, NULL, 16);
-#endif
-
-	if (address == 0)
+	bool isItem, isImport = false;
+	isItem = !item.IsNull();
+	if(isItem)
 	{
-#ifdef DEBUG_COMMENTS
-		Logger::debugLog(L"stringToDwordPtr :: address == 0, %s",hexString);
-#endif
-		return 0;
+		isImport = importsHandling.isImport(item);
 	}
-	else
-	{
-		return address;
-	}
-}
-
-void MainGui::SetupImportsMenuItems(bool isItem, bool isThunk)
-{
-	// assert(!(!isItem && isThunk));
 
 	CMenuHandle hSub = hMenuImports.GetSubMenu(0);
 
 	UINT itemOnly = isItem ? MF_ENABLED : MF_GRAYED;
-	UINT thunkOnly = isThunk ? MF_ENABLED : MF_GRAYED;
+	UINT importOnly = isImport ? MF_ENABLED : MF_GRAYED;
 
-	hSub.EnableMenuItem(ID__INVALIDATEFUNCTION, thunkOnly);
-	hSub.EnableMenuItem(ID__DISASSEMBLE, thunkOnly);
-	hSub.EnableMenuItem(ID__CUTTHUNK, thunkOnly);
+	hSub.EnableMenuItem(ID__INVALIDATE, itemOnly);
+	hSub.EnableMenuItem(ID__DISASSEMBLE, importOnly);
+	hSub.EnableMenuItem(ID__CUTTHUNK, importOnly);
 
 	hSub.EnableMenuItem(ID__DELETETREENODE, itemOnly);
 }
@@ -847,8 +883,7 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 
 	if (hMenuImports)
 	{
-		// Prepare hmenuImports
-		SetupImportsMenuItems(!over.IsNull(), importsHandling.isImport(over));
+		SetupImportsMenuItems(over);
 
 		CMenuHandle hSub = hMenuImports.GetSubMenu(0);
 
@@ -865,8 +900,11 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 			}
 			switch (menuItem)
 			{
-			case ID__INVALIDATEFUNCTION:
-				importsHandling.invalidateImport(over);
+			case ID__INVALIDATE:
+				if(importsHandling.isModule(over))
+					importsHandling.invalidateModule(over);
+				else
+					importsHandling.invalidateImport(over);
 				break;
 			case ID__DISASSEMBLE:
 				startDisassemblerGui(over);
@@ -986,7 +1024,7 @@ void MainGui::dumpActionHandler()
 			peDump.imageBase = processAccessHelp.selectedModule->modBaseAddr;
 			peDump.sizeOfImage = processAccessHelp.selectedModule->modBaseSize;
 			//get it from gui
-			peDump.entryPoint = getOEPFromGui();
+			peDump.entryPoint = EditOEPAddress.GetValue();
 			wcscpy_s(peDump.fullpath, _countof(peDump.fullpath), processAccessHelp.selectedModule->fullPath);
 		}
 		else
@@ -994,7 +1032,7 @@ void MainGui::dumpActionHandler()
 			peDump.imageBase = ProcessAccessHelp::targetImageBase;
 			peDump.sizeOfImage = (DWORD)ProcessAccessHelp::targetSizeOfImage;
 			//get it from gui
-			peDump.entryPoint = getOEPFromGui();
+			peDump.entryPoint = EditOEPAddress.GetValue();
 			wcscpy_s(peDump.fullpath, _countof(peDump.fullpath), selectedProcess->fullPath);
 		}
 
@@ -1010,18 +1048,6 @@ void MainGui::dumpActionHandler()
 			MessageBox(L"Cannot dump image.", L"Failure", MB_ICONERROR);
 		}
 	}
-}
-
-DWORD_PTR MainGui::getOEPFromGui()
-{
-	if (EditOEPAddress.GetWindowText(stringBuffer, _countof(stringBuffer)) > 0)
-	{
-		return stringToDwordPtr(stringBuffer);
-	}
-	else
-	{
-		return 0;
-	}	
 }
 
 void MainGui::peRebuildActionHandler()
@@ -1143,17 +1169,14 @@ void MainGui::enableDialogControls(BOOL value)
 	menu.EnableMenuItem(ID_FILE_FIXDUMP, valMenu);
 	menu.EnableMenuItem(ID_IMPORTS_INVALIDATESELECTED, valMenu);
 	menu.EnableMenuItem(ID_IMPORTS_CUTSELECTED, valMenu);
+	menu.EnableMenuItem(ID_IMPORTS_SAVETREE, valMenu);
+	menu.EnableMenuItem(ID_IMPORTS_LOADTREE, valMenu);
 	menu.EnableMenuItem(ID_MISC_DLLINJECTION, valMenu);
 	menu.GetSubMenu(MenuImportsOffsetTrace).EnableMenuItem(MenuImportsTraceOffsetScylla, MF_BYPOSITION | valMenu);
 	menu.GetSubMenu(MenuImportsOffsetTrace).EnableMenuItem(MenuImportsTraceOffsetImpRec, MF_BYPOSITION | valMenu);
 
 	//not yet implemented
-	GetDlgItem(IDC_BTN_SAVETREE).EnableWindow(FALSE);
-	GetDlgItem(IDC_BTN_LOADTREE).EnableWindow(FALSE);
 	GetDlgItem(IDC_BTN_AUTOTRACE).EnableWindow(FALSE);
-
-	menu.EnableMenuItem(ID_IMPORTS_SAVETREE, MF_GRAYED);
-	menu.EnableMenuItem(ID_IMPORTS_LOADTREE, MF_GRAYED);
 	menu.EnableMenuItem(ID_TRACE_AUTOTRACE, MF_GRAYED);
 }
 

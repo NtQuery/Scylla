@@ -23,6 +23,7 @@ public:
 	bool suspect;
 
 	CTreeItem hTreeItem;
+	DWORD_PTR key;
 
 	void invalidate();
 };
@@ -36,6 +37,7 @@ public:
 	DWORD_PTR firstThunk;
 
 	CTreeItem hTreeItem;
+	DWORD_PTR key;
 
 	DWORD_PTR getFirstThunk() const;
 	bool isValid() const;
