@@ -87,6 +87,9 @@
     <ClCompile Include="PickApiGui.cpp">
       <Filter>Quelldateien\GUI</Filter>
     </ClCompile>
+    <ClCompile Include="TreeImportExport.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -162,6 +165,12 @@
       <Filter>Headerdateien\GUI</Filter>
     </ClInclude>
     <ClInclude Include="multitree.h">
+      <Filter>Headerdateien\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="TreeImportExport.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="hexedit.h">
       <Filter>Headerdateien\GUI</Filter>
     </ClInclude>
   </ItemGroup>
