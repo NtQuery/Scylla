@@ -24,4 +24,6 @@ private:
 
 	DWORD_PTR findIATStartAddress( DWORD_PTR baseAddress, DWORD_PTR startAddress, BYTE * dataBuffer );
 	DWORD findIATSize( DWORD_PTR baseAddress, DWORD_PTR iatAddress, BYTE * dataBuffer, DWORD bufferSize );
+
+	bool isAddressAccessable(DWORD_PTR address);
 };

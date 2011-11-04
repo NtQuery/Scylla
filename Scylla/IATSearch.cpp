@@ -263,9 +263,12 @@ bool IATSearch::findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, D
 		return false;
 	}
 
-	dataBuffer = new BYTE[memBasic.RegionSize];
+	//(sizeof(DWORD_PTR) * 3) added to prevent buffer overflow
+	dataBuffer = new BYTE[memBasic.RegionSize + (sizeof(DWORD_PTR) * 3)];
 
-	if (!readMemoryFromProcess((DWORD_PTR)memBasic.BaseAddress,memBasic.RegionSize,dataBuffer))
+	ZeroMemory(dataBuffer, memBasic.RegionSize + (sizeof(DWORD_PTR) * 3));
+
+	if (!readMemoryFromProcess((DWORD_PTR)memBasic.BaseAddress, memBasic.RegionSize, dataBuffer))
 	{
 #ifdef DEBUG_COMMENTS
 		Logger::debugLog("findIATStartAddress :: error reading memory\r\n");
@@ -279,6 +282,8 @@ bool IATSearch::findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, D
 
 	*sizeIAT = findIATSize((DWORD_PTR)memBasic.BaseAddress, *addressIAT,dataBuffer,(DWORD)memBasic.RegionSize);
 
+	delete [] dataBuffer;
+
 	return true;
 }
 
@@ -290,21 +295,24 @@ DWORD_PTR IATSearch::findIATStartAddress(DWORD_PTR baseAddress, DWORD_PTR startA
 
 	while((DWORD_PTR)pIATAddress != (DWORD_PTR)dataBuffer)
 	{
-		if (*pIATAddress == 0 && *(pIATAddress - 1) == 0)
+		if ( (*pIATAddress < 0xFFFF) || !isAddressAccessable(*pIATAddress) )
 		{
-			if (((DWORD_PTR)(pIATAddress - 2) >= (DWORD_PTR)dataBuffer) && isApiAddressValid(*(pIATAddress - 2)))
+			if ( (*(pIATAddress - 1) < 0xFFFF) || !isAddressAccessable(*(pIATAddress - 1)) )
 			{
+				//IAT end
 
+				if ((DWORD_PTR)(pIATAddress - 2) >= (DWORD_PTR)dataBuffer)
+				{
+					if (!isApiAddressValid(*(pIATAddress - 2)))
+					{
+						return (((DWORD_PTR)pIATAddress - (DWORD_PTR)dataBuffer) + baseAddress);
+					}
+				}
+				else
+				{
+					return (((DWORD_PTR)pIATAddress - (DWORD_PTR)dataBuffer) + baseAddress);
+				}
 			}
-			else
-			{
-				return (((DWORD_PTR)pIATAddress - (DWORD_PTR)dataBuffer) + baseAddress);
-			}
-		}
-		else if (*pIATAddress < 0xFFFF && *(pIATAddress - 1) < 0xFFFF)
-		{
-			//IAT end
-			return (((DWORD_PTR)pIATAddress - (DWORD_PTR)dataBuffer) + baseAddress);
 		}
 
 		pIATAddress--;
@@ -320,7 +328,7 @@ DWORD IATSearch::findIATSize(DWORD_PTR baseAddress, DWORD_PTR iatAddress, BYTE *
 	pIATAddress = (DWORD_PTR *)((iatAddress - baseAddress) + (DWORD_PTR)dataBuffer);
 
 #ifdef DEBUG_COMMENTS
-	Logger::debugLog("findIATSize :: baseAddress %X iatAddress %X dataBuffer %X\r\n",baseAddress,iatAddress, dataBuffer);
+	Logger::debugLog("findIATSize :: baseAddress %X iatAddress %X dataBuffer %X pIATAddress %X\r\n",baseAddress,iatAddress, dataBuffer,pIATAddress);
 #endif
 
 	while((DWORD_PTR)pIATAddress < ((DWORD_PTR)dataBuffer + bufferSize - 1))
@@ -328,15 +336,44 @@ DWORD IATSearch::findIATSize(DWORD_PTR baseAddress, DWORD_PTR iatAddress, BYTE *
 #ifdef DEBUG_COMMENTS
 		Logger::debugLog("findIATSize :: %X %X %X\r\n",pIATAddress,*pIATAddress, *(pIATAddress + 1));
 #endif
-		if (*pIATAddress < 0xFFFF && *(pIATAddress + 1) < 0xFFFF) //normal is 0
+		if ( (*pIATAddress < 0xFFFF) || !isAddressAccessable(*pIATAddress) ) //normal is 0
 		{
-
-			//IAT end
-			return (DWORD)((DWORD_PTR)pIATAddress - (DWORD_PTR)dataBuffer);
+			if ( (*(pIATAddress + 1) < 0xFFFF) || !isAddressAccessable(*(pIATAddress + 1)) )
+			{
+				//IAT end
+				if (!isApiAddressValid(*(pIATAddress + 2)))
+				{
+					return (DWORD)((DWORD_PTR)pIATAddress - (DWORD_PTR)dataBuffer - (iatAddress - baseAddress));
+				}
+			}
 		}
 
 		pIATAddress++;
 	}
 
 	return bufferSize;
+}
+
+bool IATSearch::isAddressAccessable(DWORD_PTR address)
+{
+	BYTE junk[3];
+	SIZE_T numberOfBytesRead = 0;
+
+	if (address == 0x65520182)
+	{
+		printf("");
+	}
+
+	if (ReadProcessMemory(hProcess, (LPCVOID)address, junk, sizeof(junk), &numberOfBytesRead))
+	{
+		if (numberOfBytesRead == sizeof(junk))
+		{
+			if (junk[0] != 0x00)
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
