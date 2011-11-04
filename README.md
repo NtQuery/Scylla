@@ -51,6 +51,11 @@ Keyboard Shortcuts
 Changelog
 ---------
 
+Version 0.5a:
+
+- fixed memory leak
+- improved IAT search
+
 Version 0.5:
 
 - added save/load import tree feature
@@ -61,6 +66,7 @@ Version 0.5:
 - added support for scattered IATs
 - pre select target path in open file dialogs
 - improved import resolving engine with api scoring
+- api selection dialog
 - minor bug fixes and improvements
 
 Version 0.4:
