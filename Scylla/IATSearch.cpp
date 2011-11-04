@@ -143,7 +143,7 @@ DWORD_PTR IATSearch::findIATPointer()
 	return 0;
 }
 
-DWORD_PTR IATSearch::findAddressFromWORDString(char * stringBuffer)
+/*DWORD_PTR IATSearch::findAddressFromWORDString(char * stringBuffer)
 {
 	char * pAddress = 0;
 	char * pTemp = 0;
@@ -179,9 +179,9 @@ DWORD_PTR IATSearch::findAddressFromWORDString(char * stringBuffer)
 	{
 		return 0;
 	}
-}
+}*/
 
-DWORD_PTR IATSearch::findAddressFromNormalCALLString(char * stringBuffer)
+/*DWORD_PTR IATSearch::findAddressFromNormalCALLString(char * stringBuffer)
 {
 	char * pAddress = 0;
 	DWORD_PTR address = 0;
@@ -213,7 +213,7 @@ DWORD_PTR IATSearch::findAddressFromNormalCALLString(char * stringBuffer)
 	{
 		return 0;
 	}
-}
+}*/
 
 bool IATSearch::isIATPointerValid(DWORD_PTR iatPointer)
 {
@@ -252,7 +252,7 @@ bool IATSearch::isIATPointerValid(DWORD_PTR iatPointer)
 
 bool IATSearch::findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, DWORD * sizeIAT)
 {
-	MEMORY_BASIC_INFORMATION memBasic;
+	MEMORY_BASIC_INFORMATION memBasic = {0};
 	BYTE *dataBuffer = 0;
 
 	if (VirtualQueryEx(hProcess,(LPCVOID)address,&memBasic,sizeof(MEMORY_BASIC_INFORMATION)) != sizeof(MEMORY_BASIC_INFORMATION))
@@ -358,11 +358,6 @@ bool IATSearch::isAddressAccessable(DWORD_PTR address)
 {
 	BYTE junk[3];
 	SIZE_T numberOfBytesRead = 0;
-
-	if (address == 0x65520182)
-	{
-		printf("");
-	}
 
 	if (ReadProcessMemory(hProcess, (LPCVOID)address, junk, sizeof(junk), &numberOfBytesRead))
 	{
