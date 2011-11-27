@@ -5,64 +5,101 @@
 
 //#define DEBUG_COMMENTS
 
+ImportRebuild::ImportRebuild()
+{
+	imageData = NULL;
+	sizeOfFile = 0;
+
+	pDosStub = NULL;
+
+	pOverlay = NULL;
+	sizeOfOverlay = 0;
+
+	pImportDescriptor = NULL;
+	pThunkData = NULL;
+	pImportByName = NULL;
+
+	numberOfImportDescriptors = 0;
+	sizeOfImportSection = 0;
+	sizeOfApiAndModuleNames = 0;
+	importSectionIndex = 0;
+}
+
+ImportRebuild::~ImportRebuild()
+{
+	delete [] pDosStub;
+	delete [] imageData;
+
+	for (size_t i = 0; i < vecSectionData.size(); i++)
+	{
+		delete [] vecSectionData[i];
+	}
+
+	delete [] pOverlay;
+}
 
 bool ImportRebuild::splitTargetFile()
 {
 	PIMAGE_SECTION_HEADER pSecHeader = 0;
-	WORD i = 0;
 	BYTE * data = 0;
 	DWORD alignment = 0;
-	DWORD dwSize = 0;
 
-	pDosHeader = new IMAGE_DOS_HEADER;
-	CopyMemory(pDosHeader, imageData, sizeof(IMAGE_DOS_HEADER));
+	DosHeader = *(IMAGE_DOS_HEADER*)imageData;
 
-	if (pDosHeader->e_magic != IMAGE_DOS_SIGNATURE)
+	if (DosHeader.e_magic != IMAGE_DOS_SIGNATURE)
 	{
 		return false;
 	}
 
-	pNTHeader = new IMAGE_NT_HEADERS;
-	CopyMemory(pNTHeader, (PVOID)((DWORD_PTR)imageData + pDosHeader->e_lfanew), sizeof(IMAGE_NT_HEADERS));
+	NTHeader = *(IMAGE_NT_HEADERS*)(imageData + DosHeader.e_lfanew);
 
-	if (pNTHeader->Signature != IMAGE_NT_SIGNATURE)
+	if (NTHeader.Signature != IMAGE_NT_SIGNATURE)
 	{
 		return false;
 	}
 
-	if (pDosHeader->e_lfanew > sizeof(IMAGE_DOS_HEADER))
+	if (DosHeader.e_lfanew > sizeof(IMAGE_DOS_HEADER))
 	{
-		dwSize = pDosHeader->e_lfanew - sizeof(IMAGE_DOS_HEADER);
-		pDosStub = new BYTE[dwSize];
-		CopyMemory(pDosStub, (PVOID)((DWORD_PTR)imageData + sizeof(IMAGE_DOS_HEADER)), dwSize);
-	}
-	else
-	{
-		pDosStub = 0;
+		size_t sizeOfStub = DosHeader.e_lfanew - sizeof(IMAGE_DOS_HEADER);
+		pDosStub = new BYTE[sizeOfStub];
+		CopyMemory(pDosStub, imageData + sizeof(IMAGE_DOS_HEADER), sizeOfStub);
 	}
 
-	pSecHeader = IMAGE_FIRST_SECTION((PIMAGE_NT_HEADERS)((DWORD_PTR)imageData + pDosHeader->e_lfanew));
+	pSecHeader = IMAGE_FIRST_SECTION((IMAGE_NT_HEADERS*)(imageData + DosHeader.e_lfanew));
 
-	for (i = 0; i < pNTHeader->FileHeader.NumberOfSections; i++)
+	for (WORD i = 0; i < NTHeader.FileHeader.NumberOfSections; i++)
 	{
-		dwSize = pSecHeader->SizeOfRawData;
+		const DWORD SECTION_SIZE_MAX = 300000000;
+		DWORD sizeOfSection = pSecHeader->SizeOfRawData;
 
-		if (dwSize > 300000000)
+		if (sizeOfSection > SECTION_SIZE_MAX)
 		{
-			dwSize = 300000000;
+			sizeOfSection = SECTION_SIZE_MAX;
 		}
 
 		//TODO better use section alignment because it is better?
-		alignment = alignValue(dwSize, pNTHeader->OptionalHeader.SectionAlignment);
+		alignment = alignValue(sizeOfSection, NTHeader.OptionalHeader.SectionAlignment);
 		data = new BYTE[alignment];
 
 		ZeroMemory(data, alignment);
-		CopyMemory(data, (PVOID)((DWORD_PTR)imageData + pSecHeader->PointerToRawData), dwSize);
+		CopyMemory(data, imageData + pSecHeader->PointerToRawData, sizeOfSection);
 
 		vecSectionData.push_back(data);
 		vecSectionHeaders.push_back(*pSecHeader);
 
 		pSecHeader++;
+	}
+
+	if(NTHeader.FileHeader.NumberOfSections > 0) // ??
+	{
+		const IMAGE_SECTION_HEADER* pLastSec = &(*vecSectionHeaders.rbegin());
+		DWORD calcSize = pLastSec->PointerToRawData + pLastSec->SizeOfRawData;
+		if (calcSize < sizeOfFile)
+		{
+			sizeOfOverlay = sizeOfFile - calcSize;
+			pOverlay = new BYTE[sizeOfOverlay];
+			memcpy(pOverlay, imageData + calcSize, sizeOfOverlay);
+		}
 	}
 
 	delete [] imageData;
@@ -75,11 +112,11 @@ bool ImportRebuild::alignSectionHeaders()
 {
 	for (WORD i = 0; i < vecSectionHeaders.size(); i++)
 	{
-		vecSectionHeaders[i].VirtualAddress = alignValue(vecSectionHeaders[i].VirtualAddress, pNTHeader->OptionalHeader.SectionAlignment);
-		vecSectionHeaders[i].Misc.VirtualSize = alignValue(vecSectionHeaders[i].Misc.VirtualSize, pNTHeader->OptionalHeader.SectionAlignment);
+		vecSectionHeaders[i].VirtualAddress = alignValue(vecSectionHeaders[i].VirtualAddress, NTHeader.OptionalHeader.SectionAlignment);
+		vecSectionHeaders[i].Misc.VirtualSize = alignValue(vecSectionHeaders[i].Misc.VirtualSize, NTHeader.OptionalHeader.SectionAlignment);
 
-		vecSectionHeaders[i].PointerToRawData = alignValue(vecSectionHeaders[i].PointerToRawData, pNTHeader->OptionalHeader.FileAlignment);
-		vecSectionHeaders[i].SizeOfRawData = alignValue(vecSectionHeaders[i].SizeOfRawData, pNTHeader->OptionalHeader.FileAlignment);
+		vecSectionHeaders[i].PointerToRawData = alignValue(vecSectionHeaders[i].PointerToRawData, NTHeader.OptionalHeader.FileAlignment);
+		vecSectionHeaders[i].SizeOfRawData = alignValue(vecSectionHeaders[i].SizeOfRawData, NTHeader.OptionalHeader.FileAlignment);
 	}
 
 	return true;
@@ -112,15 +149,15 @@ bool ImportRebuild::saveNewFile(const WCHAR * filepath)
 
 	fileOffset = 0;
 	dwWriteSize = sizeof(IMAGE_DOS_HEADER);
-	ProcessAccessHelp::writeMemoryToFile(hFile, fileOffset, dwWriteSize, pDosHeader);
+	ProcessAccessHelp::writeMemoryToFile(hFile, fileOffset, dwWriteSize, &DosHeader);
 
 	fileOffset += dwWriteSize;
-	dwWriteSize = pDosHeader->e_lfanew - sizeof(IMAGE_DOS_HEADER);
+	dwWriteSize = DosHeader.e_lfanew - sizeof(IMAGE_DOS_HEADER);
 	ProcessAccessHelp::writeMemoryToFile(hFile, fileOffset, dwWriteSize, pDosStub);
 
 	fileOffset += dwWriteSize;
 	dwWriteSize = sizeof(IMAGE_NT_HEADERS);
-	ProcessAccessHelp::writeMemoryToFile(hFile, fileOffset, dwWriteSize, pNTHeader);
+	ProcessAccessHelp::writeMemoryToFile(hFile, fileOffset, dwWriteSize, &NTHeader);
 
 	fileOffset += dwWriteSize;
 	dwWriteSize = sizeof(IMAGE_SECTION_HEADER);
@@ -161,9 +198,13 @@ bool ImportRebuild::saveNewFile(const WCHAR * filepath)
 		fileOffset += dwWriteSize;
 	}
 
+	if(pOverlay)
+	{
+		ProcessAccessHelp::writeMemoryToFile(hFile, fileOffset, sizeOfOverlay, pOverlay);
+		fileOffset += sizeOfOverlay;
+	}
 
 	CloseHandle(hFile);
-
 	return true;
 }
 
@@ -185,36 +226,6 @@ bool ImportRebuild::writeZeroMemoryToFile(HANDLE hFile, DWORD fileOffset, DWORD 
 	return retValue;
 }
 
-void ImportRebuild::clearAllData()
-{
-	if (pDosStub)
-	{
-		delete [] pDosStub;
-		pDosStub = 0;
-	}
-
-	if (imageData)
-	{
-		delete [] imageData;
-		imageData = 0;
-	}
-
-	delete pDosHeader;
-	pDosHeader = 0;
-
-	delete pNTHeader;
-	pNTHeader = 0;
-
-	vecSectionHeaders.clear();
-
-	for (size_t i = 0; i < vecSectionData.size(); i++)
-	{
-		delete [] vecSectionData[i];
-	}
-
-	vecSectionData.clear();
-}
-
 bool ImportRebuild::addNewSection(char * sectionName, DWORD sectionSize, BYTE * sectionData)
 {
 	BYTE * newBuffer = 0;
@@ -232,11 +243,11 @@ bool ImportRebuild::addNewSection(char * sectionName, DWORD sectionSize, BYTE * 
 
 	memcpy_s(pNewSection.Name, IMAGE_SIZEOF_SHORT_NAME, sectionName, nameLength);
 
-	pNewSection.SizeOfRawData = alignValue(sectionSize, pNTHeader->OptionalHeader.FileAlignment);
-	pNewSection.Misc.VirtualSize = alignValue(sectionSize, pNTHeader->OptionalHeader.SectionAlignment);
+	pNewSection.SizeOfRawData = alignValue(sectionSize, NTHeader.OptionalHeader.FileAlignment);
+	pNewSection.Misc.VirtualSize = alignValue(sectionSize, NTHeader.OptionalHeader.SectionAlignment);
 
-	pNewSection.PointerToRawData = alignValue(vecSectionHeaders[lastSectionIndex].PointerToRawData + vecSectionHeaders[lastSectionIndex].SizeOfRawData, pNTHeader->OptionalHeader.FileAlignment);
-	pNewSection.VirtualAddress = alignValue(vecSectionHeaders[lastSectionIndex].VirtualAddress + vecSectionHeaders[lastSectionIndex].Misc.VirtualSize, pNTHeader->OptionalHeader.SectionAlignment);
+	pNewSection.PointerToRawData = alignValue(vecSectionHeaders[lastSectionIndex].PointerToRawData + vecSectionHeaders[lastSectionIndex].SizeOfRawData, NTHeader.OptionalHeader.FileAlignment);
+	pNewSection.VirtualAddress = alignValue(vecSectionHeaders[lastSectionIndex].VirtualAddress + vecSectionHeaders[lastSectionIndex].Misc.VirtualSize, NTHeader.OptionalHeader.SectionAlignment);
 
 	pNewSection.Characteristics = IMAGE_SCN_MEM_EXECUTE|IMAGE_SCN_MEM_READ|IMAGE_SCN_MEM_WRITE|IMAGE_SCN_CNT_CODE|IMAGE_SCN_CNT_INITIALIZED_DATA;
 
@@ -297,6 +308,7 @@ bool ImportRebuild::loadTargetFile(const WCHAR * filepath)
 	}
 	else
 	{
+		sizeOfFile = fileSize;
 		retValue = ProcessAccessHelp::readMemoryFromFile(hTargetFile, 0, fileSize, imageData);
 	}
 
@@ -324,11 +336,12 @@ DWORD ImportRebuild::convertRVAToOffsetVector(DWORD dwRVA)
 	return 0;
 }
 
+/*
 DWORD ImportRebuild::convertRVAToOffset(DWORD dwRVA)
 {
-	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(pNTHeader);
+	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(&NTHeader);
 
-	for (WORD i = 0; i < pNTHeader->FileHeader.NumberOfSections; i++)
+	for (WORD i = 0; i < NTHeader.FileHeader.NumberOfSections; i++)
 	{
 		if ((pSectionHeader->VirtualAddress <= dwRVA) && ((pSectionHeader->VirtualAddress + pSectionHeader->Misc.VirtualSize) > dwRVA))
 		{
@@ -339,7 +352,7 @@ DWORD ImportRebuild::convertRVAToOffset(DWORD dwRVA)
 
 	return 0;
 }
-
+*/
 DWORD_PTR ImportRebuild::convertOffsetToRVAVector(DWORD dwOffset)
 {
 	for (size_t i = 0; i < vecSectionHeaders.size(); i++)
@@ -353,11 +366,12 @@ DWORD_PTR ImportRebuild::convertOffsetToRVAVector(DWORD dwOffset)
 	return 0;
 }
 
+/*
 DWORD ImportRebuild::convertOffsetToRVA(DWORD dwOffset)
 {
-	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(pNTHeader);
+	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(&NTHeader);
 
-	for (WORD i = 0; i < pNTHeader->FileHeader.NumberOfSections; i++)
+	for (WORD i = 0; i < NTHeader.FileHeader.NumberOfSections; i++)
 	{
 		if ((pSectionHeader->PointerToRawData <= dwOffset) && ((pSectionHeader->PointerToRawData + pSectionHeader->SizeOfRawData) > dwOffset))
 		{
@@ -368,36 +382,37 @@ DWORD ImportRebuild::convertOffsetToRVA(DWORD dwOffset)
 
 	return 0;
 }
+*/
 
 void ImportRebuild::updatePeHeader()
 {
 	size_t lastSectionIndex = vecSectionHeaders.size() - 1;
 
-	pNTHeader->FileHeader.NumberOfSections = (WORD)(lastSectionIndex + 1);
-	pNTHeader->OptionalHeader.SizeOfImage = vecSectionHeaders[lastSectionIndex].VirtualAddress + vecSectionHeaders[lastSectionIndex].Misc.VirtualSize;
+	NTHeader.FileHeader.NumberOfSections = (WORD)(lastSectionIndex + 1);
+	NTHeader.OptionalHeader.SizeOfImage = vecSectionHeaders[lastSectionIndex].VirtualAddress + vecSectionHeaders[lastSectionIndex].Misc.VirtualSize;
 
-	pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].VirtualAddress = 0;
-	pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].Size = 0;
+	NTHeader.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].VirtualAddress = 0;
+	NTHeader.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].Size = 0;
 
-	if (pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress)
+	if (NTHeader.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress)
 	{
 		for (size_t i = 0; i < vecSectionHeaders.size(); i++)
 		{
-			if ((vecSectionHeaders[i].VirtualAddress <= pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress) && ((vecSectionHeaders[i].VirtualAddress + vecSectionHeaders[i].Misc.VirtualSize) > pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress))
+			if ((vecSectionHeaders[i].VirtualAddress <= NTHeader.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress) && ((vecSectionHeaders[i].VirtualAddress + vecSectionHeaders[i].Misc.VirtualSize) > NTHeader.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress))
 			{
 				//section must be read and writeable
 				vecSectionHeaders[i].Characteristics |= IMAGE_SCN_MEM_READ|IMAGE_SCN_MEM_WRITE;
 			}
 		}
 
-		pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress = 0;
-		pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].Size = 0;
+		NTHeader.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress = 0;
+		NTHeader.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].Size = 0;
 	}
 
 
-	pNTHeader->OptionalHeader.NumberOfRvaAndSizes = 0x10;
+	NTHeader.OptionalHeader.NumberOfRvaAndSizes = 0x10;
 
-	pNTHeader->OptionalHeader.SizeOfHeaders = alignValue(pDosHeader->e_lfanew + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) + pNTHeader->FileHeader.SizeOfOptionalHeader + (pNTHeader->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER)), pNTHeader->OptionalHeader.FileAlignment);
+	NTHeader.OptionalHeader.SizeOfHeaders = alignValue(DosHeader.e_lfanew + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) + NTHeader.FileHeader.SizeOfOptionalHeader + (NTHeader.FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER)), NTHeader.OptionalHeader.FileAlignment);
 
 }
 
@@ -418,8 +433,8 @@ bool ImportRebuild::buildNewImportTable(std::map<DWORD_PTR, ImportModuleThunk> &
 
 	setFlagToIATSection((*moduleList.begin()).second.firstThunk);
 
-	pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress = vecSectionHeaders[importSectionIndex].VirtualAddress;
-	pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size = (DWORD)(numberOfImportDescriptors * sizeof(IMAGE_IMPORT_DESCRIPTOR));
+	NTHeader.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress = vecSectionHeaders[importSectionIndex].VirtualAddress;
+	NTHeader.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size = (DWORD)(numberOfImportDescriptors * sizeof(IMAGE_IMPORT_DESCRIPTOR));
 	return true;
 }
 
@@ -576,8 +591,6 @@ bool ImportRebuild::rebuildImportTable(const WCHAR * targetFilePath, const WCHAR
 		{
 			retValue = saveNewFile(newFilePath);
 		}
-
-		clearAllData();
 
 		return retValue;
 	}

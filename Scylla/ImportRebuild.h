@@ -6,10 +6,13 @@
 class ImportRebuild {
 public:
 
+	ImportRebuild();
+	~ImportRebuild();
+
 	bool rebuildImportTable(const WCHAR * targetFilePath, const WCHAR * newFilePath, std::map<DWORD_PTR, ImportModuleThunk> & moduleList);
 
-	DWORD convertRVAToOffset(DWORD dwRVA);
-	DWORD convertOffsetToRVA(DWORD dwOffset);
+	//DWORD convertRVAToOffset(DWORD dwRVA);
+	//DWORD convertOffsetToRVA(DWORD dwOffset);
 
 	bool addNewSection(char * sectionName, DWORD sectionSize, BYTE * sectionData);
 
@@ -20,9 +23,14 @@ private:
 	std::vector<BYTE *> vecSectionData;
 
 	BYTE * imageData;
+	size_t sizeOfFile;
+
 	BYTE * pDosStub;
-	PIMAGE_DOS_HEADER pDosHeader;
-	PIMAGE_NT_HEADERS pNTHeader;
+	IMAGE_DOS_HEADER DosHeader;
+	IMAGE_NT_HEADERS NTHeader;
+
+	BYTE * pOverlay;
+	size_t sizeOfOverlay;
 
 	PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor;
 	PIMAGE_THUNK_DATA pThunkData;
@@ -35,7 +43,6 @@ private:
 
 	DWORD getOffsetLastSection();
 
-	void clearAllData();
 	void updatePeHeader();
 	DWORD fillImportSection( std::map<DWORD_PTR, ImportModuleThunk> & moduleList );
 	bool splitTargetFile();
