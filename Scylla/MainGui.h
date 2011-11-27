@@ -150,7 +150,7 @@ protected:
 	WCHAR stringBuffer[600];
 
 	ImportsHandling importsHandling;
-	ProcessAccessHelp processAccessHelp;
+	//ProcessAccessHelp processAccessHelp;
 	ApiReader apiReader;
 
 	Process * selectedProcess;

@@ -173,7 +173,7 @@ public:
 	/*
 	 * Get memory region from address
 	 */
-	bool getMemoryRegionFromAddress(DWORD_PTR address, DWORD_PTR * memoryRegionBase, SIZE_T * memoryRegionSize);
+	static bool getMemoryRegionFromAddress(DWORD_PTR address, DWORD_PTR * memoryRegionBase, SIZE_T * memoryRegionSize);
 
 
 	/*

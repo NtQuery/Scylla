@@ -36,7 +36,7 @@ MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports), TreeImpor
 		processLister.setDebugPrivileges();
 	}
 
-	processAccessHelp.getProcessModules(GetCurrentProcessId(), processAccessHelp.ownModuleList);
+	ProcessAccessHelp::getProcessModules(GetCurrentProcessId(), ProcessAccessHelp::ownModuleList);
 
 	hIcon.LoadIcon(IDI_ICON_SCYLLA);
 	hMenuImports.LoadMenu(IDR_MENU_IMPORTS);
@@ -344,10 +344,10 @@ void MainGui::updateStatusBar()
 		DWORD_PTR imageBase = 0;
 		const WCHAR * fileName = 0;
 
-		if(processAccessHelp.selectedModule)
+		if(ProcessAccessHelp::selectedModule)
 		{
-			imageBase = processAccessHelp.selectedModule->modBaseAddr;
-			fileName = processAccessHelp.selectedModule->getFilename();
+			imageBase = ProcessAccessHelp::selectedModule->modBaseAddr;
+			fileName = ProcessAccessHelp::selectedModule->getFilename();
 		}
 		else
 		{
@@ -423,20 +423,20 @@ void MainGui::pickDllActionHandler()
 	if(!selectedProcess)
 		return;
 
-	PickDllGui dlgPickDll(processAccessHelp.moduleList);
+	PickDllGui dlgPickDll(ProcessAccessHelp::moduleList);
 	if(dlgPickDll.DoModal())
 	{
 		//get selected module
-		processAccessHelp.selectedModule = dlgPickDll.getSelectedModule();
+		ProcessAccessHelp::selectedModule = dlgPickDll.getSelectedModule();
 
-		processAccessHelp.targetImageBase = processAccessHelp.selectedModule->modBaseAddr;
+		ProcessAccessHelp::targetImageBase = ProcessAccessHelp::selectedModule->modBaseAddr;
 
-		Logger::printfDialog(TEXT("->>> Module %s selected."), processAccessHelp.selectedModule->getFilename());
-		Logger::printfDialog(TEXT("Imagebase: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size: %08X"),processAccessHelp.selectedModule->modBaseAddr,processAccessHelp.selectedModule->modBaseSize);
+		Logger::printfDialog(TEXT("->>> Module %s selected."), ProcessAccessHelp::selectedModule->getFilename());
+		Logger::printfDialog(TEXT("Imagebase: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size: %08X"),ProcessAccessHelp::selectedModule->modBaseAddr,ProcessAccessHelp::selectedModule->modBaseSize);
 	}
 	else
 	{
-		processAccessHelp.selectedModule = 0;
+		ProcessAccessHelp::selectedModule = 0;
 	}
 
 	updateStatusBar();
@@ -449,7 +449,7 @@ void MainGui::pickApiActionHandler(CTreeItem item)
 
 	// TODO: new node when user picked an API from another DLL?
 
-	PickApiGui dlgPickApi(processAccessHelp.moduleList);
+	PickApiGui dlgPickApi(ProcessAccessHelp::moduleList);
 	if(dlgPickApi.DoModal())
 	{
 		const ApiInfo* api = dlgPickApi.getSelectedApi();
@@ -494,13 +494,13 @@ void MainGui::processSelectedActionHandler(int index)
 
 	Logger::printfDialog(TEXT("Analyzing %s"),process.fullPath);
 
-	if (processAccessHelp.hProcess != 0)
+	if (ProcessAccessHelp::hProcess != 0)
 	{
-		processAccessHelp.closeProcessHandle();
+		ProcessAccessHelp::closeProcessHandle();
 		apiReader.clearAll();
 	}
 
-	if (!processAccessHelp.openProcessHandle(process.PID))
+	if (!ProcessAccessHelp::openProcessHandle(process.PID))
 	{
 		enableDialogControls(FALSE);
 		Logger::printfDialog(TEXT("Error: Cannot open process handle."));
@@ -508,20 +508,20 @@ void MainGui::processSelectedActionHandler(int index)
 		return;
 	}
 
-	processAccessHelp.getProcessModules(process.PID, processAccessHelp.moduleList);
+	ProcessAccessHelp::getProcessModules(process.PID, ProcessAccessHelp::moduleList);
 
 	apiReader.readApisFromModuleList();
 
 	Logger::printfDialog(TEXT("Loading modules done."));
 
 	//TODO improve
-	processAccessHelp.selectedModule = 0;
-	processAccessHelp.targetSizeOfImage = process.imageSize;
-	processAccessHelp.targetImageBase = process.imageBase;
+	ProcessAccessHelp::selectedModule = 0;
+	ProcessAccessHelp::targetSizeOfImage = process.imageSize;
+	ProcessAccessHelp::targetImageBase = process.imageBase;
 
 	ProcessAccessHelp::getSizeOfImageCurrentProcess();
 
-	process.imageSize = (DWORD)processAccessHelp.targetSizeOfImage;
+	process.imageSize = (DWORD)ProcessAccessHelp::targetSizeOfImage;
 
 
 	Logger::printfDialog(TEXT("Imagebase: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size: %08X"),process.imageBase, process.imageSize);
@@ -735,7 +735,7 @@ void MainGui::iatAutosearchActionHandler()
 		{
 			if (iatSearch.searchImportAddressTableInProcess(searchAddress, &addressIAT, &sizeIAT))
 			{
-				Logger::printfDialog(TEXT("IAT found at VA ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" RVA ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size 0x%04X (%d)"),addressIAT, addressIAT - processAccessHelp.targetImageBase,sizeIAT,sizeIAT);
+				Logger::printfDialog(TEXT("IAT found at VA ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" RVA ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size 0x%04X (%d)"),addressIAT, addressIAT - ProcessAccessHelp::targetImageBase,sizeIAT,sizeIAT);
 
 				EditIATAddress.SetValue(addressIAT);
 				EditIATSize.SetValue(sizeIAT);
@@ -935,7 +935,7 @@ void MainGui::dumpActionHandler()
 	const WCHAR * defExtension;
 	PeDump peDump;
 
-	if (processAccessHelp.selectedModule)
+	if (ProcessAccessHelp::selectedModule)
 	{
 		fileFilter = filterDll;
 		defExtension = L"dll";
@@ -949,15 +949,15 @@ void MainGui::dumpActionHandler()
 	getCurrentModulePath(stringBuffer, _countof(stringBuffer));
 	if(showFileDialog(selectedFilePath, true, NULL, fileFilter, defExtension, stringBuffer))
 	{
-		if (processAccessHelp.selectedModule)
+		if (ProcessAccessHelp::selectedModule)
 		{
 			//dump DLL
 			
-			peDump.imageBase = processAccessHelp.selectedModule->modBaseAddr;
-			peDump.sizeOfImage = processAccessHelp.selectedModule->modBaseSize;
+			peDump.imageBase = ProcessAccessHelp::selectedModule->modBaseAddr;
+			peDump.sizeOfImage = ProcessAccessHelp::selectedModule->modBaseSize;
 			//get it from gui
 			peDump.entryPoint = EditOEPAddress.GetValue();
-			wcscpy_s(peDump.fullpath, _countof(peDump.fullpath), processAccessHelp.selectedModule->fullPath);
+			wcscpy_s(peDump.fullpath, _countof(peDump.fullpath), ProcessAccessHelp::selectedModule->fullPath);
 		}
 		else
 		{
@@ -1034,9 +1034,7 @@ void MainGui::dumpFixActionHandler()
 	WCHAR selectedFilePath[MAX_PATH];
 	const WCHAR * fileFilter;
 
-	ImportRebuild importRebuild;
-
-	if (processAccessHelp.selectedModule)
+	if (ProcessAccessHelp::selectedModule)
 	{
 		fileFilter = filterDll;
 	}
@@ -1066,6 +1064,7 @@ void MainGui::dumpFixActionHandler()
 			wcscat_s(newFilePath, _countof(newFilePath), extension);
 		}
 
+		ImportRebuild importRebuild;
 		if (importRebuild.rebuildImportTable(selectedFilePath,newFilePath,importsHandling.moduleList))
 		{
 			Logger::printfDialog(TEXT("Import Rebuild success %s"), newFilePath);
@@ -1221,9 +1220,9 @@ bool MainGui::getCurrentModulePath(TCHAR * buffer, size_t bufferSize)
 	if(!selectedProcess)
 		return false;
 
-	if(processAccessHelp.selectedModule)
+	if(ProcessAccessHelp::selectedModule)
 	{
-		wcscpy_s(buffer, bufferSize, processAccessHelp.selectedModule->fullPath);
+		wcscpy_s(buffer, bufferSize, ProcessAccessHelp::selectedModule->fullPath);
 	}
 	else
 	{
