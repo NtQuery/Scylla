@@ -261,6 +261,7 @@ void PeDump::fixDump(BYTE * dumpBuffer)
 void PeDump::fixBadNtHeaderValues(PIMAGE_NT_HEADERS pNtHead)
 {
 	//maybe imagebase in process is not real imagebase
+	pNtHead->OptionalHeader.ImageBase = imageBase;
 	pNtHead->OptionalHeader.AddressOfEntryPoint = (DWORD)(entryPoint - imageBase);
 	pNtHead->OptionalHeader.SizeOfImage = sizeOfImage;
 }
