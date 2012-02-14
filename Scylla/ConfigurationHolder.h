@@ -2,15 +2,10 @@
 
 #include <windows.h>
 #include <map>
+#include "Configuration.h"
 
-enum ConfigType {
-	String,
-	Decimal,
-	Hexadecimal,
-	Boolean
-};
-
-enum Configuration {
+enum ConfigOption
+{
 	USE_PE_HEADER_FROM_DISK,
 	DEBUG_PRIVILEGE,
 	CREATE_BACKUP,
@@ -19,76 +14,35 @@ enum Configuration {
 	UPDATE_HEADER_CHECKSUM,
 };
 
-const size_t CONFIG_OPTIONS_STRING_LENGTH = 100;
-
-class ConfigObject {
+class ConfigurationHolder
+{
 public:
-	WCHAR name[MAX_PATH];
-	ConfigType configType;
 
-	DWORD_PTR valueNumeric;
-	WCHAR valueString[CONFIG_OPTIONS_STRING_LENGTH];
-
-	ConfigObject& newValues(WCHAR * configname, ConfigType config)
-	{
-		wcscpy_s(name, MAX_PATH, configname);
-		configType = config;
-		valueNumeric = 0;
-		ZeroMemory(valueString, sizeof(valueString));
-
-		return *this;
-	}
-
-	bool isTrue()
-	{
-		return (valueNumeric == 1);
-	}
-
-	void setTrue()
-	{
-		valueNumeric = 1;
-	}
-
-	void setFalse()
-	{
-		valueNumeric = 0;
-	}
-};
-
-class ConfigurationInitializer {
-public:
-	std::map<Configuration, ConfigObject> mapConfig;
-
-	ConfigurationInitializer();
-};
-
-class ConfigurationHolder {
-public:
+	ConfigurationHolder(const WCHAR* fileName);
 
 	bool loadConfiguration();
-	bool saveConfiguration();
+	bool saveConfiguration() const;
 
-	ConfigObject * getConfigObject(Configuration configuration);
-	std::map<Configuration, ConfigObject> & getConfigList();
+	Configuration& operator[](ConfigOption option);
+	const Configuration& operator[](ConfigOption option) const;
 
 private:
 
-	static const WCHAR CONFIG_FILE_NAME[];
 	static const WCHAR CONFIG_FILE_SECTION_NAME[];
 
-	ConfigurationInitializer config;
 	WCHAR configPath[MAX_PATH];
+	std::map<ConfigOption, Configuration> config;
 
-	bool buildConfigFilePath();
+	bool buildConfigFilePath(const WCHAR* fileName);
 
-	bool readStringFromConfigFile(ConfigObject & configObject);
-	bool readBooleanFromConfigFile(ConfigObject & configObject);
-	bool readNumericFromConfigFile(ConfigObject & configObject, int nBase);
+	bool readStringFromConfigFile(Configuration & configObject);
+	bool readBooleanFromConfigFile(Configuration & configObject);
+	bool readNumericFromConfigFile(Configuration & configObject, int nBase);
 
-	bool saveStringToConfigFile(ConfigObject & configObject);
-	bool saveBooleanToConfigFile(ConfigObject & configObject);
-	bool saveNumericToConfigFile(ConfigObject & configObject, int nBase);
+	bool saveStringToConfigFile(const Configuration & configObject) const;
+	bool saveBooleanToConfigFile(const Configuration & configObject) const;
+	bool saveNumericToConfigFile(const Configuration & configObject, int nBase) const;
 
-	bool loadConfig(ConfigObject & configObject);
-	bool saveConfig(ConfigObject & configObject);
+	bool loadConfig(Configuration & configObject);
+	bool saveConfig(const Configuration & configObject) const;
 };

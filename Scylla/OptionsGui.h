@@ -58,6 +58,6 @@ protected:
 
 	// Gui helpers
 
-	void saveOptions();
+	void saveOptions() const;
 	void loadOptions();
 };

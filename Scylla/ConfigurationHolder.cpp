@@ -4,35 +4,35 @@
 #include <stdio.h>
 #include "Architecture.h"
 
-const WCHAR ConfigurationHolder::CONFIG_FILE_NAME[] = L"Scylla.ini";
 const WCHAR ConfigurationHolder::CONFIG_FILE_SECTION_NAME[] = L"SCYLLA_CONFIG";
 
 //#define DEBUG_COMMENTS
 
-ConfigurationInitializer::ConfigurationInitializer()
+ConfigurationHolder::ConfigurationHolder(const WCHAR* fileName)
 {
-	ConfigObject configObject;
+	config[USE_PE_HEADER_FROM_DISK]   = Configuration(L"USE_PE_HEADER_FROM_DISK",   Configuration::Boolean);
+	config[DEBUG_PRIVILEGE]           = Configuration(L"DEBUG_PRIVILEGE",           Configuration::Boolean);
+	config[CREATE_BACKUP]             = Configuration(L"CREATE_BACKUP",             Configuration::Boolean);
+	config[DLL_INJECTION_AUTO_UNLOAD] = Configuration(L"DLL_INJECTION_AUTO_UNLOAD", Configuration::Boolean);
+	config[UPDATE_HEADER_CHECKSUM]    = Configuration(L"UPDATE_HEADER_CHECKSUM",    Configuration::Boolean);
+	config[IAT_SECTION_NAME]          = Configuration(L"IAT_SECTION_NAME",          Configuration::String);
 
-	mapConfig[USE_PE_HEADER_FROM_DISK]   = configObject.newValues(L"USE_PE_HEADER_FROM_DISK",   Boolean);
-	mapConfig[DEBUG_PRIVILEGE]           = configObject.newValues(L"DEBUG_PRIVILEGE",           Boolean);
-	mapConfig[CREATE_BACKUP]             = configObject.newValues(L"CREATE_BACKUP",             Boolean);
-	mapConfig[DLL_INJECTION_AUTO_UNLOAD] = configObject.newValues(L"DLL_INJECTION_AUTO_UNLOAD", Boolean);
-	mapConfig[UPDATE_HEADER_CHECKSUM]    = configObject.newValues(L"UPDATE_HEADER_CHECKSUM",    Boolean);
-	mapConfig[IAT_SECTION_NAME]          = configObject.newValues(L"IAT_SECTION_NAME",          String);
+	buildConfigFilePath(fileName);
 }
 
 bool ConfigurationHolder::loadConfiguration()
 {
-	std::map<Configuration, ConfigObject>::iterator mapIter;
+	std::map<ConfigOption, Configuration>::iterator mapIter;
 
-	if (!buildConfigFilePath())
+	if (configPath[0] == '\0')
 	{
 		return false;
 	}
 
-	for (mapIter = config.mapConfig.begin() ; mapIter != config.mapConfig.end(); mapIter++)
+	for (mapIter = config.begin() ; mapIter != config.end(); mapIter++)
 	{
-		if (!loadConfig((*mapIter).second))
+		Configuration& configObject = mapIter->second;
+		if (!loadConfig(configObject))
 		{
 			return false;
 		}
@@ -41,18 +41,19 @@ bool ConfigurationHolder::loadConfiguration()
 	return true;
 }
 
-bool ConfigurationHolder::saveConfiguration()
+bool ConfigurationHolder::saveConfiguration() const
 {
-	std::map<Configuration, ConfigObject>::iterator mapIter;
+	std::map<ConfigOption, Configuration>::const_iterator mapIter;
 
-	if (!buildConfigFilePath())
+	if (configPath[0] == '\0')
 	{
 		return false;
 	}
 
-	for (mapIter = config.mapConfig.begin() ; mapIter != config.mapConfig.end(); mapIter++)
+	for (mapIter = config.begin() ; mapIter != config.end(); mapIter++)
 	{
-		if (!saveConfig((*mapIter).second))
+		const Configuration& configObject = mapIter->second;
+		if (!saveConfig(configObject))
 		{
 			return false;
 		}
@@ -61,128 +62,129 @@ bool ConfigurationHolder::saveConfiguration()
 	return true;
 }
 
-bool ConfigurationHolder::saveNumericToConfigFile(ConfigObject & configObject, int nBase)
+Configuration& ConfigurationHolder::operator[](ConfigOption option)
 {
+	return config[option];
+}
+
+const Configuration& ConfigurationHolder::operator[](ConfigOption option) const
+{
+	static const Configuration dummy;
+
+	std::map<ConfigOption, Configuration>::const_iterator found = config.find(option);
+	if(found != config.end())
+	{
+		return found->second;
+	}
+	else
+	{
+		return dummy;
+	}
+}
+
+bool ConfigurationHolder::saveNumericToConfigFile(const Configuration & configObject, int nBase) const
+{
+	WCHAR buf[21]; // UINT64_MAX in dec has 20 digits
 
 	if (nBase == 16)
 	{
-		swprintf_s(configObject.valueString, CONFIG_OPTIONS_STRING_LENGTH, PRINTF_DWORD_PTR_FULL, configObject.valueNumeric);
+		swprintf_s(buf, PRINTF_DWORD_PTR_FULL, configObject.getNumeric());
 	}
 	else
 	{
-		swprintf_s(configObject.valueString, CONFIG_OPTIONS_STRING_LENGTH, PRINTF_INTEGER, configObject.valueNumeric);
+		swprintf_s(buf, PRINTF_INTEGER, configObject.getNumeric());
 	}
 
-
-	BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.name, configObject.valueString, configPath);
+	BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), buf, configPath);
 	return ret == TRUE;
 }
 
-bool ConfigurationHolder::readNumericFromConfigFile(ConfigObject & configObject, int nBase)
+bool ConfigurationHolder::readNumericFromConfigFile(Configuration & configObject, int nBase)
 {
-	DWORD read = GetPrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.name, L"", configObject.valueString, _countof(configObject.valueString), configPath);
+	WCHAR buf[21]; // UINT64_MAX in dec has 20 digits
+	DWORD read = GetPrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), L"", buf, _countof(buf), configPath);
 
-	if (read > 0 && wcslen(configObject.valueString) > 0)
+	if (read > 0 && wcslen(buf) > 0)
 	{
-
 #ifdef _WIN64
-		configObject.valueNumeric = _wcstoui64(configObject.valueString, NULL, nBase);
+		configObject.setNumeric(_wcstoui64(buf, NULL, nBase));
 #else
-		configObject.valueNumeric = wcstoul(configObject.valueString, NULL, nBase);
+		configObject.setNumeric(wcstoul(buf, NULL, nBase));
 #endif
+		return true;
+	}
 
-		return (configObject.valueNumeric != 0);
-	}
-	else
-	{
-		return false;
-	}
+	return false;
 }
 
-bool ConfigurationHolder::saveStringToConfigFile(ConfigObject & configObject)
+bool ConfigurationHolder::saveStringToConfigFile(const Configuration & configObject) const
 {
-	BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.name, configObject.valueString, configPath);
+	BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), configObject.getString(), configPath);
 	return ret == TRUE;
 }
 
-bool ConfigurationHolder::readStringFromConfigFile(ConfigObject & configObject)
+bool ConfigurationHolder::readStringFromConfigFile(Configuration & configObject)
 {
-	DWORD read = GetPrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.name, L"", configObject.valueString, _countof(configObject.valueString), configPath);
-	return (read > 0 && wcslen(configObject.valueString) > 0);
+	WCHAR buf[Configuration::CONFIG_STRING_LENGTH];
+	DWORD read = GetPrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), L"", buf, _countof(buf), configPath);
+	if(read > 0 && wcslen(buf) > 0)
+	{
+		configObject.setString(buf);
+		return true;
+	}
+
+	return false;
 }
 
-bool ConfigurationHolder::readBooleanFromConfigFile(ConfigObject & configObject)
+bool ConfigurationHolder::readBooleanFromConfigFile(Configuration & configObject)
 {
-	UINT val = GetPrivateProfileInt(CONFIG_FILE_SECTION_NAME, configObject.name, 0, configPath);
-	configObject.valueNumeric = val ? 1 : 0;
+	UINT val = GetPrivateProfileInt(CONFIG_FILE_SECTION_NAME, configObject.getName(), 0, configPath);
+	configObject.setBool(val != 0);
 	return true;
 }
 
-bool ConfigurationHolder::saveBooleanToConfigFile(ConfigObject & configObject)
+bool ConfigurationHolder::saveBooleanToConfigFile(const Configuration & configObject) const
 {
-	WCHAR *boolValue = 0;
-
-	if (configObject.valueNumeric == 0)
-	{
-		boolValue = L"0";
-	}
-	else
-	{
-		boolValue = L"1";
-	}
-
-	BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.name, boolValue, configPath);
+	const WCHAR *boolValue = configObject.isTrue() ? L"1" : L"0";
+	BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), boolValue, configPath);
 	return ret == TRUE;
 }
 
-bool ConfigurationHolder::loadConfig(ConfigObject & configObject)
+bool ConfigurationHolder::loadConfig(Configuration & configObject)
 {
-	switch (configObject.configType)
+	switch (configObject.getType())
 	{
-	case String:
+	case Configuration::String:
 		return readStringFromConfigFile(configObject);
-		break;
-	case Boolean:
+	case Configuration::Boolean:
 		return readBooleanFromConfigFile(configObject);
-		break;
-	case Decimal:
+	case Configuration::Decimal:
 		return readNumericFromConfigFile(configObject, 10);
-		break;
-	case Hexadecimal:
+	case Configuration::Hexadecimal:
 		return readNumericFromConfigFile(configObject, 16);
-		break;
 	default:
 		return false;
 	}
 }
 
-bool ConfigurationHolder::saveConfig(ConfigObject & configObject)
+bool ConfigurationHolder::saveConfig(const Configuration & configObject) const
 {
-	switch (configObject.configType)
+	switch (configObject.getType())
 	{
-	case String:
+	case Configuration::String:
 		return saveStringToConfigFile(configObject);
-		break;
-	case Boolean:
+	case Configuration::Boolean:
 		return saveBooleanToConfigFile(configObject);
-		break;
-	case Decimal:
+	case Configuration::Decimal:
 		return saveNumericToConfigFile(configObject, 10);
-		break;
-	case Hexadecimal:
+	case Configuration::Hexadecimal:
 		return saveNumericToConfigFile(configObject, 16);
-		break;
 	default:
 		return false;
 	}
 }
 
-ConfigObject * ConfigurationHolder::getConfigObject(Configuration configuration)
-{
-	return &(config.mapConfig[configuration]);
-}
-
-bool ConfigurationHolder::buildConfigFilePath()
+bool ConfigurationHolder::buildConfigFilePath(const WCHAR* fileName)
 {
 	ZeroMemory(configPath, sizeof(configPath));
 
@@ -195,14 +197,9 @@ bool ConfigurationHolder::buildConfigFilePath()
 	}
 
 	PathRemoveFileSpec(configPath);
-	PathAppend(configPath, CONFIG_FILE_NAME);
+	PathAppend(configPath, fileName);
 
 	//wprintf(L"configPath %s\n\n", configPath);
 
 	return true;
-}
-
-std::map<Configuration, ConfigObject> & ConfigurationHolder::getConfigList()
-{
-	return config.mapConfig;
 }

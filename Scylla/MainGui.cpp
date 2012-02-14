@@ -977,7 +977,7 @@ void MainGui::dumpActionHandler()
 			wcscpy_s(peDump.fullpath, _countof(peDump.fullpath), selectedProcess->fullPath);
 		}
 
-		peDump.useHeaderFromDisk = Scylla::config.getConfigObject(USE_PE_HEADER_FROM_DISK)->isTrue();
+		peDump.useHeaderFromDisk = Scylla::config[USE_PE_HEADER_FROM_DISK].isTrue();
 		if (peDump.dumpCompleteProcessToDisk(selectedFilePath))
 		{
 			Scylla::windowLog.log(L"Dump success %s", selectedFilePath);
@@ -999,7 +999,7 @@ void MainGui::peRebuildActionHandler()
 	getCurrentModulePath(stringBuffer, _countof(stringBuffer));
 	if(showFileDialog(selectedFilePath, false, NULL, filterExeDll, NULL, stringBuffer))
 	{
-		if (Scylla::config.getConfigObject(CREATE_BACKUP)->isTrue())
+		if (Scylla::config[CREATE_BACKUP].isTrue())
 		{
 			if (!ProcessAccessHelp::createBackupFile(selectedFilePath))
 			{
@@ -1157,7 +1157,7 @@ void MainGui::dllInjectActionHandler()
 	if (showFileDialog(selectedFilePath, false, NULL, filterDll, NULL, stringBuffer))
 	{
 		hMod = dllInjection.dllInjection(ProcessAccessHelp::hProcess, selectedFilePath);
-		if (hMod && Scylla::config.getConfigObject(DLL_INJECTION_AUTO_UNLOAD)->isTrue())
+		if (hMod && Scylla::config[DLL_INJECTION_AUTO_UNLOAD].isTrue())
 		{
 			if (!dllInjection.unloadDllInProcess(ProcessAccessHelp::hProcess, hMod))
 			{

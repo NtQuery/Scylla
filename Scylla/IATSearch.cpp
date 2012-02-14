@@ -25,8 +25,9 @@ bool IATSearch::searchImportAddressTableInProcess(DWORD_PTR startAddress, DWORD_
 
 DWORD_PTR IATSearch::findAPIAddressInIAT(DWORD_PTR startAddress)
 {
-	static const int MEMORY_READ_SIZE = 200;
-	BYTE *dataBuffer = new BYTE[MEMORY_READ_SIZE];
+	const size_t MEMORY_READ_SIZE = 200;
+	BYTE dataBuffer[MEMORY_READ_SIZE];
+
 	DWORD_PTR iatPointer = 0;
 	int counter = 0;
 
@@ -38,7 +39,7 @@ DWORD_PTR IATSearch::findAPIAddressInIAT(DWORD_PTR startAddress)
 	{
 		counter++;
 
-		if (!readMemoryFromProcess(startAddress,MEMORY_READ_SIZE,dataBuffer))
+		if (!readMemoryFromProcess(startAddress, sizeof(dataBuffer), dataBuffer))
 		{
 #ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"findAPIAddressInIAT :: error reading memory " PRINTF_DWORD_PTR_FULL, startAddress);
@@ -46,14 +47,13 @@ DWORD_PTR IATSearch::findAPIAddressInIAT(DWORD_PTR startAddress)
 			return 0;
 		}
 
-		if (decomposeMemory(dataBuffer, MEMORY_READ_SIZE, startAddress))
+		if (decomposeMemory(dataBuffer, sizeof(dataBuffer), startAddress))
 		{
 			iatPointer = findIATPointer();
 			if (iatPointer)
 			{
 				if (isIATPointerValid(iatPointer))
 				{
-					delete[] dataBuffer;
 					return iatPointer;
 				}
 			}
@@ -63,8 +63,6 @@ DWORD_PTR IATSearch::findAPIAddressInIAT(DWORD_PTR startAddress)
 		//printf("startAddress %08X\n",startAddress);
 	} while (startAddress != 0 && counter != 8);
 
-
-	delete[] dataBuffer;
 	return 0;
 }
 

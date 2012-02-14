@@ -159,6 +159,7 @@
     <ClCompile Include="AboutGui.cpp" />
     <ClCompile Include="ApiReader.cpp" />
     <ClCompile Include="Architecture.cpp" />
+    <ClCompile Include="Configuration.cpp" />
     <ClCompile Include="ConfigurationHolder.cpp" />
     <ClCompile Include="DisassemblerGui.cpp" />
     <ClCompile Include="DllInjection.cpp" />
@@ -186,6 +187,7 @@
     <ClInclude Include="AboutGui.h" />
     <ClInclude Include="ApiReader.h" />
     <ClInclude Include="Architecture.h" />
+    <ClInclude Include="Configuration.h" />
     <ClInclude Include="ConfigurationHolder.h" />
     <ClInclude Include="definitions.h" />
     <ClInclude Include="DisassemblerGui.h" />

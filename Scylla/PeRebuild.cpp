@@ -289,7 +289,7 @@ DWORD PeRebuild::realignPE(LPVOID AddressOfMapFile, DWORD dwFsize)
 		return 0;
 	}
 
-	if (Scylla::config.getConfigObject(UPDATE_HEADER_CHECKSUM)->isTrue())
+	if (Scylla::config[UPDATE_HEADER_CHECKSUM].isTrue())
 	{
 		updatePeHeaderChecksum(AddressOfMapFile, dwSectionBase);
 	}

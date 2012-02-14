@@ -27,63 +27,22 @@ void OptionsGui::OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl)
 	EndDialog(0);
 }
 
-void OptionsGui::saveOptions()
+void OptionsGui::saveOptions() const
 {
-	std::map<Configuration, ConfigObject>::iterator mapIter;
-
-	for (mapIter = Scylla::config.getConfigList().begin() ; mapIter != Scylla::config.getConfigList().end(); mapIter++)
-	{
-		switch(mapIter->first)
-		{
-		case USE_PE_HEADER_FROM_DISK:
-			usePEHeaderFromDisk ? mapIter->second.setTrue() : mapIter->second.setFalse();
-			break;
-		case DEBUG_PRIVILEGE:
-			debugPrivilege ? mapIter->second.setTrue() : mapIter->second.setFalse();
-			break;
-		case CREATE_BACKUP:
-			createBackup ? mapIter->second.setTrue() : mapIter->second.setFalse();
-			break;
-		case DLL_INJECTION_AUTO_UNLOAD:
-			dllInjectionAutoUnload ? mapIter->second.setTrue() : mapIter->second.setFalse();
-			break;
-		case UPDATE_HEADER_CHECKSUM:
-			updateHeaderChecksum ? mapIter->second.setTrue() : mapIter->second.setFalse();
-			break;
-		case IAT_SECTION_NAME:
-			wcscpy_s(mapIter->second.valueString, _countof(mapIter->second.valueString), iatSectionName);
-			break;
-		}
-	}
+	Scylla::config[USE_PE_HEADER_FROM_DISK].setBool(usePEHeaderFromDisk);
+	Scylla::config[DEBUG_PRIVILEGE].setBool(debugPrivilege);
+	Scylla::config[CREATE_BACKUP].setBool(createBackup);
+	Scylla::config[DLL_INJECTION_AUTO_UNLOAD].setBool(dllInjectionAutoUnload);
+	Scylla::config[UPDATE_HEADER_CHECKSUM].setBool(updateHeaderChecksum);
+	Scylla::config[IAT_SECTION_NAME].setString(iatSectionName);
 }
 
 void OptionsGui::loadOptions()
 {
-	std::map<Configuration, ConfigObject>::iterator mapIter;
-
-	for (mapIter = Scylla::config.getConfigList().begin() ; mapIter != Scylla::config.getConfigList().end(); mapIter++)
-	{
-		switch(mapIter->first)
-		{
-		case USE_PE_HEADER_FROM_DISK:
-			usePEHeaderFromDisk = mapIter->second.isTrue();
-			break;
-		case DEBUG_PRIVILEGE:
-			debugPrivilege = mapIter->second.isTrue();
-			break;
-		case CREATE_BACKUP:
-			createBackup = mapIter->second.isTrue();
-			break;
-		case DLL_INJECTION_AUTO_UNLOAD:
-			dllInjectionAutoUnload = mapIter->second.isTrue();
-			break;
-		case UPDATE_HEADER_CHECKSUM:
-			updateHeaderChecksum = mapIter->second.isTrue();
-			break;
-		case IAT_SECTION_NAME:
-			wcsncpy_s(iatSectionName, _countof(iatSectionName), mapIter->second.valueString, _countof(iatSectionName)-1);
-			iatSectionName[_countof(iatSectionName)-1] = L'\0';
-			break;
-		}
-	}
+	usePEHeaderFromDisk    = Scylla::config[USE_PE_HEADER_FROM_DISK].getBool();
+	debugPrivilege         = Scylla::config[DEBUG_PRIVILEGE].getBool();
+	createBackup           = Scylla::config[CREATE_BACKUP].getBool();
+	dllInjectionAutoUnload = Scylla::config[DLL_INJECTION_AUTO_UNLOAD].getBool();
+	updateHeaderChecksum   = Scylla::config[UPDATE_HEADER_CHECKSUM].getBool();
+	wcsncpy_s(iatSectionName, Scylla::config[IAT_SECTION_NAME].getString(), _countof(iatSectionName)-1);
 }

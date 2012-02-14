@@ -446,13 +446,13 @@ bool ImportRebuild::createNewImportSection(std::map<DWORD_PTR, ImportModuleThunk
 	//DWORD sectionSize = calculateMinSize(moduleList);
 	calculateImportSizes(moduleList);
 
-	if (wcslen(Scylla::config.getConfigObject(IAT_SECTION_NAME)->valueString) > IMAGE_SIZEOF_SHORT_NAME)
+	if (wcslen(Scylla::config[IAT_SECTION_NAME].getString()) > IMAGE_SIZEOF_SHORT_NAME)
 	{
 		strcpy_s(sectionName, sizeof(sectionName), ".SCY");
 	}
 	else
 	{
-		wcstombs_s(&i, sectionName, sizeof(sectionName), Scylla::config.getConfigObject(IAT_SECTION_NAME)->valueString, _TRUNCATE);
+		wcstombs_s(&i, sectionName, sizeof(sectionName), Scylla::config[IAT_SECTION_NAME].getString(), _TRUNCATE);
 	}
 
 
