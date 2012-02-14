@@ -1,7 +1,7 @@
 #include "ImportsHandling.h"
 
 #include "Thunks.h"
-#include "definitions.h"
+#include "Architecture.h"
 
 #include <atlmisc.h>
 #include <atlcrack.h>
@@ -192,7 +192,7 @@ void ImportsHandling::updateCounts()
 
 	if (!module)
 	{
-		Logger::debugLog(TEXT("ImportsHandling::addFunction module not found rva ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(""),rva);
+		Scylla::debugLog.log(L"ImportsHandling::addFunction module not found rva " PRINTF_DWORD_PTR_FULL, rva);
 		return false;
 	}
 
@@ -416,18 +416,18 @@ void ImportsHandling::updateImportInTreeView(const ImportThunk * importThunk, CT
 
 		if (importThunk->name[0] != 0x00)
 		{
-			swprintf_s(tempString, _countof(tempString),TEXT("ord: %04X name: %S"),importThunk->ordinal,importThunk->name);
+			swprintf_s(tempString, _countof(tempString), L"ord: %04X name: %S", importThunk->ordinal, importThunk->name);
 		}
 		else
 		{
-			swprintf_s(tempString, _countof(tempString),TEXT("ord: %04X"),importThunk->ordinal);
+			swprintf_s(tempString, _countof(tempString), L"ord: %04X", importThunk->ordinal);
 		}
 
-		swprintf_s(stringBuffer, _countof(stringBuffer),TEXT(" rva: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" mod: %s %s"),importThunk->rva,importThunk->moduleName,tempString);
+		swprintf_s(stringBuffer, _countof(stringBuffer), L" rva: " PRINTF_DWORD_PTR_HALF L" mod: %s %s", importThunk->rva, importThunk->moduleName, tempString);
 	}
 	else
 	{
-		swprintf_s(stringBuffer, _countof(stringBuffer),TEXT(" rva: ")TEXT(PRINTF_DWORD_PTR_HALF)TEXT(" ptr: ")TEXT(PRINTF_DWORD_PTR_FULL),importThunk->rva,importThunk->apiAddressVA);
+		swprintf_s(stringBuffer, _countof(stringBuffer), L" rva: " PRINTF_DWORD_PTR_HALF L" ptr: " PRINTF_DWORD_PTR_FULL, importThunk->rva, importThunk->apiAddressVA);
 	}
 
 	item.SetText(stringBuffer);
@@ -437,7 +437,7 @@ void ImportsHandling::updateImportInTreeView(const ImportThunk * importThunk, CT
 
 void ImportsHandling::updateModuleInTreeView(const ImportModuleThunk * importThunk, CTreeItem item)
 {
-	swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("%s (%d) FThunk: ")TEXT(PRINTF_DWORD_PTR_HALF),importThunk->moduleName,importThunk->thunkList.size(), importThunk->firstThunk);
+	swprintf_s(stringBuffer, _countof(stringBuffer),L"%s (%d) FThunk: " PRINTF_DWORD_PTR_HALF, importThunk->moduleName,importThunk->thunkList.size(), importThunk->firstThunk);
 
 	item.SetText(stringBuffer);
 	Icon icon = getAppropiateIcon(importThunk->isValid());
@@ -677,7 +677,7 @@ bool ImportsHandling::addNotFoundApiToModuleList(const ImportThunk * apiNotFound
 			else
 			{
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog("Error iterator1 != (*moduleThunkList).end()\r\n");
+				Scylla::debugLog.log(L"Error iterator1 != (*moduleThunkList).end()");
 #endif
 				break;
 			}
@@ -693,7 +693,7 @@ bool ImportsHandling::addNotFoundApiToModuleList(const ImportThunk * apiNotFound
 	if (!module)
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog(TEXT("ImportsHandling::addFunction module not found rva ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("\r\n"),rva);
+		Scylla::debugLog.log(L"ImportsHandling::addFunction module not found rva " PRINTF_DWORD_PTR_FULL, rva);
 #endif
 		return false;
 	}
@@ -744,7 +744,7 @@ bool ImportsHandling::addFunctionToModuleList(const ImportThunk * apiFound)
 			else
 			{
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog(TEXT("Error iterator1 != moduleListNew.end()\r\n"));
+				Scylla::debugLog.log(L"Error iterator1 != moduleListNew.end()");
 #endif
 				break;
 			}
@@ -759,7 +759,7 @@ bool ImportsHandling::addFunctionToModuleList(const ImportThunk * apiFound)
 	if (!module)
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog(TEXT("ImportsHandling::addFunction module not found rva ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("\r\n"),apiFound->rva);
+		Scylla::debugLog.log(L"ImportsHandling::addFunction module not found rva " PRINTF_DWORD_PTR_FULL, apiFound->rva);
 #endif
 		return false;
 	}

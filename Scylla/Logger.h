@@ -3,18 +3,51 @@
 
 #include <windows.h>
 
-#define DEBUG_LOG_FILENAME "Scylla_debug.log"
-
-class Logger {
+class Logger
+{
 public:
-	static void debugLog(const WCHAR * format, ...);
-	static void debugLog(const CHAR * format, ...);
-	static void printfDialog(const WCHAR * format, ...);
 
-	static void getDebugLogFilePath();
+	virtual void log(const WCHAR * format, ...);
+	virtual void log(const CHAR * format, ...);
+
+protected:
+
+	virtual void write(const WCHAR * str) = 0;
+	virtual void write(const CHAR * str);
 
 private:
-	static WCHAR debugLogFile[MAX_PATH];
+
 	static WCHAR logbuf[300];
 	static char logbufChar[300];
+};
+
+class FileLog : public Logger
+{
+public:
+
+	FileLog(const WCHAR * fileName);
+
+private:
+
+	void write(const WCHAR * str);
+	void write(const CHAR * str);
+
+	WCHAR filePath[MAX_PATH];
+};
+
+class ListboxLog : public Logger
+{
+public:
+
+	ListboxLog() : window(0) { }
+	ListboxLog(HWND window);
+
+	void setWindow(HWND window);
+
+private:
+
+	void write(const WCHAR * str);
+	//void write(const CHAR * str);
+
+	HWND window;
 };

@@ -1,8 +1,8 @@
 #include "PeDump.h"
 #include "ProcessAccessHelp.h"
 
-#include "Logger.h"
-#include "definitions.h"
+#include "Scylla.h"
+#include "Architecture.h"
 
 bool PeDump::useHeaderFromDisk = true;
 bool PeDump::appendOverlayData = true;
@@ -29,7 +29,7 @@ bool PeDump::fillPeHeaderStructs(bool fromDisk)
 		if (!ProcessAccessHelp::readHeaderFromFile(headerData, dwSize, fullpath))
 		{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog(L"fillPeHeaderStructs -> ProcessAccessHelp::readHeaderFromFile failed - %X %s\r\n", dwSize, fullpath);
+			Scylla::debugLog.log(L"fillPeHeaderStructs -> ProcessAccessHelp::readHeaderFromFile failed - %X %s", dwSize, fullpath);
 #endif
 			return false;
 		}
@@ -40,7 +40,7 @@ bool PeDump::fillPeHeaderStructs(bool fromDisk)
 		if (!ProcessAccessHelp::readMemoryFromProcess(imageBase, dwSize, headerData))
 		{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog(TEXT("fillPeHeaderStructs -> ProcessAccessHelp::readMemoryFromProcess failed - ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" %X ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("\r\n"),imageBase, dwSize, headerData);
+			Scylla::debugLog.log(L"fillPeHeaderStructs -> ProcessAccessHelp::readMemoryFromProcess failed - " PRINTF_DWORD_PTR_FULL L" %X " PRINTF_DWORD_PTR_FULL, imageBase, dwSize, headerData);
 #endif
 			return false;
 		}
@@ -81,7 +81,7 @@ bool PeDump::dumpCompleteProcessToDisk(const WCHAR * dumpFilePath)
 	if (!fillPeHeaderStructs(useHeaderFromDisk))
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("dumpCompleteProcessToDisk -> fillPeHeaderStructs failed\r\n");
+		Scylla::debugLog.log(L"dumpCompleteProcessToDisk -> fillPeHeaderStructs failed");
 #endif
 		return false;
 	}
@@ -89,7 +89,7 @@ bool PeDump::dumpCompleteProcessToDisk(const WCHAR * dumpFilePath)
 	if (!validateHeaders())
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("dumpCompleteProcessToDisk -> validateHeaders failed\r\n");
+		Scylla::debugLog.log(L"dumpCompleteProcessToDisk -> validateHeaders failed");
 #endif
 		return false;
 	}
@@ -101,7 +101,7 @@ bool PeDump::dumpCompleteProcessToDisk(const WCHAR * dumpFilePath)
 		if (!ProcessAccessHelp::readMemoryFromProcess(imageBase,sizeOfImage,dumpData))
 		{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog("dumpCompleteProcessToDisk -> readMemoryFromProcess failed\r\n");
+			Scylla::debugLog.log(L"dumpCompleteProcessToDisk -> readMemoryFromProcess failed");
 #endif
 			return false;
 		}
@@ -130,7 +130,7 @@ bool PeDump::dumpCompleteProcessToDisk(const WCHAR * dumpFilePath)
 	else
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("dumpCompleteProcessToDisk -> new BYTE[sizeOfImage] failed %X\r\n",sizeOfImage);
+		Scylla::debugLog.log(L"dumpCompleteProcessToDisk -> new BYTE[sizeOfImage] failed %X", sizeOfImage);
 #endif
 		return false;
 	}
@@ -146,7 +146,7 @@ bool PeDump::appendOverlayDataToDump(const WCHAR *dumpFilePath)
 		if (offset == 0)
 		{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog("appendOverlayDataToDump :: No overlay exists\r\n");
+			Scylla::debugLog.log(L"appendOverlayDataToDump :: No overlay exists");
 #endif
 			return true;
 		}
@@ -155,14 +155,14 @@ bool PeDump::appendOverlayDataToDump(const WCHAR *dumpFilePath)
 			if (copyFileDataFromOffset(fullpath, dumpFilePath, offset, size))
 			{
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog("appendOverlayDataToDump :: appending overlay success\r\n");
+				Scylla::debugLog.log(L"appendOverlayDataToDump :: appending overlay success");
 #endif
 				return true;
 			}
 			else
 			{
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog("appendOverlayDataToDump :: appending overlay failed\r\n");
+				Scylla::debugLog.log(L"appendOverlayDataToDump :: appending overlay failed");
 #endif
 				return false;
 			}
@@ -171,7 +171,7 @@ bool PeDump::appendOverlayDataToDump(const WCHAR *dumpFilePath)
 	else
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("appendOverlayDataToDump :: getOverlayData failed\r\n");
+		Scylla::debugLog.log(L"appendOverlayDataToDump :: getOverlayData failed");
 #endif
 		return false;
 	}
@@ -188,7 +188,7 @@ bool PeDump::copyFileDataFromOffset(const WCHAR * sourceFile, const WCHAR * dest
 	if(hSourceFile == INVALID_HANDLE_VALUE)
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("copyFileDataFromOffset :: failed to open source file\r\n");
+		Scylla::debugLog.log(L"copyFileDataFromOffset :: failed to open source file");
 #endif
 		return false;
 	}
@@ -198,7 +198,7 @@ bool PeDump::copyFileDataFromOffset(const WCHAR * sourceFile, const WCHAR * dest
 	if(hSourceFile == INVALID_HANDLE_VALUE)
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("copyFileDataFromOffset :: failed to open destination file\r\n");
+		Scylla::debugLog.log(L"copyFileDataFromOffset :: failed to open destination file");
 #endif
 		CloseHandle(hSourceFile);
 		return false;
@@ -215,7 +215,7 @@ bool PeDump::copyFileDataFromOffset(const WCHAR * sourceFile, const WCHAR * dest
 		else
 		{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog("copyFileDataFromOffset :: writeMemoryToFileEnd failed\r\n");
+			Scylla::debugLog.log(L"copyFileDataFromOffset :: writeMemoryToFileEnd failed");
 #endif
 			retValue = false;
 		}
@@ -223,7 +223,7 @@ bool PeDump::copyFileDataFromOffset(const WCHAR * sourceFile, const WCHAR * dest
 	else
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("copyFileDataFromOffset :: readMemoryFromFile failed to read from source file\r\n");
+		Scylla::debugLog.log(L"copyFileDataFromOffset :: readMemoryFromFile failed to read from source file");
 #endif
 		retValue = false;
 	}
@@ -311,7 +311,7 @@ bool PeDump::saveDumpToDisk(const WCHAR * dumpFilePath, BYTE *dumpBuffer, DWORD 
 	if(hFile == INVALID_HANDLE_VALUE)
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("saveDumpToDisk :: INVALID_HANDLE_VALUE %u\r\n",GetLastError());
+		Scylla::debugLog.log(L"saveDumpToDisk :: INVALID_HANDLE_VALUE %u", GetLastError());
 #endif
 		retValue = false;
 	}
@@ -322,7 +322,7 @@ bool PeDump::saveDumpToDisk(const WCHAR * dumpFilePath, BYTE *dumpBuffer, DWORD 
 			if (lpNumberOfBytesWritten != dumpSize)
 			{
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog("saveDumpToDisk :: lpNumberOfBytesWritten != dumpSize %d %d\r\n",lpNumberOfBytesWritten,dumpSize);
+				Scylla::debugLog.log(L"saveDumpToDisk :: lpNumberOfBytesWritten != dumpSize %d %d", lpNumberOfBytesWritten,dumpSize);
 #endif
 				retValue = false;
 			}
@@ -334,7 +334,7 @@ bool PeDump::saveDumpToDisk(const WCHAR * dumpFilePath, BYTE *dumpBuffer, DWORD 
 		else
 		{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog("saveDumpToDisk :: WriteFile failed %u\r\n",GetLastError());
+			Scylla::debugLog.log(L"saveDumpToDisk :: WriteFile failed %u",GetLastError());
 #endif
 			retValue = false;
 		}
@@ -363,7 +363,7 @@ bool PeDump::getOverlayData(const WCHAR * filepath, DWORD_PTR * overlayFileOffse
 	if( hFile == INVALID_HANDLE_VALUE )
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("getOverlayData :: INVALID_HANDLE_VALUE %u\r\n",GetLastError());
+		Scylla::debugLog.log(L"getOverlayData :: INVALID_HANDLE_VALUE %u", GetLastError());
 #endif
 		returnValue = false;
 	}

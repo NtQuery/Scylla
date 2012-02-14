@@ -47,7 +47,7 @@ public:
 	ProcessLister()
 	{
 		initDeviceNameList();
-		_IsWow64Process = (def_IsWow64Process)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")),"IsWow64Process");
+		_IsWow64Process = (def_IsWow64Process)GetProcAddress(GetModuleHandle(L"kernel32.dll"), "IsWow64Process");
 	}
 
 	std::vector<Process>& getProcessList();

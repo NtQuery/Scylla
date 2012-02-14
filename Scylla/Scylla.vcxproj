@@ -158,6 +158,7 @@
   <ItemGroup>
     <ClCompile Include="AboutGui.cpp" />
     <ClCompile Include="ApiReader.cpp" />
+    <ClCompile Include="Architecture.cpp" />
     <ClCompile Include="ConfigurationHolder.cpp" />
     <ClCompile Include="DisassemblerGui.cpp" />
     <ClCompile Include="DllInjection.cpp" />
@@ -177,12 +178,14 @@
     <ClCompile Include="PluginLoader.cpp" />
     <ClCompile Include="ProcessAccessHelp.cpp" />
     <ClCompile Include="ProcessLister.cpp" />
+    <ClCompile Include="Scylla.cpp" />
     <ClCompile Include="SystemInformation.cpp" />
     <ClCompile Include="TreeImportExport.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AboutGui.h" />
     <ClInclude Include="ApiReader.h" />
+    <ClInclude Include="Architecture.h" />
     <ClInclude Include="ConfigurationHolder.h" />
     <ClInclude Include="definitions.h" />
     <ClInclude Include="DisassemblerGui.h" />
@@ -205,6 +208,7 @@
     <ClInclude Include="ProcessAccessHelp.h" />
     <ClInclude Include="ProcessLister.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Scylla.h" />
     <ClInclude Include="SystemInformation.h" />
     <ClInclude Include="Thunks.h" />
     <ClInclude Include="TreeImportExport.h" />

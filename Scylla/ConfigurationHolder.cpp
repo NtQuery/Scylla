@@ -1,10 +1,11 @@
-
 #include "ConfigurationHolder.h"
-#include "resource.h"
-#include "definitions.h"
 
-WCHAR ConfigurationHolder::configPath[MAX_PATH];
-ConfigurationInitializer ConfigurationHolder::config;
+#include <shlwapi.h>
+#include <stdio.h>
+#include "Architecture.h"
+
+const WCHAR ConfigurationHolder::CONFIG_FILE_NAME[] = L"Scylla.ini";
+const WCHAR ConfigurationHolder::CONFIG_FILE_SECTION_NAME[] = L"SCYLLA_CONFIG";
 
 //#define DEBUG_COMMENTS
 
@@ -12,15 +13,13 @@ ConfigurationInitializer::ConfigurationInitializer()
 {
 	ConfigObject configObject;
 
-	mapConfig[USE_PE_HEADER_FROM_DISK] = configObject.newValues(L"USE_PE_HEADER_FROM_DISK", Boolean, IDC_CHECK_PE_HEADER_FROM_DISK);
-	mapConfig[DEBUG_PRIVILEGE] = configObject.newValues(L"DEBUG_PRIVILEGE", Boolean, IDC_CHECK_DEBUG_PRIVILEGES);
-	mapConfig[CREATE_BACKUP] = configObject.newValues(L"CREATE_BACKUP", Boolean, IDC_CHECK_CREATE_BACKUP);
-	mapConfig[DLL_INJECTION_AUTO_UNLOAD] = configObject.newValues(L"DLL_INJECTION_AUTO_UNLOAD", Boolean, IDC_CHECK_UNLOAD_DLL);
-	mapConfig[UPDATE_HEADER_CHECKSUM] = configObject.newValues(L"UPDATE_HEADER_CHECKSUM", Boolean, IDC_CHECK_HEADER_CHECKSUM);
-
-	mapConfig[IAT_SECTION_NAME] = configObject.newValues(L"IAT_SECTION_NAME", String, IDC_OPTIONS_SECTIONNAME);
+	mapConfig[USE_PE_HEADER_FROM_DISK]   = configObject.newValues(L"USE_PE_HEADER_FROM_DISK",   Boolean);
+	mapConfig[DEBUG_PRIVILEGE]           = configObject.newValues(L"DEBUG_PRIVILEGE",           Boolean);
+	mapConfig[CREATE_BACKUP]             = configObject.newValues(L"CREATE_BACKUP",             Boolean);
+	mapConfig[DLL_INJECTION_AUTO_UNLOAD] = configObject.newValues(L"DLL_INJECTION_AUTO_UNLOAD", Boolean);
+	mapConfig[UPDATE_HEADER_CHECKSUM]    = configObject.newValues(L"UPDATE_HEADER_CHECKSUM",    Boolean);
+	mapConfig[IAT_SECTION_NAME]          = configObject.newValues(L"IAT_SECTION_NAME",          String);
 }
-
 
 bool ConfigurationHolder::loadConfiguration()
 {
@@ -67,29 +66,23 @@ bool ConfigurationHolder::saveNumericToConfigFile(ConfigObject & configObject, i
 
 	if (nBase == 16)
 	{
-		swprintf_s(configObject.valueString, CONFIG_OPTIONS_STRING_LENGTH, TEXT(PRINTF_DWORD_PTR_FULL),configObject.valueNumeric);
+		swprintf_s(configObject.valueString, CONFIG_OPTIONS_STRING_LENGTH, PRINTF_DWORD_PTR_FULL, configObject.valueNumeric);
 	}
 	else
 	{
-		swprintf_s(configObject.valueString, CONFIG_OPTIONS_STRING_LENGTH, TEXT(PRINTF_INTEGER),configObject.valueNumeric);
+		swprintf_s(configObject.valueString, CONFIG_OPTIONS_STRING_LENGTH, PRINTF_INTEGER, configObject.valueNumeric);
 	}
 
 
-	if (WritePrivateProfileString(TEXT(CONFIG_FILE_SECTION_NAME), configObject.name, configObject.valueString, configPath))
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.name, configObject.valueString, configPath);
+	return ret == TRUE;
 }
 
 bool ConfigurationHolder::readNumericFromConfigFile(ConfigObject & configObject, int nBase)
 {
-	GetPrivateProfileString(TEXT(CONFIG_FILE_SECTION_NAME),configObject.name,TEXT(""),configObject.valueString, 100, configPath);
+	DWORD read = GetPrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.name, L"", configObject.valueString, _countof(configObject.valueString), configPath);
 
-	if (wcslen(configObject.valueString) > 0)
+	if (read > 0 && wcslen(configObject.valueString) > 0)
 	{
 
 #ifdef _WIN64
@@ -98,14 +91,7 @@ bool ConfigurationHolder::readNumericFromConfigFile(ConfigObject & configObject,
 		configObject.valueNumeric = wcstoul(configObject.valueString, NULL, nBase);
 #endif
 
-		if (configObject.valueNumeric)
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
+		return (configObject.valueNumeric != 0);
 	}
 	else
 	{
@@ -113,44 +99,22 @@ bool ConfigurationHolder::readNumericFromConfigFile(ConfigObject & configObject,
 	}
 }
 
-
 bool ConfigurationHolder::saveStringToConfigFile(ConfigObject & configObject)
 {
-	if (WritePrivateProfileString(TEXT(CONFIG_FILE_SECTION_NAME), configObject.name, configObject.valueString, configPath))
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.name, configObject.valueString, configPath);
+	return ret == TRUE;
 }
 
 bool ConfigurationHolder::readStringFromConfigFile(ConfigObject & configObject)
 {
-	GetPrivateProfileString(TEXT(CONFIG_FILE_SECTION_NAME),configObject.name,TEXT(""),configObject.valueString, 100, configPath);
-
-	if (wcslen(configObject.valueString) > 0)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	DWORD read = GetPrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.name, L"", configObject.valueString, _countof(configObject.valueString), configPath);
+	return (read > 0 && wcslen(configObject.valueString) > 0);
 }
 
 bool ConfigurationHolder::readBooleanFromConfigFile(ConfigObject & configObject)
 {
-	if (GetPrivateProfileInt(TEXT(CONFIG_FILE_SECTION_NAME), configObject.name, 0, configPath) != 0)
-	{
-		configObject.valueNumeric = 1;
-	}
-	else
-	{
-		configObject.valueNumeric = 0;
-	}
-
+	UINT val = GetPrivateProfileInt(CONFIG_FILE_SECTION_NAME, configObject.name, 0, configPath);
+	configObject.valueNumeric = val ? 1 : 0;
 	return true;
 }
 
@@ -167,14 +131,8 @@ bool ConfigurationHolder::saveBooleanToConfigFile(ConfigObject & configObject)
 		boolValue = L"1";
 	}
 
-	if (WritePrivateProfileString(TEXT(CONFIG_FILE_SECTION_NAME), configObject.name, boolValue, configPath))
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.name, boolValue, configPath);
+	return ret == TRUE;
 }
 
 bool ConfigurationHolder::loadConfig(ConfigObject & configObject)
@@ -231,22 +189,13 @@ bool ConfigurationHolder::buildConfigFilePath()
 	if (!GetModuleFileName(0, configPath, _countof(configPath)))
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("buildConfigFilePath :: GetModuleFileName failed %d\r\n",GetLastError());
+		Scylla::debugLog.log(L"buildConfigFilePath :: GetModuleFileName failed %d", GetLastError());
 #endif
 		return false;
 	}
 
-	//remove exe file name
-	for (size_t i = wcslen(configPath) - 1; i >= 0; i--)
-	{
-		if (configPath[i] == L'\\')
-		{
-			configPath[i + 1] = 0;
-			break;
-		}
-	}
-
-	wcscat_s(configPath, _countof(configPath), TEXT(CONFIG_FILE_NAME) );
+	PathRemoveFileSpec(configPath);
+	PathAppend(configPath, CONFIG_FILE_NAME);
 
 	//wprintf(L"configPath %s\n\n", configPath);
 

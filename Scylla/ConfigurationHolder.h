@@ -1,12 +1,7 @@
-
 #pragma once
 
 #include <windows.h>
-#include <stdio.h>
 #include <map>
-
-#define CONFIG_FILE_NAME "Scylla.ini"
-#define CONFIG_FILE_SECTION_NAME "SCYLLA_CONFIG"
 
 enum ConfigType {
 	String,
@@ -24,7 +19,7 @@ enum Configuration {
 	UPDATE_HEADER_CHECKSUM,
 };
 
-#define CONFIG_OPTIONS_STRING_LENGTH 100
+const size_t CONFIG_OPTIONS_STRING_LENGTH = 100;
 
 class ConfigObject {
 public:
@@ -34,15 +29,12 @@ public:
 	DWORD_PTR valueNumeric;
 	WCHAR valueString[CONFIG_OPTIONS_STRING_LENGTH];
 
-	int dialogItemValue;
-
-	ConfigObject& newValues(WCHAR * configname, ConfigType config, int dlgValue)
+	ConfigObject& newValues(WCHAR * configname, ConfigType config)
 	{
 		wcscpy_s(name, MAX_PATH, configname);
 		configType = config;
 		valueNumeric = 0;
 		ZeroMemory(valueString, sizeof(valueString));
-		dialogItemValue = dlgValue;
 
 		return *this;
 	}
@@ -73,28 +65,30 @@ public:
 class ConfigurationHolder {
 public:
 
-	static bool loadConfiguration();
-	static bool saveConfiguration();
+	bool loadConfiguration();
+	bool saveConfiguration();
 
-	static ConfigObject * getConfigObject(Configuration configuration);
-	static std::map<Configuration, ConfigObject> & getConfigList();
+	ConfigObject * getConfigObject(Configuration configuration);
+	std::map<Configuration, ConfigObject> & getConfigList();
 
 private:
-	static ConfigurationInitializer config;
-	static WCHAR configPath[MAX_PATH];
 
-	static bool buildConfigFilePath();
+	static const WCHAR CONFIG_FILE_NAME[];
+	static const WCHAR CONFIG_FILE_SECTION_NAME[];
 
-	
+	ConfigurationInitializer config;
+	WCHAR configPath[MAX_PATH];
 
-	static bool readStringFromConfigFile(ConfigObject & configObject);
-	static bool readBooleanFromConfigFile(ConfigObject & configObject);
-	static bool readNumericFromConfigFile(ConfigObject & configObject, int nBase);
+	bool buildConfigFilePath();
 
-	static bool saveStringToConfigFile(ConfigObject & configObject);
-	static bool saveBooleanToConfigFile(ConfigObject & configObject);
-	static bool saveNumericToConfigFile(ConfigObject & configObject, int nBase);
+	bool readStringFromConfigFile(ConfigObject & configObject);
+	bool readBooleanFromConfigFile(ConfigObject & configObject);
+	bool readNumericFromConfigFile(ConfigObject & configObject, int nBase);
 
-	static bool loadConfig(ConfigObject & configObject);
-	static bool saveConfig(ConfigObject & configObject);
+	bool saveStringToConfigFile(ConfigObject & configObject);
+	bool saveBooleanToConfigFile(ConfigObject & configObject);
+	bool saveNumericToConfigFile(ConfigObject & configObject, int nBase);
+
+	bool loadConfig(ConfigObject & configObject);
+	bool saveConfig(ConfigObject & configObject);
 };

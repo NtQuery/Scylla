@@ -1,5 +1,5 @@
 #include "DllInjectionPlugin.h"
-#include "Logger.h"
+#include "Scylla.h"
 
 const WCHAR * DllInjectionPlugin::FILE_MAPPING_NAME = L"ScyllaPluginExchange";
 
@@ -17,14 +17,14 @@ void DllInjectionPlugin::injectPlugin(Plugin & plugin, std::map<DWORD_PTR, Impor
 
 	if (numberOfUnresolvedImports == 0)
 	{
-		Logger::printfDialog(L"No unresolved Imports");
+		Scylla::windowLog.log(L"No unresolved Imports");
 		return;
 	}
 
 	if (!createFileMapping((DWORD)(sizeof(SCYLLA_EXCHANGE) + sizeof(UNRESOLVED_IMPORT) + (sizeof(UNRESOLVED_IMPORT) * numberOfUnresolvedImports))))
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog(L"injectPlugin :: createFileMapping %X failed\r\n",sizeof(SCYLLA_EXCHANGE) + sizeof(UNRESOLVED_IMPORT) + (sizeof(UNRESOLVED_IMPORT) * numberOfUnresolvedImports));
+		Scylla::debugLog.log(L"injectPlugin :: createFileMapping %X failed",sizeof(SCYLLA_EXCHANGE) + sizeof(UNRESOLVED_IMPORT) + (sizeof(UNRESOLVED_IMPORT) * numberOfUnresolvedImports));
 #endif
 		return;
 	}
@@ -46,10 +46,10 @@ void DllInjectionPlugin::injectPlugin(Plugin & plugin, std::map<DWORD_PTR, Impor
 	HMODULE hDll = dllInjection(hProcess, plugin.fullpath);
 	if (hDll)
 	{
-		Logger::printfDialog(L"Plugin injection was successful");
+		Scylla::windowLog.log(L"Plugin injection was successful");
 		if (!unloadDllInProcess(hProcess,hDll))
 		{
-			Logger::printfDialog(L"Plugin unloading failed");
+			Scylla::windowLog.log(L"Plugin unloading failed");
 		}
 		lpViewOfFile = MapViewOfFile(hMapFile, FILE_MAP_ALL_ACCESS, 0, 0, 0);
 
@@ -62,7 +62,7 @@ void DllInjectionPlugin::injectPlugin(Plugin & plugin, std::map<DWORD_PTR, Impor
 	}
 	else
 	{
-		Logger::printfDialog(L"Plugin injection failed");
+		Scylla::windowLog.log(L"Plugin injection failed");
 	}
 
 	closeAllHandles();
@@ -78,7 +78,7 @@ void DllInjectionPlugin::injectImprecPlugin(Plugin & plugin, std::map<DWORD_PTR,
 	if (hImprecMap == NULL)
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("injectImprecPlugin :: CreateFileMapping failed 0x%X\r\n",GetLastError());
+		Scylla::debugLog.log(L"injectImprecPlugin :: CreateFileMapping failed 0x%X", GetLastError());
 #endif
 		return;
 	}
@@ -88,7 +88,7 @@ void DllInjectionPlugin::injectImprecPlugin(Plugin & plugin, std::map<DWORD_PTR,
 	if (lpImprecViewOfFile == NULL)
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("injectImprecPlugin :: MapViewOfFile failed 0x%X\r\n",GetLastError());
+		Scylla::debugLog.log(L"injectImprecPlugin :: MapViewOfFile failed 0x%X", GetLastError());
 #endif
 		CloseHandle(hImprecMap);
 		return;
@@ -100,7 +100,7 @@ void DllInjectionPlugin::injectImprecPlugin(Plugin & plugin, std::map<DWORD_PTR,
 
 	newPlugin.fileSize = plugin.fileSize;
 	wcscpy_s(newPlugin.pluginName, _countof(newPlugin.pluginName), plugin.pluginName);
-	wcscpy_s(newPlugin.fullpath, _countof(newPlugin.fullpath), PluginLoader::imprecWrapperDllPath);
+	wcscpy_s(newPlugin.fullpath, _countof(newPlugin.fullpath), Scylla::plugins.imprecWrapperDllPath);
 
 	injectPlugin(newPlugin,moduleList,imageBase,imageSize);
 
@@ -116,7 +116,7 @@ bool DllInjectionPlugin::createFileMapping(DWORD mappingSize)
 	if (hMapFile == NULL)
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("createFileMapping :: CreateFileMapping failed 0x%X\r\n",GetLastError());
+		Scylla::debugLog.log(L"createFileMapping :: CreateFileMapping failed 0x%X", GetLastError());
 #endif
 		return false;
 	}
@@ -126,7 +126,7 @@ bool DllInjectionPlugin::createFileMapping(DWORD mappingSize)
 	if (lpViewOfFile == NULL)
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("createFileMapping :: MapViewOfFile failed 0x%X\r\n",GetLastError());
+		Scylla::debugLog.log(L"createFileMapping :: MapViewOfFile failed 0x%X", GetLastError());
 #endif
 		CloseHandle(hMapFile);
 		hMapFile = 0;
@@ -229,25 +229,25 @@ void DllInjectionPlugin::handlePluginResults( PSCYLLA_EXCHANGE scyllaExchange, s
 	switch (scyllaExchange->status)
 	{
 	case SCYLLA_STATUS_SUCCESS:
-		Logger::printfDialog(L"Plugin was successful");
+		Scylla::windowLog.log(L"Plugin was successful");
 		updateImportsWithPluginResult(unresImp, moduleList);
 		break;
 	case SCYLLA_STATUS_UNKNOWN_ERROR:
-		Logger::printfDialog(L"Plugin reported Unknown Error");
+		Scylla::windowLog.log(L"Plugin reported Unknown Error");
 		break;
 	case SCYLLA_STATUS_UNSUPPORTED_PROTECTION:
-		Logger::printfDialog(L"Plugin detected unknown protection");
+		Scylla::windowLog.log(L"Plugin detected unknown protection");
 		updateImportsWithPluginResult(unresImp, moduleList);
 		break;
 	case SCYLLA_STATUS_IMPORT_RESOLVING_FAILED:
-		Logger::printfDialog(L"Plugin import resolving failed");
+		Scylla::windowLog.log(L"Plugin import resolving failed");
 		updateImportsWithPluginResult(unresImp, moduleList);
 		break;
 	case SCYLLA_STATUS_MAPPING_FAILED:
-		Logger::printfDialog(L"Plugin file mapping failed");
+		Scylla::windowLog.log(L"Plugin file mapping failed");
 		break;
 	default:
-		Logger::printfDialog(L"Plugin failed without reason");
+		Scylla::windowLog.log(L"Plugin failed without reason");
 	}
 }
 
@@ -286,7 +286,7 @@ void DllInjectionPlugin::updateImportsWithPluginResult( PUNRESOLVED_IMPORT first
 					strcpy_s(importThunk->name, _countof(importThunk->name),apiInfo->name);
 					wcscpy_s(importThunk->moduleName, _countof(importThunk->moduleName), apiInfo->module->getFilename());
 
-					if (moduleThunk->moduleName[0] == TEXT('?'))
+					if (moduleThunk->moduleName[0] == L'?')
 					{
 						wcscpy_s(moduleThunk->moduleName, _countof(importThunk->moduleName), apiInfo->module->getFilename());
 					}

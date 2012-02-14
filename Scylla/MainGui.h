@@ -140,13 +140,15 @@ public:
 
 	MainGui();
 
-	void addTextToOutputLog(const WCHAR * text);
+	//void addTextToOutputLog(const WCHAR * text);
+
+	//CWindow getLogListboxHandle() const { return ListLog; }
 
 protected:
 
 	// Variables
 
-	ProcessLister processLister;
+	
 	WCHAR stringBuffer[600];
 
 	ImportsHandling importsHandling;
@@ -195,6 +197,8 @@ protected:
 	static const int MenuImportsOffsetTrace = 2;
 	static const int MenuImportsTraceOffsetScylla = 2;
 	static const int MenuImportsTraceOffsetImpRec = 4;
+
+	static const int PLUGIN_MENU_BASE_ID = 0x10;
 
 protected:
 

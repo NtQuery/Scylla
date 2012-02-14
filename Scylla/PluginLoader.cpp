@@ -2,12 +2,13 @@
 #include "Logger.h"
 
 #include "ProcessAccessHelp.h"
+#include <shlwapi.h>
+#include <stdio.h>
 
-std::vector<Plugin> PluginLoader::scyllaPluginList;
-std::vector<Plugin> PluginLoader::imprecPluginList;
-WCHAR PluginLoader::dirSearchString[MAX_PATH];
-WCHAR PluginLoader::baseDirPath[MAX_PATH];
-WCHAR PluginLoader::imprecWrapperDllPath[MAX_PATH];
+const WCHAR PluginLoader::PLUGIN_DIR[] = L"Plugins\\";
+const WCHAR PluginLoader::PLUGIN_SEARCH_STRING[] = L"*.dll";
+const WCHAR PluginLoader::PLUGIN_IMPREC_DIR[] = L"ImpRec_Plugins\\";
+const WCHAR PluginLoader::PLUGIN_IMPREC_WRAPPER_DLL[] = L"Imprec_Wrapper_DLL.dll";
 
 //#define DEBUG_COMMENTS
 
@@ -73,7 +74,7 @@ bool PluginLoader::searchForPlugin(std::vector<Plugin> & newPluginList, const WC
 	if (dwError == ERROR_FILE_NOT_FOUND)
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("findAllPlugins :: No files found\r\n");
+		Scylla::debugLog.log(L"findAllPlugins :: No files found");
 #endif
 		return true;
 	}
@@ -81,7 +82,7 @@ bool PluginLoader::searchForPlugin(std::vector<Plugin> & newPluginList, const WC
 	if (hFind == INVALID_HANDLE_VALUE)
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("findAllPlugins :: FindFirstFile failed %d\r\n", dwError);
+		Scylla::debugLog.log(L"findAllPlugins :: FindFirstFile failed %d", dwError);
 #endif
 		return false;
 	}
@@ -94,7 +95,7 @@ bool PluginLoader::searchForPlugin(std::vector<Plugin> & newPluginList, const WC
 			if ((ffd.nFileSizeHigh != 0) || (ffd.nFileSizeLow < 200))
 			{
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog(TEXT("findAllPlugins :: Plugin invalid file size: %s\r\n"), ffd.cFileName);
+				Scylla::debugLog.log(L"findAllPlugins :: Plugin invalid file size: %s", ffd.cFileName);
 #endif
 			}
 			else
@@ -104,7 +105,7 @@ bool PluginLoader::searchForPlugin(std::vector<Plugin> & newPluginList, const WC
 				wcscat_s(pluginData.fullpath, _countof(baseDirPath), ffd.cFileName);
 
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog(L"findAllPlugins :: Plugin %s\r\n",pluginData.fullpath);
+				Scylla::debugLog.log(L"findAllPlugins :: Plugin %s", pluginData.fullpath);
 #endif
 				if (isValidDllFile(pluginData.fullpath))
 				{
@@ -118,7 +119,7 @@ bool PluginLoader::searchForPlugin(std::vector<Plugin> & newPluginList, const WC
 						else
 						{
 #ifdef DEBUG_COMMENTS
-							Logger::debugLog(TEXT("Cannot get scylla plugin name %s\r\n"),pluginData.fullpath);
+							Scylla::debugLog.log(L"Cannot get scylla plugin name %s", pluginData.fullpath);
 #endif
 						}
 					}
@@ -173,7 +174,7 @@ bool PluginLoader::getScyllaPluginName(Plugin * pluginData)
 			wcscpy_s(pluginData->pluginName, MAX_PATH, ScyllaPluginNameW());
 
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog(L"getPluginName :: Plugin name %s\r\n", pluginData->pluginName);
+			Scylla::debugLog.log(L"getPluginName :: Plugin name %s", pluginData->pluginName);
 #endif
 
 			retValue = true;
@@ -189,7 +190,7 @@ bool PluginLoader::getScyllaPluginName(Plugin * pluginData)
 				mbstowcs_s(&convertedChars, pluginData->pluginName, strlen(pluginName) + 1, pluginName, _TRUNCATE);
 
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog(L"getPluginName :: Plugin name mbstowcs_s %s\r\n", pluginData->pluginName);
+				Scylla::debugLog.log(L"getPluginName :: Plugin name mbstowcs_s %s", pluginData->pluginName);
 #endif
 
 				if (convertedChars > 1)
@@ -214,7 +215,7 @@ bool PluginLoader::getScyllaPluginName(Plugin * pluginData)
 	else
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog(L"getPluginName :: LoadLibraryEx failed %s\r\n", pluginData->fullpath);
+		Scylla::debugLog.log(L"getPluginName :: LoadLibraryEx failed %s", pluginData->fullpath);
 #endif
 		return false;
 	}
@@ -228,36 +229,23 @@ bool PluginLoader::buildSearchString()
 	if (!GetModuleFileName(0, dirSearchString, _countof(dirSearchString)))
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("buildSearchString :: GetModuleFileName failed %d\r\n",GetLastError());
+		Scylla::debugLog.log(L"buildSearchString :: GetModuleFileName failed %d", GetLastError());
 #endif
 		return false;
 	}
 
 	//wprintf(L"dirSearchString 1 %s\n\n", dirSearchString);
-
-
-	//remove exe file name
-	for (size_t i = wcslen(dirSearchString) - 1; i >= 0; i--)
-	{
-		if (dirSearchString[i] == L'\\')
-		{
-			dirSearchString[i + 1] = 0;
-			break;
-		}
-	}
-
+	PathRemoveFileSpec(dirSearchString);
 	//wprintf(L"dirSearchString 2 %s\n\n", dirSearchString);
-
-	wcscat_s(dirSearchString, _countof(dirSearchString), TEXT(PLUGIN_DIR)TEXT("\\") );
+	PathAppend(dirSearchString, PLUGIN_DIR);
 
 	wcscpy_s(baseDirPath, _countof(baseDirPath), dirSearchString);
-
-	wcscat_s(dirSearchString, _countof(dirSearchString), TEXT(PLUGIN_SEARCH_STRING) );
+	wcscat_s(dirSearchString, _countof(dirSearchString), PLUGIN_SEARCH_STRING);
 
 	//wprintf(L"dirSearchString 3 %s\n\n", dirSearchString);
 
 #ifdef DEBUG_COMMENTS
-	Logger::debugLog(L"dirSearchString final %s\r\n", dirSearchString);
+	Scylla::debugLog.log(L"dirSearchString final %s", dirSearchString);
 #endif
 
 
@@ -332,7 +320,7 @@ bool PluginLoader::isValidImprecPlugin(const WCHAR * fullpath)
 	else
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog(L"isValidImprecPlugin :: LoadLibraryEx failed %s\r\n", pluginData->fullpath);
+		Scylla::debugLog.log(L"isValidImprecPlugin :: LoadLibraryEx failed %s", pluginData->fullpath);
 #endif
 		return false;
 	}
@@ -342,20 +330,20 @@ bool PluginLoader::buildSearchStringImprecPlugins()
 {
 	wcscpy_s(dirSearchString, _countof(dirSearchString), baseDirPath);
 
-	wcscat_s(dirSearchString, _countof(dirSearchString), TEXT(PLUGIN_IMPREC_DIR)TEXT("\\") );
+	wcscat_s(dirSearchString, _countof(dirSearchString), PLUGIN_IMPREC_DIR);
 
 	wcscpy_s(baseDirPath, _countof(baseDirPath), dirSearchString);
 
 	//build imprec wrapper dll path
 	wcscpy_s(imprecWrapperDllPath, _countof(imprecWrapperDllPath), dirSearchString);
-	wcscat_s(imprecWrapperDllPath, _countof(imprecWrapperDllPath), TEXT(PLUGIN_IMPREC_WRAPPER_DLL) );
+	wcscat_s(imprecWrapperDllPath, _countof(imprecWrapperDllPath), PLUGIN_IMPREC_WRAPPER_DLL);
 
 	if (!fileExists(imprecWrapperDllPath))
 	{
 		return false;
 	}
 
-	wcscat_s(dirSearchString, _countof(dirSearchString), TEXT(PLUGIN_SEARCH_STRING) );
+	wcscat_s(dirSearchString, _countof(dirSearchString), PLUGIN_SEARCH_STRING);
 
 	return true;
 }

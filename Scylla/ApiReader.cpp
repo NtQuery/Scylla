@@ -1,8 +1,8 @@
 
 #include "ApiReader.h"
 
-#include "Logger.h"
-#include "definitions.h"
+#include "Scylla.h"
+#include "Architecture.h"
 #include "SystemInformation.h"
 
 stdext::hash_multimap<DWORD_PTR, ApiInfo *> ApiReader::apiList; //api look up table
@@ -24,7 +24,7 @@ void ApiReader::readApisFromModuleList()
 			maxValidAddress = moduleList[i].modBaseAddr + moduleList[i].modBaseSize;
 		}
 
-		Logger::printfDialog(TEXT("Module parsing: %s"),moduleList[i].fullPath);
+		Scylla::windowLog.log(L"Module parsing: %s",moduleList[i].fullPath);
 
 		if (!moduleList[i].isAlreadyParsed)
 		{
@@ -33,7 +33,7 @@ void ApiReader::readApisFromModuleList()
 	}
 
 #ifdef DEBUG_COMMENTS
-	Logger::debugLog(TEXT("Address Min ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Max ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("\nimagebase ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" maxValidAddress ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("\r\n"),minApiAddress,maxApiAddress,targetImageBase,maxValidAddress);
+	Scylla::debugLog.log(L"Address Min " PRINTF_DWORD_PTR_FULL L" Max " PRINTF_DWORD_PTR_FULL L"\nimagebase " PRINTF_DWORD_PTR_FULL L" maxValidAddress " PRINTF_DWORD_PTR_FULL, minApiAddress, maxApiAddress, targetImageBase ,maxValidAddress);
 #endif
 }
 
@@ -54,7 +54,6 @@ void ApiReader::parseModule(ModuleInfo *module)
 		parseModuleWithProcess(module);
 	}
 	
-
 	module->isAlreadyParsed = true;
 }
 
@@ -186,7 +185,7 @@ void ApiReader::handleForwardedApi(DWORD_PTR vaStringPointer,char * functionName
 		if (rvaApi == 0)
 		{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog(L"handleForwardedApi :: Api not found, this is really BAD! %S\r\n",fordwardedString);
+			Scylla::debugLog.log(L"handleForwardedApi :: Api not found, this is really BAD! %S",fordwardedString);
 #endif
 		}
 		else
@@ -260,7 +259,7 @@ BYTE * ApiReader::getHeaderFromProcess(ModuleInfo * module)
 	if(!readMemoryFromProcess(module->modBaseAddr, readSize, bufferHeader))
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog(L"getHeaderFromProcess :: Error reading header\r\n");
+		Scylla::debugLog.log(L"getHeaderFromProcess :: Error reading header");
 #endif
 		delete[] bufferHeader;
 		return 0;
@@ -282,7 +281,7 @@ BYTE * ApiReader::getExportTableFromProcess(ModuleInfo * module, PIMAGE_NT_HEADE
 	{
 		//Something is wrong with the PE Header
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog(L"Something is wrong with the PE Header here Export table size %d\r\n",readSize);
+		Scylla::debugLog.log(L"Something is wrong with the PE Header here Export table size %d", readSize);
 #endif
 		readSize = sizeof(IMAGE_EXPORT_DIRECTORY) + 100;
 	}
@@ -294,7 +293,7 @@ BYTE * ApiReader::getExportTableFromProcess(ModuleInfo * module, PIMAGE_NT_HEADE
 		if(!readMemoryFromProcess(module->modBaseAddr + pNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress, readSize, bufferExportTable))
 		{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog(L"getExportTableFromProcess :: Error reading export table from process\r\n");
+			Scylla::debugLog.log(L"getExportTableFromProcess :: Error reading export table from process");
 #endif
 			delete[] bufferExportTable;
 			return 0;
@@ -356,7 +355,7 @@ void ApiReader::parseExportTable(ModuleInfo *module, PIMAGE_NT_HEADERS pNtHeader
 	addressOfNameOrdinalsArray = (WORD *)((DWORD_PTR)pExportDir->AddressOfNameOrdinals + deltaAddress);
 
 #ifdef DEBUG_COMMENTS
-	Logger::debugLog(L"parseExportTable :: module %s NumberOfNames %X\r\n",module->fullPath,pExportDir->NumberOfNames);
+	Scylla::debugLog.log(L"parseExportTable :: module %s NumberOfNames %X", module->fullPath, pExportDir->NumberOfNames);
 #endif
 
 	for (i = 0; i < pExportDir->NumberOfNames; i++)
@@ -367,7 +366,7 @@ void ApiReader::parseExportTable(ModuleInfo *module, PIMAGE_NT_HEADERS pNtHeader
 		VA = addressOfFunctionsArray[addressOfNameOrdinalsArray[i]] + module->modBaseAddr;
 
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog(TEXT("parseExportTable :: api %S ")TEXT(" ordinal %d imagebase ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" RVA ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" VA ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("\r\n"),functionName,ordinal,module->modBaseAddr,RVA,VA);
+		Scylla::debugLog.log(L"parseExportTable :: api %S ordinal %d imagebase " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" VA " PRINTF_DWORD_PTR_FULL, functionName, ordinal, module->modBaseAddr, RVA, VA);
 #endif
 		if (!isApiBlacklisted(functionName))
 		{
@@ -455,14 +454,14 @@ void ApiReader::findApiByModule(ModuleInfo * module, char * searchFunctionName, 
 			else
 			{
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog(TEXT("findApiByModule :: vaApi == NULL, should never happen %S\r\n"),searchFunctionName);
+				Scylla::debugLog.log(L"findApiByModule :: vaApi == NULL, should never happen %S", searchFunctionName);
 #endif
 			}
 		}
 		else
 		{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog(TEXT("findApiByModule :: hModule == NULL, should never happen %s\r\n"),module->getFilename());
+			Scylla::debugLog.log(L"findApiByModule :: hModule == NULL, should never happen %s", module->getFilename());
 #endif
 		}
 	}
@@ -505,7 +504,7 @@ void ApiReader::parseModuleWithOwnProcess( ModuleInfo * module )
 	else
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog(TEXT("parseModuleWithOwnProcess :: hModule is NULL\r\n"));
+		Scylla::debugLog.log(L"parseModuleWithOwnProcess :: hModule is NULL");
 #endif
 	}
 }
@@ -514,12 +513,12 @@ bool ApiReader::isPeAndExportTableValid(PIMAGE_NT_HEADERS pNtHeader)
 {
 	if (pNtHeader->Signature != IMAGE_NT_SIGNATURE)
 	{
-		Logger::printfDialog(TEXT("-> IMAGE_NT_SIGNATURE doesn't match."));
+		Scylla::windowLog.log(L"-> IMAGE_NT_SIGNATURE doesn't match.");
 		return false;
 	}
 	else if ((pNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress == 0) || (pNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size == 0))
 	{
-		Logger::printfDialog(TEXT("-> No export table."));
+		Scylla::windowLog.log(L"-> No export table.");
 		return false;
 	}
 	else
@@ -605,23 +604,23 @@ void ApiReader::setModulePriority(ModuleInfo * module)
 	const WCHAR *moduleFileName = module->getFilename();
 
 	//imports by kernelbase don't exist
-	if (!_wcsicmp(moduleFileName, TEXT("kernelbase.dll")))
+	if (!_wcsicmp(moduleFileName, L"kernelbase.dll"))
 	{
 		module->priority = -1;
 	}
-	else if (!_wcsicmp(moduleFileName, TEXT("ntdll.dll")))
+	else if (!_wcsicmp(moduleFileName, L"ntdll.dll"))
 	{
 		module->priority = 0;
 	}
-	else if (!_wcsicmp(moduleFileName, TEXT("shlwapi.dll")))
+	else if (!_wcsicmp(moduleFileName, L"shlwapi.dll"))
 	{
 		module->priority = 0;
 	}
-	else if (!_wcsicmp(moduleFileName, TEXT("ShimEng.dll")))
+	else if (!_wcsicmp(moduleFileName, L"ShimEng.dll"))
 	{
 		module->priority = 0;
 	}
-	else if (!_wcsicmp(moduleFileName, TEXT("kernel32.dll")))
+	else if (!_wcsicmp(moduleFileName, L"kernel32.dll"))
 	{
 		module->priority = 2;
 	}
@@ -647,7 +646,7 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 
 	if (countDuplicates == 0)
 	{
-		Logger::printfDialog(TEXT("getApiByVirtualAddress :: No Api found ")TEXT(PRINTF_DWORD_PTR_FULL),virtualAddress);
+		Scylla::windowLog.log(L"getApiByVirtualAddress :: No Api found " PRINTF_DWORD_PTR_FULL, virtualAddress);
 		return 0;
 	}
 	else if (countDuplicates == 1)
@@ -713,11 +712,11 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 	}
 
 	//is never reached
-	Logger::printfDialog(TEXT("getApiByVirtualAddress :: There is a api resolving bug, VA: ")TEXT(PRINTF_DWORD_PTR_FULL),virtualAddress);
+	Scylla::windowLog.log(L"getApiByVirtualAddress :: There is a api resolving bug, VA: " PRINTF_DWORD_PTR_FULL, virtualAddress);
 	for (size_t c = 0; c < countDuplicates; c++, it1++)
 	{
 		apiFound = (ApiInfo *)((*it1).second);
-		Logger::printfDialog(TEXT("-> Possible API: %S ord: %d "),apiFound->name,apiFound->ordinal);
+		Scylla::windowLog.log(L"-> Possible API: %S ord: %d ", apiFound->name, apiFound->ordinal);
 	}
 	return (ApiInfo *) 1; 
 }
@@ -733,7 +732,7 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 
 	if (countDuplicates == 0)
 	{
-		Logger::printfDialog(TEXT("getApiByVirtualAddress :: No Api found ")TEXT(PRINTF_DWORD_PTR_FULL),virtualAddress);
+		Scylla::windowLog.log(L"getApiByVirtualAddress :: No Api found " PRINTF_DWORD_PTR_FULL, virtualAddress);
 		return 0;
 	}
 	else if (countDuplicates == 1)
@@ -771,7 +770,7 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 		if (countHighPriority == 0)
 		{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog(TEXT("getApiByVirtualAddress :: countHighPriority == 0 ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("\r\n"),virtualAddress);
+			Scylla::debugLog.log(L"getApiByVirtualAddress :: countHighPriority == 0 " PRINTF_DWORD_PTR_FULL, virtualAddress);
 #endif
 			*isSuspect = true;
 			return (ApiInfo *)((*it1).second);
@@ -795,13 +794,13 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 		{
 			//API not 100% correct
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog(TEXT("getApiByVirtualAddress :: countHighPriority == %d ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("\r\n"),countHighPriority,virtualAddress);
+			Scylla::debugLog.log(L"getApiByVirtualAddress :: countHighPriority == %d " PRINTF_DWORD_PTR_FULL, countHighPriority, virtualAddress);
 #endif
 			*isSuspect = true;
 			for (c = 0; c < countDuplicates; c++, it1++)
 			{
 				apiFound = (ApiInfo *)((*it1).second);
-				Logger::printfDialog("%s - %s %X %X\n",apiFound->name,apiFound->module->getFilename(),apiFound->rva, apiFound->ordinal);
+				Scylla::windowLog.log(L"%s - %s %X %X\n",apiFound->name, apiFound->module->getFilename(), apiFound->rva, apiFound->ordinal);
 			}
 			it1 = it2;
 
@@ -813,7 +812,7 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 				if (apiFound->module->priority >= 1 && apiFound->name[0] != 0x00) //1 == high priority
 				{
 					//prefer ANSI/UNICODE APIs
-					if (strrchr(apiFound->name,TEXT('W')) || strrchr(apiFound->name,TEXT('A')))
+					if (strrchr(apiFound->name, 'W') || strrchr(apiFound->name, 'A'))
 					{
 						return apiFound;
 					}
@@ -827,7 +826,7 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 				apiFound = (ApiInfo *)((*it1).second);
 
 				//prefer APIs with a name
-				if (apiFound->module->priority == 2 && !strrchr(apiFound->name,TEXT('_'))) //1 == high priority
+				if (apiFound->module->priority == 2 && !strrchr(apiFound->name, '_')) //1 == high priority
 				{
 					return apiFound;
 				}
@@ -859,7 +858,7 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 	}
 
 	//is never reached
-	Logger::printfDialog(TEXT("getApiByVirtualAddress :: There is a big bug"));
+	Scylla::windowLog.log(L"getApiByVirtualAddress :: There is a big bug");
 	return (ApiInfo *) 1; 
 }*/
 
@@ -1008,7 +1007,7 @@ void  ApiReader::readAndParseIAT(DWORD_PTR addressIAT, DWORD sizeIAT, std::map<D
 	else
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog(TEXT("ApiReader::readAndParseIAT :: error reading iat ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("\r\n"),addressIAT);
+		Scylla::debugLog.log(L"ApiReader::readAndParseIAT :: error reading iat " PRINTF_DWORD_PTR_FULL, addressIAT);
 #endif
 	}
 
@@ -1028,7 +1027,7 @@ void ApiReader::parseIAT(DWORD_PTR addressIAT, BYTE * iatBuffer, SIZE_T size)
 
 	for (SIZE_T i = 0; i < sizeIAT; i++)
 	{
-		//Logger::printfDialog("%08X %08X %d von %d",addressIAT + (DWORD_PTR)&pIATAddress[i] - (DWORD_PTR)iatBuffer,pIATAddress[i],i,sizeIAT);
+		//Scylla::windowLog.log(L"%08X %08X %d von %d", addressIAT + (DWORD_PTR)&pIATAddress[i] - (DWORD_PTR)iatBuffer, pIATAddress[i],i,sizeIAT);
 
 
 		if (pIATAddress[i] == 0 || pIATAddress[i] == -1)
@@ -1051,14 +1050,14 @@ void ApiReader::parseIAT(DWORD_PTR addressIAT, BYTE * iatBuffer, SIZE_T size)
 			if (apiFound == (ApiInfo *)1)
 			{
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog(TEXT("apiFound == (ApiInfo *)1 -> ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("\r\n"),pIATAddress[i]);
+				Scylla::debugLog.log(L"apiFound == (ApiInfo *)1 -> " PRINTF_DWORD_PTR_FULL, pIATAddress[i]);
 #endif
 			}
 			else if (apiFound)
 			{
 				countApiFound++;
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog(TEXT("")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" %s %d %s\r\n"),apiFound->va, apiFound->module->getFilename(), apiFound->ordinal,apiFound->name);
+				Scylla::debugLog.log(PRINTF_DWORD_PTR_FULL L" %s %d %s", apiFound->va, apiFound->module->getFilename(), apiFound->ordinal, apiFound->name);
 #endif
 				if (module != apiFound->module)
 				{
@@ -1086,7 +1085,7 @@ void ApiReader::parseIAT(DWORD_PTR addressIAT, BYTE * iatBuffer, SIZE_T size)
 		}
 	}
 
-	Logger::printfDialog(TEXT("IAT parsing finished, found %d valid APIs, missed %d APIs"),countApiFound,countApiNotFound);
+	Scylla::windowLog.log(L"IAT parsing finished, found %d valid APIs, missed %d APIs", countApiFound, countApiNotFound);
 }
 
 void ApiReader::addFoundApiToModuleList(DWORD_PTR iatAddressVA, ApiInfo * apiFound, bool isNewModule, bool isSuspect)
@@ -1115,7 +1114,7 @@ void ApiReader::addUnknownModuleToModuleList(DWORD_PTR firstThunk)
 	ImportModuleThunk module;
 
 	module.firstThunk = firstThunk;
-	wcscpy_s(module.moduleName, _countof(module.moduleName), TEXT("?"));
+	wcscpy_s(module.moduleName, _countof(module.moduleName), L"?");
 
 	(*moduleThunkList).insert(std::pair<DWORD_PTR,ImportModuleThunk>(firstThunk,module));
 }
@@ -1150,7 +1149,7 @@ bool ApiReader::addFunctionToModuleList(ApiInfo * apiFound, DWORD_PTR va, DWORD_
 			else
 			{
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog(TEXT("Error iterator1 != (*moduleThunkList).end()\r\n"));
+				Scylla::debugLog.log(L"Error iterator1 != (*moduleThunkList).end()");
 #endif
 				break;
 			}
@@ -1165,7 +1164,7 @@ bool ApiReader::addFunctionToModuleList(ApiInfo * apiFound, DWORD_PTR va, DWORD_
 	if (!module)
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog(TEXT("ImportsHandling::addFunction module not found rva ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("\r\n"),rva);
+		Scylla::debugLog.log(L"ImportsHandling::addFunction module not found rva " PRINTF_DWORD_PTR_FULL, rva);
 #endif
 		return false;
 	}
@@ -1245,7 +1244,7 @@ bool ApiReader::addNotFoundApiToModuleList(DWORD_PTR iatAddressVA, DWORD_PTR api
 			else
 			{
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog(TEXT("Error iterator1 != (*moduleThunkList).end()\r\n"));
+				Scylla::debugLog.log(L"Error iterator1 != (*moduleThunkList).end()\r\n");
 #endif
 				break;
 			}
@@ -1261,7 +1260,7 @@ bool ApiReader::addNotFoundApiToModuleList(DWORD_PTR iatAddressVA, DWORD_PTR api
 	if (!module)
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog(TEXT("ImportsHandling::addFunction module not found rva ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("\r\n"),rva);
+		Scylla::debugLog.log(L"ImportsHandling::addFunction module not found rva " PRINTF_DWORD_PTR_FULL,rva);
 #endif
 		return false;
 	}
@@ -1274,7 +1273,7 @@ bool ApiReader::addNotFoundApiToModuleList(DWORD_PTR iatAddressVA, DWORD_PTR api
 	import.apiAddressVA = apiAddress;
 	import.ordinal = 0;
 
-	wcscpy_s(import.moduleName, _countof(import.moduleName), TEXT("?"));
+	wcscpy_s(import.moduleName, _countof(import.moduleName), L"?");
 	strcpy_s(import.name, _countof(import.name), "?");
 
 	module->thunkList.insert(std::pair<DWORD_PTR,ImportThunk>(import.rva, import));
@@ -1311,11 +1310,11 @@ bool ApiReader::isApiBlacklisted( const char * functionName )
 
 bool ApiReader::isWinSxSModule( ModuleInfo * module )
 {
-	if (wcsstr(module->fullPath, TEXT("\\WinSxS\\")))
+	if (wcsstr(module->fullPath, L"\\WinSxS\\"))
 	{
 		return true;
 	}
-	else if (wcsstr(module->fullPath, TEXT("\\winsxs\\")))
+	else if (wcsstr(module->fullPath, L"\\winsxs\\"))
 	{
 		return true;
 	}

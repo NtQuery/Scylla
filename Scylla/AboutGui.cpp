@@ -1,6 +1,7 @@
 #include "AboutGui.h"
 
-#include "definitions.h"
+#include "Scylla.h"
+#include "Architecture.h"
 
 const WCHAR AboutGui::TEXT_VISIT[]          = L"Visit <a>http://kickme.to/grn</a> and <a>http://forum.tuts4you.com</a>";
 const WCHAR AboutGui::TEXT_DEVELOPED[]      = L"Developed with Microsoft Visual Studio, written in pure C/C++";
@@ -33,7 +34,7 @@ BOOL AboutGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	StaticTitle.SetFont(FontBold, FALSE);
 
-	StaticTitle.SetWindowText(TEXT(APPNAME)TEXT(" ")TEXT(ARCHITECTURE)TEXT(" ")TEXT(APPVERSION));
+	StaticTitle.SetWindowText(APPNAME L" " ARCHITECTURE L" " APPVERSION);
 	StaticDeveloped.SetWindowText(TEXT_DEVELOPED);
 	StaticGreetings.SetWindowText(TEXT_GREETINGS);
 	StaticYoda.SetWindowText(TEXT_CREDIT_YODA);
@@ -80,25 +81,25 @@ void AboutGui::setupLinks()
 	LinkLicense.SetWindowText(TEXT_LICENSE);
 
 	// Assign URLs to anchors in the link text
-	setLinkURL(LinkVisit, URL_VISIT1, 0);
-	setLinkURL(LinkVisit, URL_VISIT2, 1);
+	setLinkURL(LinkVisit,   URL_VISIT1, 0);
+	setLinkURL(LinkVisit,   URL_VISIT2, 1);
 	setLinkURL(LinkDistorm, URL_DISTORM);
-	setLinkURL(LinkWTL, URL_WTL);
-	setLinkURL(LinkSilk, URL_SILK);
+	setLinkURL(LinkWTL,     URL_WTL);
+	setLinkURL(LinkSilk,    URL_SILK);
 	setLinkURL(LinkTinyxml, URL_TINYXML);
 	setLinkURL(LinkLicense, URL_LICENSE);
 
 	// Create tooltips for the links
 	TooltipDistorm.Create(m_hWnd, NULL, NULL, TTS_NOPREFIX, WS_EX_TOPMOST);
-	TooltipWTL.Create(m_hWnd, NULL, NULL, TTS_NOPREFIX, WS_EX_TOPMOST);
-	TooltipSilk.Create(m_hWnd, NULL, NULL, TTS_NOPREFIX, WS_EX_TOPMOST);
+	TooltipWTL.Create(m_hWnd,     NULL, NULL, TTS_NOPREFIX, WS_EX_TOPMOST);
+	TooltipSilk.Create(m_hWnd,    NULL, NULL, TTS_NOPREFIX, WS_EX_TOPMOST);
 	TooltipTinyxml.Create(m_hWnd, NULL, NULL, TTS_NOPREFIX, WS_EX_TOPMOST);
 	TooltipLicense.Create(m_hWnd, NULL, NULL, TTS_NOPREFIX, WS_EX_TOPMOST);
 
 	// Assign control and text to the tooltips
 	setupTooltip(TooltipDistorm, LinkDistorm, URL_DISTORM);
-	setupTooltip(TooltipWTL, LinkWTL, URL_WTL);
-	setupTooltip(TooltipSilk, LinkSilk, URL_SILK);
+	setupTooltip(TooltipWTL,     LinkWTL,     URL_WTL);
+	setupTooltip(TooltipSilk,    LinkSilk,    URL_SILK);
 	setupTooltip(TooltipTinyxml, LinkTinyxml, URL_TINYXML);
 	setupTooltip(TooltipLicense, LinkLicense, URL_LICENSE);
 }

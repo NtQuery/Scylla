@@ -1,5 +1,5 @@
 #include "OptionsGui.h"
-#include "ConfigurationHolder.h"
+#include "Scylla.h"
 
 BOOL OptionsGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
@@ -17,7 +17,7 @@ void OptionsGui::OnOK(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	DoDataExchange(DDX_SAVE);
 	saveOptions();
-	ConfigurationHolder::saveConfiguration();
+	Scylla::config.saveConfiguration();
 
 	EndDialog(0);
 }
@@ -31,7 +31,7 @@ void OptionsGui::saveOptions()
 {
 	std::map<Configuration, ConfigObject>::iterator mapIter;
 
-	for (mapIter = ConfigurationHolder::getConfigList().begin() ; mapIter != ConfigurationHolder::getConfigList().end(); mapIter++)
+	for (mapIter = Scylla::config.getConfigList().begin() ; mapIter != Scylla::config.getConfigList().end(); mapIter++)
 	{
 		switch(mapIter->first)
 		{
@@ -61,7 +61,7 @@ void OptionsGui::loadOptions()
 {
 	std::map<Configuration, ConfigObject>::iterator mapIter;
 
-	for (mapIter = ConfigurationHolder::getConfigList().begin() ; mapIter != ConfigurationHolder::getConfigList().end(); mapIter++)
+	for (mapIter = Scylla::config.getConfigList().begin() ; mapIter != Scylla::config.getConfigList().end(); mapIter++)
 	{
 		switch(mapIter->first)
 		{

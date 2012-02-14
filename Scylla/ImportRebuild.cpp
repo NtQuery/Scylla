@@ -1,7 +1,7 @@
 #include "ImportRebuild.h"
 
-#include "Logger.h"
-#include "ConfigurationHolder.h"
+#include "Scylla.h"
+//#include "ConfigurationHolder.h"
 
 //#define DEBUG_COMMENTS
 
@@ -138,7 +138,7 @@ bool ImportRebuild::saveNewFile(const WCHAR * filepath)
 	if(hFile == INVALID_HANDLE_VALUE)
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("saveNewFile :: INVALID_HANDLE_VALUE %u\r\n",GetLastError());
+		Scylla::debugLog.log(L"saveNewFile :: INVALID_HANDLE_VALUE %u", GetLastError());
 #endif
 
 		return false;
@@ -167,7 +167,7 @@ bool ImportRebuild::saveNewFile(const WCHAR * filepath)
 		if (!ProcessAccessHelp::writeMemoryToFile(hFile, fileOffset, dwWriteSize, &vecSectionHeaders[i]))
 		{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog(TEXT("saveNewFile :: writeMemoryToFile failed offset %X size %X\r\n"),fileOffset,dwWriteSize);
+			Scylla::debugLog.log(L"saveNewFile :: writeMemoryToFile failed offset %X size %X", fileOffset, dwWriteSize);
 #endif
 			CloseHandle(hFile);
 			return false;
@@ -184,7 +184,7 @@ bool ImportRebuild::saveNewFile(const WCHAR * filepath)
 			if (!writeZeroMemoryToFile(hFile, fileOffset, dwWriteSize))
 			{
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog(TEXT("saveNewFile :: writeZeroMemoryToFile failed offset %X size %X\r\n"),fileOffset,dwWriteSize);
+				Scylla::debugLog.log(L"saveNewFile :: writeZeroMemoryToFile failed offset %X size %X", fileOffset, dwWriteSize);
 #endif
 				CloseHandle(hFile);
 				return false;
@@ -236,7 +236,7 @@ bool ImportRebuild::addNewSection(char * sectionName, DWORD sectionSize, BYTE * 
 	if (nameLength > IMAGE_SIZEOF_SHORT_NAME)
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog(TEXT("addNewSection :: sectionname is too long %d\r\n"),nameLength);
+		Scylla::debugLog.log(L"addNewSection :: sectionname is too long %d", nameLength);
 #endif
 		return false;
 	}
@@ -285,7 +285,7 @@ bool ImportRebuild::loadTargetFile(const WCHAR * filepath)
 	if(hTargetFile == INVALID_HANDLE_VALUE)
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("loadTargetFile :: INVALID_HANDLE_VALUE %u\r\n",GetLastError());
+		Scylla::debugLog.log(L"loadTargetFile :: INVALID_HANDLE_VALUE %u", GetLastError());
 #endif
 
 		return false;
@@ -446,13 +446,13 @@ bool ImportRebuild::createNewImportSection(std::map<DWORD_PTR, ImportModuleThunk
 	//DWORD sectionSize = calculateMinSize(moduleList);
 	calculateImportSizes(moduleList);
 
-	if (wcslen(ConfigurationHolder::getConfigObject(IAT_SECTION_NAME)->valueString) > IMAGE_SIZEOF_SHORT_NAME)
+	if (wcslen(Scylla::config.getConfigObject(IAT_SECTION_NAME)->valueString) > IMAGE_SIZEOF_SHORT_NAME)
 	{
 		strcpy_s(sectionName, sizeof(sectionName), ".SCY");
 	}
 	else
 	{
-		wcstombs_s(&i, sectionName, sizeof(sectionName), ConfigurationHolder::getConfigObject(IAT_SECTION_NAME)->valueString, _TRUNCATE);
+		wcstombs_s(&i, sectionName, sizeof(sectionName), Scylla::config.getConfigObject(IAT_SECTION_NAME)->valueString, _TRUNCATE);
 	}
 
 
@@ -529,7 +529,7 @@ DWORD ImportRebuild::fillImportSection( std::map<DWORD_PTR, ImportModuleThunk> &
 		stringLength = addImportDescriptor(importModuleThunk, offset);
 
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("fillImportSection :: importDesc.Name %X\r\n", pImportDescriptor->Name);
+		Scylla::debugLog.log(L"fillImportSection :: importDesc.Name %X", pImportDescriptor->Name);
 #endif
 
 		offset += (DWORD)stringLength; //stringLength has null termination char
@@ -550,7 +550,7 @@ DWORD ImportRebuild::fillImportSection( std::map<DWORD_PTR, ImportModuleThunk> &
 			if (!pThunk)
 			{
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog(TEXT("fillImportSection :: Failed to get pThunk RVA: %X\n"), importThunk->rva);
+				Scylla::debugLog.log(L"fillImportSection :: Failed to get pThunk RVA: %X", importThunk->rva);
 #endif
 				return 0;
 			}
@@ -563,7 +563,7 @@ DWORD ImportRebuild::fillImportSection( std::map<DWORD_PTR, ImportModuleThunk> &
 			lastRVA = importThunk->rva;
 
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog(TEXT("fillImportSection :: importThunk %X pThunk %X pImportByName %X offset %X\n"), importThunk,pThunk,pImportByName,offset);
+			Scylla::debugLog.log(L"fillImportSection :: importThunk %X pThunk %X pImportByName %X offset %X", importThunk,pThunk,pImportByName,offset);
 #endif
 			stringLength = addImportToImportTable(importThunk, pThunk, pImportByName, offset);
 
@@ -597,7 +597,7 @@ bool ImportRebuild::rebuildImportTable(const WCHAR * targetFilePath, const WCHAR
 	else
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog(TEXT("rebuildImportTable ::Failed to load target %s\n"), targetFilePath);
+		Scylla::debugLog.log(L"rebuildImportTable ::Failed to load target %s", targetFilePath);
 #endif
 		return false;
 	}
@@ -635,7 +635,7 @@ size_t ImportRebuild::addImportToImportTable( ImportThunk * pImport, PIMAGE_THUN
 		if (!pThunk->u1.AddressOfData)
 		{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog("addImportToImportTable :: failed to get AddressOfData %X %X\n",vecSectionHeaders[importSectionIndex].PointerToRawData, sectionOffset);
+			Scylla::debugLog.log(L"addImportToImportTable :: failed to get AddressOfData %X %X", vecSectionHeaders[importSectionIndex].PointerToRawData, sectionOffset);
 #endif
 		}
 
@@ -644,7 +644,7 @@ size_t ImportRebuild::addImportToImportTable( ImportThunk * pImport, PIMAGE_THUN
 		pThunk->u1.AddressOfData = 0;
 
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog("addImportToImportTable :: pThunk->u1.AddressOfData %X %X %X\n",pThunk->u1.AddressOfData, pThunk,  vecSectionHeaders[importSectionIndex].PointerToRawData + sectionOffset);
+		Scylla::debugLog.log(L"addImportToImportTable :: pThunk->u1.AddressOfData %X %X %X", pThunk->u1.AddressOfData, pThunk, vecSectionHeaders[importSectionIndex].PointerToRawData + sectionOffset);
 #endif
 		stringLength += sizeof(WORD);
 	}

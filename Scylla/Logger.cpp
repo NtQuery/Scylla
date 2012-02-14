@@ -1,92 +1,112 @@
 #include "Logger.h"
 
-#include "MainGui.h"
+#include <shlwapi.h>
+#include <atlconv.h>
+#include <fstream>
 
-extern MainGui* pMainGui;
-
-WCHAR Logger::debugLogFile[MAX_PATH];
 WCHAR Logger::logbuf[300];
 char  Logger::logbufChar[300];
 
-void Logger::getDebugLogFilePath()
+void Logger::log(const WCHAR * format, ...)
 {
-	GetModuleFileName(0, debugLogFile, MAX_PATH);
-
-	for(size_t i = wcslen(debugLogFile); i > 0; i--) 
-	{
-		if(debugLogFile[i] == L'\\') 
-		{ 
-			debugLogFile[i+1] = 0x00;
-			break; 
-		} 
-	}
-
-	wcscat_s(debugLogFile, _countof(debugLogFile), TEXT(DEBUG_LOG_FILENAME));
-}
-
-
-void Logger::debugLog(const WCHAR * format, ...)
-{
-	FILE * pFile;
-	va_list va_alist;
-
 	if (!format)
 	{ 
 		return;
 	}
 
-	ZeroMemory(logbuf, sizeof(logbuf));
+	//ZeroMemory(logbuf, sizeof(logbuf));
 
+	va_list va_alist;
 	va_start (va_alist, format);
 	_vsnwprintf_s(logbuf, _countof(logbuf), _countof(logbuf) - 1, format, va_alist);
 	va_end (va_alist);
 
-	if (_wfopen_s(&pFile,debugLogFile,L"a") == NULL)
-	{
-		fputws(logbuf,pFile);
-		fclose (pFile);
-	}
+	write(logbuf);
 }
 
-void  Logger::debugLog(const char * format, ...)
+void Logger::log(const char * format, ...)
 {
-	FILE * pFile;
-	va_list va_alist;
-
 	if (!format)
 	{ 
 		return;
 	}
 
-	ZeroMemory(logbufChar, sizeof(logbufChar));
+	//ZeroMemory(logbufChar, sizeof(logbufChar));
 
+	va_list va_alist;
 	va_start (va_alist, format);
 	_vsnprintf_s(logbufChar, _countof(logbufChar), _countof(logbufChar) - 1, format, va_alist);
 	va_end (va_alist);
 
-	if (_wfopen_s(&pFile,debugLogFile,L"a") == NULL)
+	write(logbufChar);
+}
+
+void Logger::write(const CHAR * str)
+{
+	size_t len = strlen(str) + 1;
+	WCHAR * buf = new WCHAR[len];
+
+	size_t convertedChars = 0;
+	mbstowcs_s(&convertedChars, buf, len, str, _TRUNCATE);
+
+	write(buf);
+
+	delete[] buf;
+}
+
+FileLog::FileLog(const WCHAR * fileName)
+{
+	GetModuleFileName(0, this->filePath, _countof(this->filePath));
+	PathRemoveFileSpec(this->filePath);
+	PathAppend(this->filePath, fileName);
+}
+
+void FileLog::write(const CHAR * str)
+{
+	/*
+	std::wofstream file(filePath, std::wofstream::app);
+	if(!file.fail())
 	{
-		fputs(logbufChar,pFile);
-		fclose (pFile);
+		file << str << std::endl;
+	}
+	*/
+
+	FILE * pFile;
+	if (_wfopen_s(&pFile, filePath, L"a") == 0)
+	{
+		fputs(str, pFile);
+		fputs("\r\n", pFile);
+		fclose(pFile);
 	}
 }
 
-void Logger::printfDialog(const WCHAR * format, ...)
+void FileLog::write(const WCHAR * str)
 {
-	va_list va_alist;
-
-	if (!format)
-	{ 
-		return;
+	/*
+	std::wofstream file(filePath, std::wofstream::app);
+	if(!file.fail())
+	{
+		file << str << std::endl;
 	}
-
-	ZeroMemory(logbuf, sizeof(logbuf));
-
-	va_start (va_alist, format);
-	_vsnwprintf_s(logbuf, _countof(logbuf), _countof(logbuf) - 1, format, va_alist);
-	va_end (va_alist);
-
+	*/
 	
-	pMainGui->addTextToOutputLog(logbuf);
-	UpdateWindow(pMainGui->m_hWnd);
+	FILE * pFile;
+	if (_wfopen_s(&pFile, filePath, L"a") == 0)
+	{
+		fputws(str, pFile);
+		fputws(L"\r\n", pFile);
+		fclose(pFile);
+	}
+}
+
+void ListboxLog::setWindow(HWND window)
+{
+	this->window = window;
+}
+
+void ListboxLog::write(const WCHAR * str)
+{	
+	LRESULT index = SendMessageW(window, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(str));
+	SendMessage(window, LB_SETCURSEL, index, 0);
+	UpdateWindow(window);
 }

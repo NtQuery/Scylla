@@ -1,7 +1,7 @@
 
 #include "TreeImportExport.h"
-#include "definitions.h"
-#include "Logger.h"
+#include "Architecture.h"
+#include "Scylla.h"
 
 #define DEBUG_COMMENTS
 
@@ -37,7 +37,7 @@ bool TreeImportExport::importTreeList(const WCHAR * targetXmlFile, std::map<DWOR
 		doc.Parse(buffer);
 		if (doc.Error())
 		{
-			Logger::printfDialog(TEXT("Load Tree :: Error parsing xml %S: %S\r\n"), doc.Value(), doc.ErrorDesc());
+			Scylla::windowLog.log(L"Load Tree :: Error parsing xml %S: %S\r\n", doc.Value(), doc.ErrorDesc());
 			delete [] buffer;
 			return false;
 		}
@@ -235,7 +235,7 @@ bool TreeImportExport::ConvertStringToBool(const char * strValue)
 
 void TreeImportExport::ConvertDwordPtrToString(const DWORD_PTR dwValue)
 {
-	sprintf_s(xmlStringBuffer, _countof(xmlStringBuffer), PRINTF_DWORD_PTR_FULL, dwValue);
+	sprintf_s(xmlStringBuffer, _countof(xmlStringBuffer), PRINTF_DWORD_PTR_FULL_S, dwValue);
 }
 
 DWORD_PTR TreeImportExport::ConvertStringToDwordPtr(const char * strValue)

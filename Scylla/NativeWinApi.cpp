@@ -17,7 +17,7 @@ def_RtlNtStatusToDosError NativeWinApi::RtlNtStatusToDosError = 0;
 
 void NativeWinApi::initialize()
 {
-	HMODULE hModuleNtdll = GetModuleHandle(TEXT("ntdll.dll"));
+	HMODULE hModuleNtdll = GetModuleHandle(L"ntdll.dll");
 
 	if (!hModuleNtdll)
 	{

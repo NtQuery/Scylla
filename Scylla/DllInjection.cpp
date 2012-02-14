@@ -18,7 +18,7 @@
 		if (memorySize < 7)
 		{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog(L"dllInjection :: memorySize invalid\r\n");
+			Scylla::debugLog.log(L"dllInjection :: memorySize invalid");
 #endif
 			return 0;
 		}
@@ -28,7 +28,7 @@
 		if (remoteMemory == 0)
 		{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog(L"dllInjection :: VirtualAllocEx failed 0x%X\r\n",GetLastError());
+			Scylla::debugLog.log(L"dllInjection :: VirtualAllocEx failed 0x%X", GetLastError());
 #endif
 			return 0;
 		}
@@ -50,7 +50,7 @@
 				if (!GetExitCodeThread(hThread, (LPDWORD) &hModule))
 				{
 #ifdef DEBUG_COMMENTS
-					Logger::debugLog(L"dllInjection :: GetExitCodeThread failed 0x%X\r\n",GetLastError());
+					Scylla::debugLog.log(L"dllInjection :: GetExitCodeThread failed 0x%X", GetLastError());
 #endif
 					hModule = 0;
 				}
@@ -61,14 +61,14 @@
 			else
 			{
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog(L"dllInjection :: CreateRemoteThread failed 0x%X\r\n",GetLastError());
+				Scylla::debugLog.log(L"dllInjection :: CreateRemoteThread failed 0x%X", GetLastError());
 #endif
 			}
 		}
 		else
 		{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog(L"dllInjection :: WriteProcessMemory failed 0x%X\r\n",GetLastError());
+			Scylla::debugLog.log(L"dllInjection :: WriteProcessMemory failed 0x%X", GetLastError());
 #endif
 		}
 
@@ -94,7 +94,7 @@
 			if (!GetExitCodeThread(hThread, (LPDWORD) &freeLibraryRet))
 			{
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog(L"unloadDllInProcess :: GetExitCodeThread failed 0x%X\r\n",GetLastError());
+				Scylla::debugLog.log(L"unloadDllInProcess :: GetExitCodeThread failed 0x%X", GetLastError());
 #endif
 				freeLibraryRet = 0;
 			}
@@ -104,7 +104,7 @@
 		else
 		{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog(L"unloadDllInProcess :: CreateRemoteThread failed 0x%X\r\n",GetLastError());
+			Scylla::debugLog.log(L"unloadDllInProcess :: CreateRemoteThread failed 0x%X", GetLastError());
 #endif
 		}
 
@@ -128,7 +128,7 @@
 			if (!EnumProcessModules(hProcess, hMods, count * sizeof(HMODULE), &cbNeeded))
 			{
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog(L"DllInjection::getModuleHandle :: EnumProcessModules failed count %d\r\n",count);
+				Scylla::debugLog.log(L"DllInjection::getModuleHandle :: EnumProcessModules failed count %d", count);
 #endif
 				delete [] hMods;
 				return 0;
@@ -160,7 +160,7 @@
 			else
 			{
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog(L"DllInjection::getModuleHandle :: GetModuleFileNameExW failed 0x%X\r\n", GetLastError());
+				Scylla::debugLog.log(L"DllInjection::getModuleHandle :: GetModuleFileNameExW failed 0x%X", GetLastError());
 #endif
 			}
 		}
@@ -168,7 +168,7 @@
 		if (!hModResult)
 		{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog(L"DllInjection::getModuleHandle :: Handle not found\r\n");
+			Scylla::debugLog.log(L"DllInjection::getModuleHandle :: Handle not found");
 #endif
 		}
 
@@ -184,7 +184,7 @@
 			if (!SetThreadPriority(hThread, THREAD_PRIORITY_TIME_CRITICAL))
 			{
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog(L"specialThreadSettings :: SetThreadPriority(hThread, THREAD_PRIORITY_TIME_CRITICAL) failed 0x%X\r\n",GetLastError());
+				Scylla::debugLog.log(L"specialThreadSettings :: SetThreadPriority(hThread, THREAD_PRIORITY_TIME_CRITICAL) failed 0x%X", GetLastError());
 #endif
 			}
 
@@ -193,7 +193,7 @@
 				if (NativeWinApi::NtSetInformationThread(hThread, ThreadHideFromDebugger, 0, 0) != STATUS_SUCCESS)
 				{
 #ifdef DEBUG_COMMENTS
-					Logger::debugLog(L"specialThreadSettings :: NtSetInformationThread ThreadHideFromDebugger failed\r\n");
+					Scylla::debugLog.log(L"specialThreadSettings :: NtSetInformationThread ThreadHideFromDebugger failed");
 #endif
 				}
 			}
@@ -234,7 +234,7 @@
 			else
 			{
 #ifdef DEBUG_COMMENTS
-				Logger::debugLog(L"customCreateRemoteThread :: NtCreateThreadEx failed 0x%X\r\n",NativeWinApi::RtlNtStatusToDosError(ntStatus));
+				Scylla::debugLog.log(L"customCreateRemoteThread :: NtCreateThreadEx failed 0x%X", NativeWinApi::RtlNtStatusToDosError(ntStatus));
 #endif
 				return 0;
 			}

@@ -52,15 +52,15 @@ void ProcessLister::initDeviceNameList()
 	TCHAR longName[MAX_PATH] = {0};
 	HardDisk hardDisk;
 
-	shortName[1] = TEXT(':');
+	shortName[1] = L':';
 
-	for ( WCHAR shortD = TEXT('a'); shortD < TEXT('z'); shortD++ )
+	for ( WCHAR shortD = L'a'; shortD < L'z'; shortD++ )
 	{
 		shortName[0] = shortD;
 		if (QueryDosDeviceW( shortName, longName, MAX_PATH ) > 0)
 		{
 			hardDisk.shortName[0] = towupper(shortD);
-			hardDisk.shortName[1] = TEXT(':');
+			hardDisk.shortName[1] = L':';
 			hardDisk.shortName[2] = 0;
 
 			hardDisk.longNameLength = wcslen(longName);
@@ -167,7 +167,7 @@ bool ProcessLister::getAbsoluteFilePath(Process * process)
 		if (!resolveDeviceLongNameToShort(processPath, process->fullPath))
 		{
 #ifdef DEBUG_COMMENTS
-			Logger::debugLog(TEXT("getAbsoluteFilePath :: resolveDeviceLongNameToShort failed with path %s\r\n"), processPath);
+			Scylla::debugLog.log(L"getAbsoluteFilePath :: resolveDeviceLongNameToShort failed with path %s", processPath);
 #endif
 		}
 		return true;
@@ -175,7 +175,7 @@ bool ProcessLister::getAbsoluteFilePath(Process * process)
 	else
 	{
 #ifdef DEBUG_COMMENTS
-		Logger::debugLog(TEXT("getAbsoluteFilePath :: GetProcessImageFileName failed %u\r\n"),GetLastError());
+		Scylla::debugLog.log(L"getAbsoluteFilePath :: GetProcessImageFileName failed %u", GetLastError());
 #endif
 		CloseHandle(hProcess);
 		return false;

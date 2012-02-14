@@ -1,7 +1,6 @@
 #pragma once
 
 #include <windows.h>
-#include <stdio.h>
 #include <vector>
 
 class Plugin {
@@ -11,11 +10,6 @@ public:
 	WCHAR pluginName[MAX_PATH];
 };
 
-#define PLUGIN_DIR "Plugins"
-#define PLUGIN_SEARCH_STRING "*.dll"
-#define PLUGIN_IMPREC_DIR "ImpRec_Plugins"
-#define PLUGIN_IMPREC_WRAPPER_DLL "Imprec_Wrapper_DLL.dll"
-
 typedef wchar_t * (__cdecl * def_ScyllaPluginNameW)();
 typedef char * (__cdecl * def_ScyllaPluginNameA)();
 
@@ -23,26 +17,33 @@ typedef DWORD ( * def_Imprec_Trace)(DWORD hFileMap, DWORD dwSizeMap, DWORD dwTim
 
 class PluginLoader {
 public:
-	static WCHAR imprecWrapperDllPath[MAX_PATH];
+	WCHAR imprecWrapperDllPath[MAX_PATH];
 
-	static bool findAllPlugins();
+	bool findAllPlugins();
 
-	static std::vector<Plugin> & getScyllaPluginList();
-	static std::vector<Plugin> & getImprecPluginList();
+	std::vector<Plugin> & getScyllaPluginList();
+	std::vector<Plugin> & getImprecPluginList();
 
 private:
-	static std::vector<Plugin> scyllaPluginList;
-	static std::vector<Plugin> imprecPluginList;
 
-	static WCHAR dirSearchString[MAX_PATH];
-	static WCHAR baseDirPath[MAX_PATH];
+	static const WCHAR PLUGIN_DIR[];
+	static const WCHAR PLUGIN_SEARCH_STRING[];
+	static const WCHAR PLUGIN_IMPREC_DIR[];
+	static const WCHAR PLUGIN_IMPREC_WRAPPER_DLL[];
 
-	static bool buildSearchString();
-	static bool getScyllaPluginName(Plugin * pluginData);
-	static bool isValidDllFile( const WCHAR * fullpath );
-	static bool searchForPlugin(std::vector<Plugin> & newPluginList, const WCHAR * searchPath, bool isScyllaPlugin);
-	static bool isValidImprecPlugin(const WCHAR * fullpath);
-	static bool buildSearchStringImprecPlugins();
+	std::vector<Plugin> scyllaPluginList;
+	std::vector<Plugin> imprecPluginList;
+
+	WCHAR dirSearchString[MAX_PATH];
+	WCHAR baseDirPath[MAX_PATH];
+
+	bool buildSearchString();
+	bool buildSearchStringImprecPlugins();
+
+	bool getScyllaPluginName(Plugin * pluginData);
+	bool searchForPlugin(std::vector<Plugin> & newPluginList, const WCHAR * searchPath, bool isScyllaPlugin);
 
 	static bool fileExists(const WCHAR * fileName);
+	static bool isValidDllFile(const WCHAR * fullpath);
+	static bool isValidImprecPlugin(const WCHAR * fullpath);
 };

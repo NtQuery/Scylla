@@ -90,6 +90,12 @@
     <ClCompile Include="TreeImportExport.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="Scylla.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Architecture.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -172,6 +178,12 @@
     </ClInclude>
     <ClInclude Include="hexedit.h">
       <Filter>Headerdateien\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Scylla.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Architecture.h">
+      <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

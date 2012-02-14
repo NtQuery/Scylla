@@ -1,30 +1,32 @@
 #include "MainGui.h"
 
-#include "definitions.h"
-#include "PluginLoader.h"
-#include "ConfigurationHolder.h"
+#include "Architecture.h"
+//#include "PluginLoader.h"
+//#include "ConfigurationHolder.h"
 #include "PeDump.h"
 #include "PeRebuild.h"
 #include "DllInjectionPlugin.h"
 #include "DisassemblerGui.h"
 #include "PickApiGui.h"
-#include "NativeWinApi.h"
+//#include "NativeWinApi.h"
 #include "ImportRebuild.h"
 #include "SystemInformation.h"
+#include "Scylla.h"
 #include "AboutGui.h"
 #include "OptionsGui.h"
 #include "TreeImportExport.h"
 
 extern CAppModule _Module; // o_O
 
-const WCHAR MainGui::filterExe[] = L"Executable (*.exe)\0*.exe\0All files\0*.*\0";
-const WCHAR MainGui::filterDll[] = L"Dynamic Link Library (*.dll)\0*.dll\0All files\0*.*\0";
+const WCHAR MainGui::filterExe[]    = L"Executable (*.exe)\0*.exe\0All files\0*.*\0";
+const WCHAR MainGui::filterDll[]    = L"Dynamic Link Library (*.dll)\0*.dll\0All files\0*.*\0";
 const WCHAR MainGui::filterExeDll[] = L"Executable (*.exe)\0*.exe\0Dynamic Link Library (*.dll)\0*.dll\0All files\0*.*\0";
-const WCHAR MainGui::filterTxt[] = L"Text file (*.txt)\0*.txt\0All files\0*.*\0";
-const WCHAR MainGui::filterXml[] = L"XML file (*.xml)\0*.xml\0All files\0*.*\0";
+const WCHAR MainGui::filterTxt[]    = L"Text file (*.txt)\0*.txt\0All files\0*.*\0";
+const WCHAR MainGui::filterXml[]    = L"XML file (*.xml)\0*.xml\0All files\0*.*\0";
 
 MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports), TreeImportsSubclass(this, IDC_TREE_IMPORTS)
 {
+	/*
 	Logger::getDebugLogFilePath();
 	ConfigurationHolder::loadConfiguration();
 	PluginLoader::findAllPlugins();
@@ -35,8 +37,12 @@ MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports), TreeImpor
 	{
 		processLister.setDebugPrivileges();
 	}
+	
 
 	ProcessAccessHelp::getProcessModules(GetCurrentProcessId(), ProcessAccessHelp::ownModuleList);
+	*/
+
+	Scylla::init();
 
 	hIcon.LoadIcon(IDI_ICON_SCYLLA);
 	hMenuImports.LoadMenu(IDR_MENU_IMPORTS);
@@ -46,8 +52,6 @@ MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports), TreeImpor
 	hIconCheck.LoadIcon(IDI_ICON_CHECK, 16, 16);
 	hIconWarning.LoadIcon(IDI_ICON_WARNING, 16, 16);
 	hIconError.LoadIcon(IDI_ICON_ERROR, 16, 16);
-
-	appendPluginListToMenu(hMenuImports.GetSubMenu(0));
 }
 
 BOOL MainGui::PreTranslateMessage(MSG* pMsg)
@@ -84,6 +88,9 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	DoDataExchange(); // attach controls
 	DlgResize_Init(true, true); // init CDialogResize
 
+	Scylla::windowLog.setWindow(ListLog);
+
+	appendPluginListToMenu(hMenuImports.GetSubMenu(0));
 	appendPluginListToMenu(CMenuHandle(GetMenu()).GetSubMenu(MenuImportsOffsetTrace));
 
 	enableDialogControls(FALSE);
@@ -122,7 +129,7 @@ void MainGui::OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl)
 	// Handle plugin trace menu selection
 	if(uNotifyCode == 0 && !wndCtl.IsWindow()) // make sure it's a menu
 	{
-		if ((nID >= PLUGIN_MENU_BASE_ID) && (nID <= (int)(PluginLoader::getScyllaPluginList().size() + PluginLoader::getImprecPluginList().size() + PLUGIN_MENU_BASE_ID)))
+		if ((nID >= PLUGIN_MENU_BASE_ID) && (nID <= (int)(Scylla::plugins.getScyllaPluginList().size() + Scylla::plugins.getImprecPluginList().size() + PLUGIN_MENU_BASE_ID)))
 		{
 			pluginActionHandler(nID);
 			return;
@@ -324,7 +331,7 @@ void MainGui::updateStatusBar()
 	unsigned int invalidImports = importsHandling.invalidThunkCount();
 
 	// \t = center, \t\t = right-align
-	swprintf_s(stringBuffer, _countof(stringBuffer), TEXT("\tImports: %u"), totalImports);
+	swprintf_s(stringBuffer, _countof(stringBuffer), L"\tImports: %u", totalImports);
 	StatusBar.SetText(PART_COUNT, stringBuffer);
 
 	if(invalidImports > 0)
@@ -336,7 +343,7 @@ void MainGui::updateStatusBar()
 		StatusBar.SetIcon(PART_INVALID, hIconCheck);
 	}
 
-	swprintf_s(stringBuffer, _countof(stringBuffer), TEXT("\tInvalid: %u"), invalidImports);
+	swprintf_s(stringBuffer, _countof(stringBuffer), L"\tInvalid: %u", invalidImports);
 	StatusBar.SetText(PART_INVALID, stringBuffer);
 
 	if(selectedProcess)
@@ -355,7 +362,7 @@ void MainGui::updateStatusBar()
 			fileName = selectedProcess->filename;
 		}
 
-		swprintf_s(stringBuffer, _countof(stringBuffer), TEXT("\tImagebase: ")TEXT(PRINTF_DWORD_PTR_FULL), imageBase);
+		swprintf_s(stringBuffer, _countof(stringBuffer), L"\tImagebase: " PRINTF_DWORD_PTR_FULL, imageBase);
 		StatusBar.SetText(PART_IMAGEBASE, stringBuffer);
 		StatusBar.SetText(PART_MODULE, fileName);
 		StatusBar.SetTipText(PART_MODULE, fileName);
@@ -381,7 +388,7 @@ OPENFILENAME ofn = {0};
 	}
 	else
 	{
-		selectedFile[0] = _T('\0');
+		selectedFile[0] = L'\0';
 	}
 
 	ofn.lStructSize     = sizeof(ofn);
@@ -415,7 +422,7 @@ void MainGui::setIconAndDialogCaption()
 	SetIcon(hIcon, TRUE);
 	SetIcon(hIcon, FALSE);
 
-	SetWindowText(TEXT(APPNAME)TEXT(" ")TEXT(ARCHITECTURE)TEXT(" ")TEXT(APPVERSION));
+	SetWindowText(APPNAME L" " ARCHITECTURE L" " APPVERSION);
 }
 
 void MainGui::pickDllActionHandler()
@@ -431,8 +438,8 @@ void MainGui::pickDllActionHandler()
 
 		ProcessAccessHelp::targetImageBase = ProcessAccessHelp::selectedModule->modBaseAddr;
 
-		Logger::printfDialog(TEXT("->>> Module %s selected."), ProcessAccessHelp::selectedModule->getFilename());
-		Logger::printfDialog(TEXT("Imagebase: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size: %08X"),ProcessAccessHelp::selectedModule->modBaseAddr,ProcessAccessHelp::selectedModule->modBaseSize);
+		Scylla::windowLog.log(L"->>> Module %s selected.", ProcessAccessHelp::selectedModule->getFilename());
+		Scylla::windowLog.log(L"Imagebase: " PRINTF_DWORD_PTR_FULL L" Size: %08X", ProcessAccessHelp::selectedModule->modBaseAddr, ProcessAccessHelp::selectedModule->modBaseSize);
 	}
 	else
 	{
@@ -473,7 +480,7 @@ void MainGui::startDisassemblerGui(CTreeItem selectedTreeNode)
 		BYTE test;
 		if(!ProcessAccessHelp::readMemoryFromProcess(address, sizeof(test), &test))
 		{
-			swprintf_s(stringBuffer, _countof(stringBuffer), TEXT("Can't read memory at ")TEXT(PRINTF_DWORD_PTR_FULL),address);
+			swprintf_s(stringBuffer, _countof(stringBuffer), L"Can't read memory at " PRINTF_DWORD_PTR_FULL, address);
 			MessageBox(stringBuffer, L"Failure", MB_ICONERROR);
 		}
 		else
@@ -486,13 +493,13 @@ void MainGui::startDisassemblerGui(CTreeItem selectedTreeNode)
 
 void MainGui::processSelectedActionHandler(int index)
 {
-	std::vector<Process>& processList = processLister.getProcessList();
+	std::vector<Process>& processList = Scylla::processLister.getProcessList();
 	Process &process = processList.at(index);
 	selectedProcess = 0;
 
 	clearImportsActionHandler();
 
-	Logger::printfDialog(TEXT("Analyzing %s"),process.fullPath);
+	Scylla::windowLog.log(L"Analyzing %s", process.fullPath);
 
 	if (ProcessAccessHelp::hProcess != 0)
 	{
@@ -503,7 +510,7 @@ void MainGui::processSelectedActionHandler(int index)
 	if (!ProcessAccessHelp::openProcessHandle(process.PID))
 	{
 		enableDialogControls(FALSE);
-		Logger::printfDialog(TEXT("Error: Cannot open process handle."));
+		Scylla::windowLog.log(L"Error: Cannot open process handle.");
 		updateStatusBar();
 		return;
 	}
@@ -512,7 +519,7 @@ void MainGui::processSelectedActionHandler(int index)
 
 	apiReader.readApisFromModuleList();
 
-	Logger::printfDialog(TEXT("Loading modules done."));
+	Scylla::windowLog.log(L"Loading modules done.");
 
 	//TODO improve
 	ProcessAccessHelp::selectedModule = 0;
@@ -524,7 +531,7 @@ void MainGui::processSelectedActionHandler(int index)
 	process.imageSize = (DWORD)ProcessAccessHelp::targetSizeOfImage;
 
 
-	Logger::printfDialog(TEXT("Imagebase: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size: %08X"),process.imageBase, process.imageSize);
+	Scylla::windowLog.log(L"Imagebase: " PRINTF_DWORD_PTR_FULL L" Size: %08X", process.imageBase, process.imageSize);
 
 	process.entryPoint = ProcessAccessHelp::getEntryPointFromFile(process.fullPath);
 
@@ -540,15 +547,16 @@ void MainGui::fillProcessListComboBox(CComboBox& hCombo)
 {
 	hCombo.ResetContent();
 
-	std::vector<Process>& processList = processLister.getProcessListSnapshot();
+	std::vector<Process>& processList = Scylla::processLister.getProcessListSnapshot();
 
 	for (size_t i = 0; i < processList.size(); i++)
 	{
-		swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("0x%04X - %s - %s"),processList[i].PID,processList[i].filename,processList[i].fullPath);
+		swprintf_s(stringBuffer, _countof(stringBuffer), L"0x%04X - %s - %s", processList[i].PID, processList[i].filename, processList[i].fullPath);
 		hCombo.AddString(stringBuffer);
 	}
 }
 
+/*
 void MainGui::addTextToOutputLog(const WCHAR * text)
 {
 	if (m_hWnd)
@@ -556,6 +564,7 @@ void MainGui::addTextToOutputLog(const WCHAR * text)
 		ListLog.SetCurSel(ListLog.AddString(text));
 	}
 }
+*/
 
 void MainGui::clearOutputLog()
 {
@@ -669,7 +678,7 @@ void MainGui::loadTreeActionHandler()
 	{
 		if(!treeIO.importTreeList(selectedFilePath, importsHandling.moduleList, &addrOEP, &addrIAT, &sizeIAT))
 		{
-			Logger::printfDialog(TEXT("Loading tree file failed %s"), selectedFilePath);
+			Scylla::windowLog.log(L"Loading tree file failed %s", selectedFilePath);
 			MessageBox(L"Loading tree file failed.", L"Failure", MB_ICONERROR);
 		}
 		else
@@ -681,9 +690,9 @@ void MainGui::loadTreeActionHandler()
 			importsHandling.displayAllImports();
 			updateStatusBar();
 
-			Logger::printfDialog(TEXT("Loaded tree file %s"), selectedFilePath);
-			Logger::printfDialog(TEXT("-> OEP: ")TEXT(PRINTF_DWORD_PTR_FULL), addrOEP);
-			Logger::printfDialog(TEXT("-> IAT: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size: ")TEXT(PRINTF_DWORD_PTR), addrIAT, sizeIAT);
+			Scylla::windowLog.log(L"Loaded tree file %s", selectedFilePath);
+			Scylla::windowLog.log(L"-> OEP: " PRINTF_DWORD_PTR_FULL, addrOEP);
+			Scylla::windowLog.log(L"-> IAT: " PRINTF_DWORD_PTR_FULL L" Size: " PRINTF_DWORD_PTR, addrIAT, sizeIAT);
 		}
 	}
 }
@@ -708,12 +717,12 @@ void MainGui::saveTreeActionHandler()
 
 		if(!treeIO.exportTreeList(selectedFilePath, importsHandling.moduleList, selectedProcess, addrOEP, addrIAT, sizeIAT))
 		{
-			Logger::printfDialog(TEXT("Saving tree file failed %s"), selectedFilePath);
+			Scylla::windowLog.log(L"Saving tree file failed %s", selectedFilePath);
 			MessageBox(L"Saving tree file failed.", L"Failure", MB_ICONERROR);
 		}
 		else
 		{
-			Logger::printfDialog(TEXT("Saved tree file %s"), selectedFilePath);
+			Scylla::windowLog.log(L"Saved tree file %s", selectedFilePath);
 		}
 	}
 }
@@ -735,17 +744,17 @@ void MainGui::iatAutosearchActionHandler()
 		{
 			if (iatSearch.searchImportAddressTableInProcess(searchAddress, &addressIAT, &sizeIAT))
 			{
-				Logger::printfDialog(TEXT("IAT found at VA ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" RVA ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT(" Size 0x%04X (%d)"),addressIAT, addressIAT - ProcessAccessHelp::targetImageBase,sizeIAT,sizeIAT);
+				Scylla::windowLog.log(L"IAT found at VA " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" Size 0x%04X (%d)", addressIAT, addressIAT - ProcessAccessHelp::targetImageBase, sizeIAT, sizeIAT);
 
 				EditIATAddress.SetValue(addressIAT);
 				EditIATSize.SetValue(sizeIAT);
 
-				swprintf_s(stringBuffer, _countof(stringBuffer),TEXT("IAT found:\r\n\r\nStart: ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("\r\nSize: 0x%04X (%d) "),addressIAT,sizeIAT,sizeIAT);
+				swprintf_s(stringBuffer, _countof(stringBuffer), L"IAT found:\r\n\r\nStart: " PRINTF_DWORD_PTR_FULL L"\r\nSize: 0x%04X (%d) ", addressIAT, sizeIAT, sizeIAT);
 				MessageBox(stringBuffer, L"IAT found", MB_ICONINFORMATION);
 			}
 			else
 			{
-				Logger::printfDialog(TEXT("IAT not found at OEP ")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("!"),searchAddress);
+				Scylla::windowLog.log(L"IAT not found at OEP " PRINTF_DWORD_PTR_FULL L"!", searchAddress);
 			}
 		}
 	}
@@ -761,7 +770,7 @@ void MainGui::getImportsActionHandler()
 
 	if (addressIAT && sizeIAT)
 	{
-		apiReader.readAndParseIAT(addressIAT, sizeIAT,importsHandling.moduleList);
+		apiReader.readAndParseIAT(addressIAT, sizeIAT, importsHandling.moduleList);
 		importsHandling.displayAllImports();
 
 		updateStatusBar();
@@ -824,7 +833,7 @@ void MainGui::DisplayContextMenuImports(CWindow hwnd, CPoint pt)
 	BOOL menuItem = hSub.TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, hwnd);
 	if (menuItem)
 	{
-		if ((menuItem >= PLUGIN_MENU_BASE_ID) && (menuItem <= (int)(PluginLoader::getScyllaPluginList().size() + PluginLoader::getImprecPluginList().size() + PLUGIN_MENU_BASE_ID)))
+		if ((menuItem >= PLUGIN_MENU_BASE_ID) && (menuItem <= (int)(Scylla::plugins.getScyllaPluginList().size() + Scylla::plugins.getImprecPluginList().size() + PLUGIN_MENU_BASE_ID)))
 		{
 			//wsprintf(stringBuffer, L"%d %s\n",menuItem,pluginList[menuItem - PLUGIN_MENU_BASE_ID].pluginName);
 			//MessageBox(stringBuffer, L"plugin selection");
@@ -893,8 +902,8 @@ void MainGui::DisplayContextMenuLog(CWindow hwnd, CPoint pt)
 
 void MainGui::appendPluginListToMenu(CMenuHandle hMenu)
 {
-	std::vector<Plugin> &scyllaPluginList = PluginLoader::getScyllaPluginList();
-	std::vector<Plugin> &imprecPluginList = PluginLoader::getImprecPluginList();
+	std::vector<Plugin> &scyllaPluginList = Scylla::plugins.getScyllaPluginList();
+	std::vector<Plugin> &imprecPluginList = Scylla::plugins.getImprecPluginList();
 
 	if (scyllaPluginList.size() > 0)
 	{
@@ -968,14 +977,14 @@ void MainGui::dumpActionHandler()
 			wcscpy_s(peDump.fullpath, _countof(peDump.fullpath), selectedProcess->fullPath);
 		}
 
-		peDump.useHeaderFromDisk = ConfigurationHolder::getConfigObject(USE_PE_HEADER_FROM_DISK)->isTrue();
+		peDump.useHeaderFromDisk = Scylla::config.getConfigObject(USE_PE_HEADER_FROM_DISK)->isTrue();
 		if (peDump.dumpCompleteProcessToDisk(selectedFilePath))
 		{
-			Logger::printfDialog(TEXT("Dump success %s"),selectedFilePath);
+			Scylla::windowLog.log(L"Dump success %s", selectedFilePath);
 		}
 		else
 		{
-			Logger::printfDialog(TEXT("Error: Cannot dump image."));
+			Scylla::windowLog.log(L"Error: Cannot dump image.");
 			MessageBox(L"Cannot dump image.", L"Failure", MB_ICONERROR);
 		}
 	}
@@ -990,11 +999,11 @@ void MainGui::peRebuildActionHandler()
 	getCurrentModulePath(stringBuffer, _countof(stringBuffer));
 	if(showFileDialog(selectedFilePath, false, NULL, filterExeDll, NULL, stringBuffer))
 	{
-		if (ConfigurationHolder::getConfigObject(CREATE_BACKUP)->isTrue())
+		if (Scylla::config.getConfigObject(CREATE_BACKUP)->isTrue())
 		{
 			if (!ProcessAccessHelp::createBackupFile(selectedFilePath))
 			{
-				Logger::printfDialog(TEXT("Creating backup file failed %s"), selectedFilePath);
+				Scylla::windowLog.log(L"Creating backup file failed %s", selectedFilePath);
 			}
 		}
 
@@ -1006,15 +1015,15 @@ void MainGui::peRebuildActionHandler()
 
 		if (newSize < 10)
 		{
-			Logger::printfDialog(TEXT("Rebuild failed %s"), selectedFilePath);
+			Scylla::windowLog.log(L"Rebuild failed %s", selectedFilePath);
 			MessageBox(L"Rebuild failed.", L"Failure", MB_ICONERROR);
 		}
 		else
 		{
 			peRebuild.truncateFile(selectedFilePath, newSize);
 
-			Logger::printfDialog(TEXT("Rebuild success %s"), selectedFilePath);
-			Logger::printfDialog(TEXT("-> Old file size 0x%08X new file size 0x%08X (%d %%)"), (DWORD)fileSize, newSize, (DWORD)((newSize * 100) / (DWORD)fileSize) );
+			Scylla::windowLog.log(L"Rebuild success %s", selectedFilePath);
+			Scylla::windowLog.log(L"-> Old file size 0x%08X new file size 0x%08X (%d %%)", (DWORD)fileSize, newSize, (DWORD)((newSize * 100) / (DWORD)fileSize) );
 		}
 	}
 }
@@ -1026,7 +1035,7 @@ void MainGui::dumpFixActionHandler()
 
 	if (TreeImports.GetCount() < 2)
 	{
-		Logger::printfDialog(TEXT("Nothing to rebuild"));
+		Scylla::windowLog.log(L"Nothing to rebuild");
 		return;
 	}
 
@@ -1067,11 +1076,11 @@ void MainGui::dumpFixActionHandler()
 		ImportRebuild importRebuild;
 		if (importRebuild.rebuildImportTable(selectedFilePath,newFilePath,importsHandling.moduleList))
 		{
-			Logger::printfDialog(TEXT("Import Rebuild success %s"), newFilePath);
+			Scylla::windowLog.log(L"Import Rebuild success %s", newFilePath);
 		}
 		else
 		{
-			Logger::printfDialog(TEXT("Import Rebuild failed %s"), selectedFilePath);
+			Scylla::windowLog.log(L"Import Rebuild failed %s", selectedFilePath);
 			MessageBox(L"Import Rebuild failed", L"Failure", MB_ICONERROR);
 		}
 	}
@@ -1148,21 +1157,21 @@ void MainGui::dllInjectActionHandler()
 	if (showFileDialog(selectedFilePath, false, NULL, filterDll, NULL, stringBuffer))
 	{
 		hMod = dllInjection.dllInjection(ProcessAccessHelp::hProcess, selectedFilePath);
-		if (hMod && ConfigurationHolder::getConfigObject(DLL_INJECTION_AUTO_UNLOAD)->isTrue())
+		if (hMod && Scylla::config.getConfigObject(DLL_INJECTION_AUTO_UNLOAD)->isTrue())
 		{
 			if (!dllInjection.unloadDllInProcess(ProcessAccessHelp::hProcess, hMod))
 			{
-				Logger::printfDialog(TEXT("DLL unloading failed, target %s"), selectedFilePath);
+				Scylla::windowLog.log(L"DLL unloading failed, target %s", selectedFilePath);
 			}
 		}
 
 		if (hMod)
 		{
-			Logger::printfDialog(TEXT("DLL Injection was successful, target %s"), selectedFilePath);
+			Scylla::windowLog.log(L"DLL Injection was successful, target %s", selectedFilePath);
 		}
 		else
 		{
-			Logger::printfDialog(TEXT("DLL Injection failed, target %s"), selectedFilePath);
+			Scylla::windowLog.log(L"DLL Injection failed, target %s", selectedFilePath);
 		}
 	}
 }
@@ -1186,8 +1195,8 @@ void MainGui::pluginActionHandler( int menuItem )
 
 	DllInjectionPlugin dllInjectionPlugin;
 
-	std::vector<Plugin> &scyllaPluginList = PluginLoader::getScyllaPluginList();
-	std::vector<Plugin> &imprecPluginList = PluginLoader::getImprecPluginList();
+	std::vector<Plugin> &scyllaPluginList = Scylla::plugins.getScyllaPluginList();
+	std::vector<Plugin> &imprecPluginList = Scylla::plugins.getImprecPluginList();
 
 	menuItem -= PLUGIN_MENU_BASE_ID;
 
