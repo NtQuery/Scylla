@@ -29,29 +29,43 @@ bool SystemInformation::getSystemInformation()
 		GetSystemInfo(&si);
 	}
 
-	if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64 && osvi.dwMajorVersion == 6 && osvi.dwMinorVersion == 0)
-	{
-		currenOS = WIN_VISTA_64;
-	}
-	else if(si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL && osvi.dwMajorVersion == 6 && osvi.dwMinorVersion == 0)
-	{
-		currenOS = WIN_VISTA_32;
-	}
-	else if(si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64 && osvi.dwMajorVersion == 6 && osvi.dwMinorVersion == 1)
-	{
-		currenOS = WIN_7_64;
-	}
-	else if(si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL && osvi.dwMajorVersion == 6 && osvi.dwMinorVersion == 1)
-	{
-		currenOS = WIN_7_32;
-	}
-	else if(si.wProcessorArchitecture==PROCESSOR_ARCHITECTURE_AMD64 && osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 2)
+	bool isX64 = si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64;
+	bool isX86 = si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL;
+
+	DWORD major = osvi.dwMajorVersion;
+	DWORD minor = osvi.dwMinorVersion;
+
+	if(isX64 && major == 5 && minor == 2)
 	{
 		currenOS = WIN_XP_64;
 	}
-	else if(osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 1)
+	else if(isX86 && major == 5 && minor == 1)
 	{
 		currenOS = WIN_XP_32;
+	}
+	if(isX64 && major == 6 && minor == 0)
+	{
+		currenOS = WIN_VISTA_64;
+	}
+	else if(isX86 && major == 6 && minor == 0)
+	{
+		currenOS = WIN_VISTA_32;
+	}
+	else if(isX64 && major == 6 && minor == 1)
+	{
+		currenOS = WIN_7_64;
+	}
+	else if(isX86 && major == 6 && minor == 1)
+	{
+		currenOS = WIN_7_32;
+	}
+	else if(isX64 && major == 6 && minor == 2)
+	{
+		currenOS = WIN_8_64;
+	}
+	else if(isX86 && major == 6 && minor == 2)
+	{
+		currenOS = WIN_8_32;
 	}
 	else
 	{

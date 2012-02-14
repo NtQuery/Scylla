@@ -10,6 +10,8 @@ enum OPERATING_SYSTEM {
 	WIN_VISTA_64,
 	WIN_7_32,
 	WIN_7_64,
+	WIN_8_32,
+	WIN_8_64
 };
 
 typedef void (WINAPI *def_GetNativeSystemInfo)(LPSYSTEM_INFO lpSystemInfo);
