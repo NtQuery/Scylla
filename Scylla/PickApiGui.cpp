@@ -71,7 +71,7 @@ void PickApiGui::OnApiFilterUpdated(UINT uNotifyCode, int nID, CWindow wndCtl)
 			else
 			{
 				WCHAR buf[6];
-				swprintf_s(buf, _countof(buf), L"#%04X", api->ordinal);
+				swprintf_s(buf, L"#%04X", api->ordinal);
 				if(!_wcsnicmp(buf, filter, lenFilter))
 				{
 					newApis.push_back(api);
@@ -132,7 +132,7 @@ void PickApiGui::fillApiListBox(CListBox& list, const std::vector<ApiInfo *> &ap
 		else
 		{
 			WCHAR buf[6];
-			swprintf_s(buf, _countof(buf), L"#%04X", api->ordinal);
+			swprintf_s(buf, L"#%04X", api->ordinal);
 			item = list.AddString(buf);
 		}
 		list.SetItemData(item, (DWORD_PTR)api);

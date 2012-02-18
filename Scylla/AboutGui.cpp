@@ -110,7 +110,7 @@ void AboutGui::setLinkURL(CLinkCtrl& link, const WCHAR* url, int index)
 	item.mask = LIF_ITEMINDEX | LIF_URL;
 	item.iLink = index;
 
-	wcscpy_s(item.szUrl, _countof(item.szUrl), url);
+	wcscpy_s(item.szUrl, url);
 	link.SetItem(&item);
 }
 

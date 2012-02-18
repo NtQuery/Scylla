@@ -291,5 +291,5 @@ protected:
 
 	// Misc
 
-	bool getCurrentModulePath(TCHAR * buffer, size_t bufferSize);
+	bool getCurrentModulePath(WCHAR * buffer, size_t bufferSize);
 };

@@ -101,8 +101,8 @@ bool PluginLoader::searchForPlugin(std::vector<Plugin> & newPluginList, const WC
 			else
 			{
 				pluginData.fileSize = ffd.nFileSizeLow;
-				wcscpy_s(pluginData.fullpath, _countof(baseDirPath), baseDirPath);
-				wcscat_s(pluginData.fullpath, _countof(baseDirPath), ffd.cFileName);
+				wcscpy_s(pluginData.fullpath, baseDirPath);
+				wcscat_s(pluginData.fullpath, ffd.cFileName);
 
 #ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"findAllPlugins :: Plugin %s", pluginData.fullpath);
@@ -127,7 +127,7 @@ bool PluginLoader::searchForPlugin(std::vector<Plugin> & newPluginList, const WC
 					{
 						if (isValidImprecPlugin(pluginData.fullpath))
 						{
-							wcscpy_s(pluginData.pluginName, MAX_PATH, ffd.cFileName);
+							wcscpy_s(pluginData.pluginName, ffd.cFileName);
 							newPluginList.push_back(pluginData);
 						}
 					}
@@ -170,7 +170,7 @@ bool PluginLoader::getScyllaPluginName(Plugin * pluginData)
 
 		if (ScyllaPluginNameW)
 		{
-			wcscpy_s(pluginData->pluginName, MAX_PATH, ScyllaPluginNameW());
+			wcscpy_s(pluginData->pluginName, ScyllaPluginNameW());
 
 #ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"getPluginName :: Plugin name %s", pluginData->pluginName);
@@ -238,8 +238,8 @@ bool PluginLoader::buildSearchString()
 	//wprintf(L"dirSearchString 2 %s\n\n", dirSearchString);
 	PathAppend(dirSearchString, PLUGIN_DIR);
 
-	wcscpy_s(baseDirPath, _countof(baseDirPath), dirSearchString);
-	wcscat_s(dirSearchString, _countof(dirSearchString), PLUGIN_SEARCH_STRING);
+	wcscpy_s(baseDirPath, dirSearchString);
+	wcscat_s(dirSearchString, PLUGIN_SEARCH_STRING);
 
 	//wprintf(L"dirSearchString 3 %s\n\n", dirSearchString);
 
@@ -327,34 +327,27 @@ bool PluginLoader::isValidImprecPlugin(const WCHAR * fullpath)
 
 bool PluginLoader::buildSearchStringImprecPlugins()
 {
-	wcscpy_s(dirSearchString, _countof(dirSearchString), baseDirPath);
+	wcscpy_s(dirSearchString, baseDirPath);
 
-	wcscat_s(dirSearchString, _countof(dirSearchString), PLUGIN_IMPREC_DIR);
+	wcscat_s(dirSearchString, PLUGIN_IMPREC_DIR);
 
-	wcscpy_s(baseDirPath, _countof(baseDirPath), dirSearchString);
+	wcscpy_s(baseDirPath, dirSearchString);
 
 	//build imprec wrapper dll path
-	wcscpy_s(imprecWrapperDllPath, _countof(imprecWrapperDllPath), dirSearchString);
-	wcscat_s(imprecWrapperDllPath, _countof(imprecWrapperDllPath), PLUGIN_IMPREC_WRAPPER_DLL);
+	wcscpy_s(imprecWrapperDllPath, dirSearchString);
+	wcscat_s(imprecWrapperDllPath, PLUGIN_IMPREC_WRAPPER_DLL);
 
 	if (!fileExists(imprecWrapperDllPath))
 	{
 		return false;
 	}
 
-	wcscat_s(dirSearchString, _countof(dirSearchString), PLUGIN_SEARCH_STRING);
+	wcscat_s(dirSearchString, PLUGIN_SEARCH_STRING);
 
 	return true;
 }
 
 bool PluginLoader::fileExists(const WCHAR * fileName)
 {
-	if (GetFileAttributesW(fileName) == INVALID_FILE_ATTRIBUTES)
-	{
-		return false;
-	}
-	else
-	{
-		return true;
-	}
+	return (GetFileAttributesW(fileName) != INVALID_FILE_ATTRIBUTES);
 }

@@ -447,7 +447,7 @@ bool ImportRebuild::createNewImportSection(std::map<DWORD_PTR, ImportModuleThunk
 
 	if (wcslen(Scylla::config[IAT_SECTION_NAME].getString()) > IMAGE_SIZEOF_SHORT_NAME)
 	{
-		strcpy_s(sectionName, sizeof(sectionName), ".SCY");
+		strcpy_s(sectionName, ".SCY");
 	}
 	else
 	{

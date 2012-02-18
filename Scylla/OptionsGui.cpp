@@ -45,4 +45,5 @@ void OptionsGui::loadOptions()
 	dllInjectionAutoUnload = Scylla::config[DLL_INJECTION_AUTO_UNLOAD].getBool();
 	updateHeaderChecksum   = Scylla::config[UPDATE_HEADER_CHECKSUM].getBool();
 	wcsncpy_s(iatSectionName, Scylla::config[IAT_SECTION_NAME].getString(), _countof(iatSectionName)-1);
+	iatSectionName[_countof(iatSectionName) - 1] = L'\0';
 }

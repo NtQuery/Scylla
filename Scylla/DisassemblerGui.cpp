@@ -94,22 +94,22 @@ void DisassemblerGui::displayDisassembly(CListViewCtrl& list)
 	{
 
 #ifdef _WIN64
-		swprintf_s(tempBuffer, _countof(tempBuffer),L"%016I64X",ProcessAccessHelp::decodedInstructions[i].offset);
+		swprintf_s(tempBuffer, L"%016I64X",ProcessAccessHelp::decodedInstructions[i].offset);
 #else
-		swprintf_s(tempBuffer, _countof(tempBuffer),L"%08X",ProcessAccessHelp::decodedInstructions[i].offset);
+		swprintf_s(tempBuffer, L"%08X",ProcessAccessHelp::decodedInstructions[i].offset);
 #endif
 
 		list.InsertItem(i, tempBuffer);
 
-		swprintf_s(tempBuffer, _countof(tempBuffer),L"%02d",ProcessAccessHelp::decodedInstructions[i].size);
+		swprintf_s(tempBuffer, L"%02d",ProcessAccessHelp::decodedInstructions[i].size);
 
 		list.SetItemText(i, COL_INSTRUCTION_SIZE, tempBuffer);
 
-		swprintf_s(tempBuffer, _countof(tempBuffer),L"%S",(char *)ProcessAccessHelp::decodedInstructions[i].instructionHex.p);
+		swprintf_s(tempBuffer, L"%S", (char *)ProcessAccessHelp::decodedInstructions[i].instructionHex.p);
 
 		list.SetItemText(i, COL_OPCODES, tempBuffer);
 
-		swprintf_s(tempBuffer, _countof(tempBuffer),L"%S%S%S",(char*)ProcessAccessHelp::decodedInstructions[i].mnemonic.p, ProcessAccessHelp::decodedInstructions[i].operands.length != 0 ? " " : "", (char*)ProcessAccessHelp::decodedInstructions[i].operands.p);
+		swprintf_s(tempBuffer, L"%S%S%S",(char*)ProcessAccessHelp::decodedInstructions[i].mnemonic.p, ProcessAccessHelp::decodedInstructions[i].operands.length != 0 ? " " : "", (char*)ProcessAccessHelp::decodedInstructions[i].operands.p);
 
 		list.SetItemText(i, COL_INSTRUCTION, tempBuffer);
 	}
@@ -126,10 +126,10 @@ void DisassemblerGui::copyToClipboard(const WCHAR * text)
 	{
 		EmptyClipboard();
 		size_t len = wcslen(text);
-		HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, (len+1)*sizeof(WCHAR));
+		HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, (len + 1) * sizeof(WCHAR));
 		if(hMem)
 		{
-			wcscpy_s((WCHAR *)GlobalLock(hMem), len+1, text);
+			wcscpy_s(static_cast<WCHAR *>(GlobalLock(hMem)), len + 1, text);
 			GlobalUnlock(hMem);
 			if(!SetClipboardData(CF_UNICODETEXT, hMem))
 			{

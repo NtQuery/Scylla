@@ -65,7 +65,7 @@ void ProcessLister::initDeviceNameList()
 
 			hardDisk.longNameLength = wcslen(longName);
 
-			wcscpy_s(hardDisk.longName, MAX_PATH, longName);
+			wcscpy_s(hardDisk.longName, longName);
 			deviceNameList.push_back(hardDisk);
 		}
 	}
@@ -245,7 +245,7 @@ std::vector<Process>& ProcessLister::getProcessListSnapshot()
 						CloseHandle(hModuleSnap);
 					}
 
-					wcscpy_s(process.filename, MAX_PATH, pe32.szExeFile);
+					wcscpy_s(process.filename, pe32.szExeFile);
 
 					getAbsoluteFilePath(&process);
 
@@ -302,7 +302,7 @@ void ProcessLister::getModuleInformationByProcess(Process *process)
 
 	if(hModuleSnap == INVALID_HANDLE_VALUE)
 	{
-		sprintf_s(temp,sizeof(temp),"GetLastError %d",GetLastError());
+		sprintf_s(temp, "GetLastError %d",GetLastError());
 		MessageBox(0, temp,"ProcessLister::getModuleInformationByProcess", MB_OK|MB_ICONWARNING);
 		return;
 	}
@@ -323,7 +323,7 @@ void ProcessLister::getModuleInformationByProcess(Process *process)
 		if (!_strnicmp(me32.szExePath,"\\Systemroot",11))
 		{
 			char * path = (char *)malloc(MAX_PATH);
-			sprintf_s(path,MAX_PATH,"%s\\%s",getenv("SystemRoot"),(me32.szExePath + 12));
+			sprintf_s(path"%s\\%s",getenv("SystemRoot"),(me32.szExePath + 12));
 			strcpy_s(moduleInfo.fullPath,MAX_PATH, path);
 			free(path);
 		}

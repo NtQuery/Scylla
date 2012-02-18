@@ -94,13 +94,13 @@ void PickDllGui::displayModuleList(CListViewCtrl& list)
 		list.InsertItem(count, iter->getFilename());
 
 #ifdef _WIN64
-		swprintf_s(temp, _countof(temp), L"%016I64X", iter->modBaseAddr);
+		swprintf_s(temp, L"%016I64X", iter->modBaseAddr);
 #else
-		swprintf_s(temp, _countof(temp), L"%08X", iter->modBaseAddr);
+		swprintf_s(temp, L"%08X", iter->modBaseAddr);
 #endif
 		list.SetItemText(count, COL_IMAGEBASE, temp);
 
-		swprintf_s(temp, _countof(temp),L"%08X",iter->modBaseSize);
+		swprintf_s(temp, L"%08X",iter->modBaseSize);
 		list.SetItemText(count, COL_IMAGESIZE, temp);
 
 		list.SetItemText(count, COL_PATH, iter->fullPath);

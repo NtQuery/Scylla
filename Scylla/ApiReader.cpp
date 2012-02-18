@@ -118,7 +118,7 @@ void ApiReader::handleForwardedApi(DWORD_PTR vaStringPointer,char * functionName
 	}
 	else
 	{
-		strncpy_s(dllName,sizeof(dllName),fordwardedString,dllNameLength);
+		strncpy_s(dllName, fordwardedString, dllNameLength);
 	}
 
 	searchFunctionName++;
@@ -140,7 +140,7 @@ void ApiReader::handleForwardedApi(DWORD_PTR vaStringPointer,char * functionName
 		return;
 	}
 
-	strcat_s(dllName, sizeof(dllName), ".dll");
+	strcat_s(dllName, ".dll");
 	
 	StringConversion::ToUTF16(dllName, dllNameW, _countof(dllNameW));
 	
@@ -219,7 +219,7 @@ void ApiReader::addApi(char *functionName, WORD hint, WORD ordinal, DWORD_PTR va
 
 	if ((functionName != 0) && (strlen(functionName) < _countof(apiInfo->name)))
 	{
-		strcpy_s(apiInfo->name, _countof(apiInfo->name), functionName);
+		strcpy_s(apiInfo->name, functionName);
 	}
 	else
 	{
@@ -1102,7 +1102,7 @@ bool ApiReader::addModuleToModuleList(const WCHAR * moduleName, DWORD_PTR firstT
 	ImportModuleThunk module;
 
 	module.firstThunk = firstThunk;
-	wcscpy_s(module.moduleName, _countof(module.moduleName), moduleName);
+	wcscpy_s(module.moduleName, moduleName);
 
 	(*moduleThunkList).insert(std::pair<DWORD_PTR,ImportModuleThunk>(firstThunk,module));
 
@@ -1114,7 +1114,7 @@ void ApiReader::addUnknownModuleToModuleList(DWORD_PTR firstThunk)
 	ImportModuleThunk module;
 
 	module.firstThunk = firstThunk;
-	wcscpy_s(module.moduleName, _countof(module.moduleName), L"?");
+	wcscpy_s(module.moduleName, L"?");
 
 	(*moduleThunkList).insert(std::pair<DWORD_PTR,ImportModuleThunk>(firstThunk,module));
 }
@@ -1178,8 +1178,8 @@ bool ApiReader::addFunctionToModuleList(ApiInfo * apiFound, DWORD_PTR va, DWORD_
 	import.ordinal = ordinal;
 	import.hint = (WORD)apiFound->hint;
 
-	wcscpy_s(import.moduleName, _countof(import.moduleName), apiFound->module->getFilename());
-	strcpy_s(import.name, _countof(import.name), apiFound->name);
+	wcscpy_s(import.moduleName, apiFound->module->getFilename());
+	strcpy_s(import.name, apiFound->name);
 
 	module->thunkList.insert(std::pair<DWORD_PTR,ImportThunk>(import.rva, import));
 
@@ -1273,8 +1273,8 @@ bool ApiReader::addNotFoundApiToModuleList(DWORD_PTR iatAddressVA, DWORD_PTR api
 	import.apiAddressVA = apiAddress;
 	import.ordinal = 0;
 
-	wcscpy_s(import.moduleName, _countof(import.moduleName), L"?");
-	strcpy_s(import.name, _countof(import.name), "?");
+	wcscpy_s(import.moduleName, L"?");
+	strcpy_s(import.name, "?");
 
 	module->thunkList.insert(std::pair<DWORD_PTR,ImportThunk>(import.rva, import));
 

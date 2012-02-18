@@ -389,8 +389,8 @@ bool ImportsHandling::setImport(CTreeItem item, const WCHAR * moduleName, const 
 			const ImportModuleThunk * module = getModuleThunk(parent);
 			if(module)
 			{
-				wcscpy_s(import->moduleName, _countof(import->moduleName), moduleName);
-				strcpy_s(import->name, _countof(import->name), apiName);
+				wcscpy_s(import->moduleName, moduleName);
+				strcpy_s(import->name, apiName);
 				import->ordinal = ordinal;
 				//import->apiAddressVA = api->va; //??
 				import->hint = hint;
@@ -416,18 +416,18 @@ void ImportsHandling::updateImportInTreeView(const ImportThunk * importThunk, CT
 
 		if (importThunk->name[0] != 0x00)
 		{
-			swprintf_s(tempString, _countof(tempString), L"ord: %04X name: %S", importThunk->ordinal, importThunk->name);
+			swprintf_s(tempString, L"ord: %04X name: %S", importThunk->ordinal, importThunk->name);
 		}
 		else
 		{
-			swprintf_s(tempString, _countof(tempString), L"ord: %04X", importThunk->ordinal);
+			swprintf_s(tempString, L"ord: %04X", importThunk->ordinal);
 		}
 
-		swprintf_s(stringBuffer, _countof(stringBuffer), L" rva: " PRINTF_DWORD_PTR_HALF L" mod: %s %s", importThunk->rva, importThunk->moduleName, tempString);
+		swprintf_s(stringBuffer, L" rva: " PRINTF_DWORD_PTR_HALF L" mod: %s %s", importThunk->rva, importThunk->moduleName, tempString);
 	}
 	else
 	{
-		swprintf_s(stringBuffer, _countof(stringBuffer), L" rva: " PRINTF_DWORD_PTR_HALF L" ptr: " PRINTF_DWORD_PTR_FULL, importThunk->rva, importThunk->apiAddressVA);
+		swprintf_s(stringBuffer, L" rva: " PRINTF_DWORD_PTR_HALF L" ptr: " PRINTF_DWORD_PTR_FULL, importThunk->rva, importThunk->apiAddressVA);
 	}
 
 	item.SetText(stringBuffer);
@@ -437,7 +437,7 @@ void ImportsHandling::updateImportInTreeView(const ImportThunk * importThunk, CT
 
 void ImportsHandling::updateModuleInTreeView(const ImportModuleThunk * importThunk, CTreeItem item)
 {
-	swprintf_s(stringBuffer, _countof(stringBuffer),L"%s (%d) FThunk: " PRINTF_DWORD_PTR_HALF, importThunk->moduleName,importThunk->thunkList.size(), importThunk->firstThunk);
+	swprintf_s(stringBuffer, L"%s (%d) FThunk: " PRINTF_DWORD_PTR_HALF, importThunk->moduleName,importThunk->thunkList.size(), importThunk->firstThunk);
 
 	item.SetText(stringBuffer);
 	Icon icon = getAppropiateIcon(importThunk->isValid());
@@ -503,10 +503,10 @@ bool ImportsHandling::cutImport(CTreeItem item)
 					if (module->isValid() && module->moduleName[0] == L'?')
 					{
 						//update module name
-						wcscpy_s(module->moduleName,_countof(module->moduleName),(*module->thunkList.begin()).second.moduleName);
+						wcscpy_s(module->moduleName, module->thunkList.begin()->second.moduleName);
 					}
 
-					module->firstThunk = (*module->thunkList.begin()).second.rva;
+					module->firstThunk = module->thunkList.begin()->second.rva;
 					updateModuleInTreeView(module, module->hTreeItem);
 				}
 
@@ -600,7 +600,7 @@ bool ImportsHandling::addModuleToModuleList(const WCHAR * moduleName, DWORD_PTR 
 	ImportModuleThunk module;
 
 	module.firstThunk = firstThunk;
-	wcscpy_s(module.moduleName, _countof(module.moduleName), moduleName);
+	wcscpy_s(module.moduleName, moduleName);
 
 	module.key = module.firstThunk;
 	moduleListNew[module.key] = module;
@@ -630,7 +630,7 @@ void ImportsHandling::addUnknownModuleToModuleList(DWORD_PTR firstThunk)
 	ImportModuleThunk module;
 
 	module.firstThunk = firstThunk;
-	wcscpy_s(module.moduleName, _countof(module.moduleName), L"?");
+	wcscpy_s(module.moduleName, L"?");
 
 	module.key = module.firstThunk;
 	moduleListNew[module.key] = module;
@@ -706,8 +706,8 @@ bool ImportsHandling::addNotFoundApiToModuleList(const ImportThunk * apiNotFound
 	import.apiAddressVA = apiNotFound->apiAddressVA;
 	import.ordinal = 0;
 
-	wcscpy_s(import.moduleName, _countof(import.moduleName), L"?");
-	strcpy_s(import.name, _countof(import.name), "?");
+	wcscpy_s(import.moduleName, L"?");
+	strcpy_s(import.name, "?");
 
 	import.key = import.rva;
 	module->thunkList[import.key] = import;
@@ -773,8 +773,8 @@ bool ImportsHandling::addFunctionToModuleList(const ImportThunk * apiFound)
 	import.ordinal = apiFound->ordinal;
 	import.hint = apiFound->hint;
 
-	wcscpy_s(import.moduleName, _countof(import.moduleName), apiFound->moduleName);
-	strcpy_s(import.name, _countof(import.name), apiFound->name);
+	wcscpy_s(import.moduleName, apiFound->moduleName);
+	strcpy_s(import.name, apiFound->name);
 
 	import.key = import.rva;
 	module->thunkList[import.key] = import;

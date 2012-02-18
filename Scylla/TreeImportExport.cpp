@@ -77,7 +77,7 @@ char * TreeImportExport::readXmlFile(const WCHAR * xmlFilePath)
 	long lSize = 0;
 	char * buffer = 0;
 
-	if (_wfopen_s(&pFile,xmlFilePath,L"r") == NULL)
+	if (_wfopen_s(&pFile, xmlFilePath, L"r") == NULL)
 	{
 		fseek(pFile, 0, SEEK_END);
 		lSize = ftell(pFile);
@@ -111,7 +111,7 @@ bool TreeImportExport::saveXmlToFile(TiXmlDocument doc, const WCHAR * xmlFilePat
 {
 	FILE * pFile = 0;
 
-	if (_wfopen_s(&pFile,xmlFilePath,L"w") == NULL)
+	if (_wfopen_s(&pFile, xmlFilePath, L"w") == NULL)
 	{
 		doc.Print(pFile);
 		fclose (pFile);
@@ -204,11 +204,11 @@ void TreeImportExport::ConvertBoolToString(const bool boolValue)
 {
 	if (boolValue)
 	{
-		strcpy_s(xmlStringBuffer,_countof(xmlStringBuffer), "1");
+		strcpy_s(xmlStringBuffer, "1");
 	}
 	else
 	{
-		strcpy_s(xmlStringBuffer,_countof(xmlStringBuffer), "0");
+		strcpy_s(xmlStringBuffer, "0");
 	}
 }
 
@@ -227,7 +227,7 @@ bool TreeImportExport::ConvertStringToBool(const char * strValue)
 
 void TreeImportExport::ConvertDwordPtrToString(const DWORD_PTR dwValue)
 {
-	sprintf_s(xmlStringBuffer, _countof(xmlStringBuffer), PRINTF_DWORD_PTR_FULL_S, dwValue);
+	sprintf_s(xmlStringBuffer, PRINTF_DWORD_PTR_FULL_S, dwValue);
 }
 
 DWORD_PTR TreeImportExport::ConvertStringToDwordPtr(const char * strValue)
@@ -248,7 +248,7 @@ DWORD_PTR TreeImportExport::ConvertStringToDwordPtr(const char * strValue)
 
 void TreeImportExport::ConvertWordToString(const WORD dwValue)
 {
-	sprintf_s(xmlStringBuffer, _countof(xmlStringBuffer), "%04X", dwValue);
+	sprintf_s(xmlStringBuffer, "%04X", dwValue);
 }
 
 WORD TreeImportExport::ConvertStringToWord(const char * strValue)
@@ -304,14 +304,14 @@ void TreeImportExport::parseAllElementImports( TiXmlElement * moduleElement, Imp
 			temp = importElement->Attribute("name");
 			if (temp)
 			{
-				strcpy_s(importThunk.name, _countof(importThunk.name),temp);
+				strcpy_s(importThunk.name, temp);
 			}
 			else
 			{
 				importThunk.name[0] = 0;
 			}
 
-			wcscpy_s(importThunk.moduleName,_countof(importThunk.moduleName), importModuleThunk->moduleName);
+			wcscpy_s(importThunk.moduleName, importModuleThunk->moduleName);
 
 			importThunk.suspect = ConvertStringToBool(importElement->Attribute("suspect"));
 			importThunk.ordinal = ConvertStringToWord(importElement->Attribute("ordinal"));

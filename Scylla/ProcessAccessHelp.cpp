@@ -585,7 +585,7 @@ bool ProcessAccessHelp::getProcessModules(DWORD dwPID, std::vector<ModuleInfo> &
 		module.modBaseSize = me32.modBaseSize;
 		module.isAlreadyParsed = false;
 		module.parsing = false;
-		wcscpy_s(module.fullPath, MAX_PATH, me32.szExePath);
+		wcscpy_s(module.fullPath, me32.szExePath);
 
 		moduleList.push_back(module);
 

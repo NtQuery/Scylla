@@ -331,7 +331,7 @@ void MainGui::updateStatusBar()
 	unsigned int invalidImports = importsHandling.invalidThunkCount();
 
 	// \t = center, \t\t = right-align
-	swprintf_s(stringBuffer, _countof(stringBuffer), L"\tImports: %u", totalImports);
+	swprintf_s(stringBuffer, L"\tImports: %u", totalImports);
 	StatusBar.SetText(PART_COUNT, stringBuffer);
 
 	if(invalidImports > 0)
@@ -343,7 +343,7 @@ void MainGui::updateStatusBar()
 		StatusBar.SetIcon(PART_INVALID, hIconCheck);
 	}
 
-	swprintf_s(stringBuffer, _countof(stringBuffer), L"\tInvalid: %u", invalidImports);
+	swprintf_s(stringBuffer, L"\tInvalid: %u", invalidImports);
 	StatusBar.SetText(PART_INVALID, stringBuffer);
 
 	if(selectedProcess)
@@ -362,7 +362,7 @@ void MainGui::updateStatusBar()
 			fileName = selectedProcess->filename;
 		}
 
-		swprintf_s(stringBuffer, _countof(stringBuffer), L"\tImagebase: " PRINTF_DWORD_PTR_FULL, imageBase);
+		swprintf_s(stringBuffer, L"\tImagebase: " PRINTF_DWORD_PTR_FULL, imageBase);
 		StatusBar.SetText(PART_IMAGEBASE, stringBuffer);
 		StatusBar.SetText(PART_MODULE, fileName);
 		StatusBar.SetTipText(PART_MODULE, fileName);
@@ -480,7 +480,7 @@ void MainGui::startDisassemblerGui(CTreeItem selectedTreeNode)
 		BYTE test;
 		if(!ProcessAccessHelp::readMemoryFromProcess(address, sizeof(test), &test))
 		{
-			swprintf_s(stringBuffer, _countof(stringBuffer), L"Can't read memory at " PRINTF_DWORD_PTR_FULL, address);
+			swprintf_s(stringBuffer, L"Can't read memory at " PRINTF_DWORD_PTR_FULL, address);
 			MessageBox(stringBuffer, L"Failure", MB_ICONERROR);
 		}
 		else
@@ -551,7 +551,7 @@ void MainGui::fillProcessListComboBox(CComboBox& hCombo)
 
 	for (size_t i = 0; i < processList.size(); i++)
 	{
-		swprintf_s(stringBuffer, _countof(stringBuffer), L"0x%04X - %s - %s", processList[i].PID, processList[i].filename, processList[i].fullPath);
+		swprintf_s(stringBuffer, L"0x%04X - %s - %s", processList[i].PID, processList[i].filename, processList[i].fullPath);
 		hCombo.AddString(stringBuffer);
 	}
 }
@@ -749,7 +749,7 @@ void MainGui::iatAutosearchActionHandler()
 				EditIATAddress.SetValue(addressIAT);
 				EditIATSize.SetValue(sizeIAT);
 
-				swprintf_s(stringBuffer, _countof(stringBuffer), L"IAT found:\r\n\r\nStart: " PRINTF_DWORD_PTR_FULL L"\r\nSize: 0x%04X (%d) ", addressIAT, sizeIAT, sizeIAT);
+				swprintf_s(stringBuffer, L"IAT found:\r\n\r\nStart: " PRINTF_DWORD_PTR_FULL L"\r\nSize: 0x%04X (%d) ", addressIAT, sizeIAT, sizeIAT);
 				MessageBox(stringBuffer, L"IAT found", MB_ICONINFORMATION);
 			}
 			else
@@ -966,7 +966,7 @@ void MainGui::dumpActionHandler()
 			peDump.sizeOfImage = ProcessAccessHelp::selectedModule->modBaseSize;
 			//get it from gui
 			peDump.entryPoint = EditOEPAddress.GetValue();
-			wcscpy_s(peDump.fullpath, _countof(peDump.fullpath), ProcessAccessHelp::selectedModule->fullPath);
+			wcscpy_s(peDump.fullpath, ProcessAccessHelp::selectedModule->fullPath);
 		}
 		else
 		{
@@ -974,7 +974,7 @@ void MainGui::dumpActionHandler()
 			peDump.sizeOfImage = (DWORD)ProcessAccessHelp::targetSizeOfImage;
 			//get it from gui
 			peDump.entryPoint = EditOEPAddress.GetValue();
-			wcscpy_s(peDump.fullpath, _countof(peDump.fullpath), selectedProcess->fullPath);
+			wcscpy_s(peDump.fullpath, selectedProcess->fullPath);
 		}
 
 		peDump.useHeaderFromDisk = Scylla::config[USE_PE_HEADER_FROM_DISK].isTrue();
@@ -1055,7 +1055,7 @@ void MainGui::dumpFixActionHandler()
 	getCurrentModulePath(stringBuffer, _countof(stringBuffer));
 	if (showFileDialog(selectedFilePath, false, NULL, fileFilter, NULL, stringBuffer))
 	{
-		wcscpy_s(newFilePath,_countof(newFilePath),selectedFilePath);
+		wcscpy_s(newFilePath, selectedFilePath);
 
 		const WCHAR * extension = 0;
 
@@ -1066,11 +1066,11 @@ void MainGui::dumpFixActionHandler()
 			extension = selectedFilePath + (dot - newFilePath); //wcsrchr(selectedFilePath, L'.');
 		}
 
-		wcscat_s(newFilePath, _countof(newFilePath), L"_SCY");
+		wcscat_s(newFilePath, L"_SCY");
 
 		if(extension)
 		{
-			wcscat_s(newFilePath, _countof(newFilePath), extension);
+			wcscat_s(newFilePath, extension);
 		}
 
 		ImportRebuild importRebuild;
@@ -1224,7 +1224,7 @@ void MainGui::pluginActionHandler( int menuItem )
 	updateStatusBar();
 }
 
-bool MainGui::getCurrentModulePath(TCHAR * buffer, size_t bufferSize)
+bool MainGui::getCurrentModulePath(WCHAR * buffer, size_t bufferSize)
 {
 	if(!selectedProcess)
 		return false;

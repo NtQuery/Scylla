@@ -99,8 +99,8 @@ void DllInjectionPlugin::injectImprecPlugin(Plugin & plugin, std::map<DWORD_PTR,
 	UnmapViewOfFile(lpImprecViewOfFile);
 
 	newPlugin.fileSize = plugin.fileSize;
-	wcscpy_s(newPlugin.pluginName, _countof(newPlugin.pluginName), plugin.pluginName);
-	wcscpy_s(newPlugin.fullpath, _countof(newPlugin.fullpath), Scylla::plugins.imprecWrapperDllPath);
+	wcscpy_s(newPlugin.pluginName, plugin.pluginName);
+	wcscpy_s(newPlugin.fullpath, Scylla::plugins.imprecWrapperDllPath);
 
 	injectPlugin(newPlugin,moduleList,imageBase,imageSize);
 
@@ -283,8 +283,8 @@ void DllInjectionPlugin::updateImportsWithPluginResult( PUNRESOLVED_IMPORT first
 					importThunk->apiAddressVA = firstUnresImp->InvalidApiAddress;
 					importThunk->hint = (WORD)apiInfo->hint;
 					importThunk->ordinal = apiInfo->ordinal;
-					strcpy_s(importThunk->name, _countof(importThunk->name),apiInfo->name);
-					wcscpy_s(importThunk->moduleName, _countof(importThunk->moduleName), apiInfo->module->getFilename());
+					strcpy_s(importThunk->name, apiInfo->name);
+					wcscpy_s(importThunk->moduleName, apiInfo->module->getFilename());
 
 					if (moduleThunk->moduleName[0] == L'?')
 					{
