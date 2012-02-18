@@ -1,57 +1,44 @@
 #include "Logger.h"
 
 #include <shlwapi.h>
+//#include <fstream>
+#include <cstdio>
+#include <atlbase.h> 
 #include <atlconv.h>
-#include <fstream>
-
-WCHAR Logger::logbuf[300];
-char  Logger::logbufChar[300];
 
 void Logger::log(const WCHAR * format, ...)
 {
-	if (!format)
-	{ 
-		return;
-	}
+	static WCHAR buf[300];
 
-	//ZeroMemory(logbuf, sizeof(logbuf));
+	if(!format)
+		return;
 
 	va_list va_alist;
 	va_start (va_alist, format);
-	_vsnwprintf_s(logbuf, _countof(logbuf), _countof(logbuf) - 1, format, va_alist);
+	_vsnwprintf_s(buf, _countof(buf) - 1, format, va_alist);
 	va_end (va_alist);
 
-	write(logbuf);
+	write(buf);
 }
 
 void Logger::log(const char * format, ...)
 {
-	if (!format)
-	{ 
-		return;
-	}
+	static char buf[300];
 
-	//ZeroMemory(logbufChar, sizeof(logbufChar));
+	if(!format)
+		return;
 
 	va_list va_alist;
 	va_start (va_alist, format);
-	_vsnprintf_s(logbufChar, _countof(logbufChar), _countof(logbufChar) - 1, format, va_alist);
+	_vsnprintf_s(buf, _countof(buf) - 1, format, va_alist);
 	va_end (va_alist);
 
-	write(logbufChar);
+	write(buf);
 }
 
 void Logger::write(const CHAR * str)
 {
-	size_t len = strlen(str) + 1;
-	WCHAR * buf = new WCHAR[len];
-
-	size_t convertedChars = 0;
-	mbstowcs_s(&convertedChars, buf, len, str, _TRUNCATE);
-
-	write(buf);
-
-	delete[] buf;
+	write(ATL::CA2W(str));
 }
 
 FileLog::FileLog(const WCHAR * fileName)
@@ -71,7 +58,7 @@ void FileLog::write(const CHAR * str)
 	}
 	*/
 
-	FILE * pFile;
+	FILE * pFile = 0;
 	if (_wfopen_s(&pFile, filePath, L"a") == 0)
 	{
 		fputs(str, pFile);
@@ -90,7 +77,7 @@ void FileLog::write(const WCHAR * str)
 	}
 	*/
 	
-	FILE * pFile;
+	FILE * pFile = 0;
 	if (_wfopen_s(&pFile, filePath, L"a") == 0)
 	{
 		fputws(str, pFile);
@@ -104,7 +91,7 @@ void ListboxLog::setWindow(HWND window)
 	this->window = window;
 }
 
-void ListboxLog::write(const WCHAR * str)
+void ListboxLog::write(const WCHAR* str)
 {	
 	LRESULT index = SendMessageW(window, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(str));
 	SendMessage(window, LB_SETCURSEL, index, 0);

@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <windows.h>
@@ -14,11 +13,6 @@ protected:
 
 	virtual void write(const WCHAR * str) = 0;
 	virtual void write(const CHAR * str);
-
-private:
-
-	static WCHAR logbuf[300];
-	static char logbufChar[300];
 };
 
 class FileLog : public Logger
