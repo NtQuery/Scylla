@@ -27,9 +27,6 @@
     <ClCompile Include="MainGui.cpp">
       <Filter>Quelldateien\GUI</Filter>
     </ClCompile>
-    <ClCompile Include="Logger.cpp">
-      <Filter>Quelldateien\GUI</Filter>
-    </ClCompile>
     <ClCompile Include="ProcessLister.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
@@ -99,15 +96,18 @@
     <ClCompile Include="Configuration.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="Logger.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="StringConversion.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="MainGui.h">
-      <Filter>Headerdateien\GUI</Filter>
-    </ClInclude>
-    <ClInclude Include="Logger.h">
       <Filter>Headerdateien\GUI</Filter>
     </ClInclude>
     <ClInclude Include="ProcessLister.h">
@@ -152,9 +152,6 @@
     <ClInclude Include="PluginLoader.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="definitions.h">
-      <Filter>Headerdateien\GUI</Filter>
-    </ClInclude>
     <ClInclude Include="DisassemblerGui.h">
       <Filter>Headerdateien\GUI</Filter>
     </ClInclude>
@@ -189,6 +186,12 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="Configuration.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="StringConversion.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>

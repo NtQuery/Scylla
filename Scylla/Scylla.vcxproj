@@ -91,7 +91,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)$(Platform)\$(Configuration)\diStorm.lib;$(SolutionDir)$(Platform)\$(Configuration)\tinyxml.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)$(Platform)\$(Configuration)\diStorm.lib;$(SolutionDir)$(Platform)\$(Configuration)\tinyxml.lib;psapi.lib;imagehlp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalManifestDependencies>type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' </AdditionalManifestDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -107,7 +107,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)$(Platform)\$(Configuration)\diStorm.lib;$(SolutionDir)$(Platform)\$(Configuration)\tinyxml.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)$(Platform)\$(Configuration)\diStorm.lib;$(SolutionDir)$(Platform)\$(Configuration)\tinyxml.lib;psapi.lib;imagehlp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalManifestDependencies>type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' </AdditionalManifestDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -129,7 +129,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>$(SolutionDir)$(Platform)\$(Configuration)\diStorm.lib;$(SolutionDir)$(Platform)\$(Configuration)\tinyxml.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)$(Platform)\$(Configuration)\diStorm.lib;$(SolutionDir)$(Platform)\$(Configuration)\tinyxml.lib;psapi.lib;imagehlp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalManifestDependencies>type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' </AdditionalManifestDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -151,7 +151,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>$(SolutionDir)$(Platform)\$(Configuration)\diStorm.lib;$(SolutionDir)$(Platform)\$(Configuration)\tinyxml.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)$(Platform)\$(Configuration)\diStorm.lib;$(SolutionDir)$(Platform)\$(Configuration)\tinyxml.lib;psapi.lib;imagehlp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalManifestDependencies>type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' </AdditionalManifestDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -180,6 +180,7 @@
     <ClCompile Include="ProcessAccessHelp.cpp" />
     <ClCompile Include="ProcessLister.cpp" />
     <ClCompile Include="Scylla.cpp" />
+    <ClCompile Include="StringConversion.cpp" />
     <ClCompile Include="SystemInformation.cpp" />
     <ClCompile Include="TreeImportExport.cpp" />
   </ItemGroup>
@@ -189,7 +190,6 @@
     <ClInclude Include="Architecture.h" />
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="ConfigurationHolder.h" />
-    <ClInclude Include="definitions.h" />
     <ClInclude Include="DisassemblerGui.h" />
     <ClInclude Include="DllInjection.h" />
     <ClInclude Include="DllInjectionPlugin.h" />
@@ -211,6 +211,7 @@
     <ClInclude Include="ProcessLister.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Scylla.h" />
+    <ClInclude Include="StringConversion.h" />
     <ClInclude Include="SystemInformation.h" />
     <ClInclude Include="Thunks.h" />
     <ClInclude Include="TreeImportExport.h" />
