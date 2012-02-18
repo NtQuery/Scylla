@@ -1,15 +1,13 @@
-
 #include "TreeImportExport.h"
 #include "Architecture.h"
 #include "Scylla.h"
-
-#define DEBUG_COMMENTS
+#include "StringConversion.h"
 
 bool TreeImportExport::exportTreeList(const WCHAR * targetXmlFile, std::map<DWORD_PTR, ImportModuleThunk> & moduleList, const Process * process, const DWORD_PTR addressOEP, const DWORD_PTR addressIAT, const DWORD sizeIAT)
 {
 	TiXmlDocument doc;
 
-	TiXmlDeclaration * decl = new TiXmlDeclaration( "1.0", "", "" );
+	TiXmlDeclaration * decl = new TiXmlDeclaration( "1.0", "", "");
 	doc.LinkEndChild(decl);
 
 	TiXmlElement * rootElement = new TiXmlElement("target");
@@ -60,21 +58,17 @@ bool TreeImportExport::importTreeList(const WCHAR * targetXmlFile, std::map<DWOR
 
 void TreeImportExport::setTargetInformation(TiXmlElement * rootElement, const Process * process, const DWORD_PTR addressOEP, const DWORD_PTR addressIAT, const DWORD sizeIAT)
 {
-	size_t stringLength = 0;
-
-	wcstombs_s(&stringLength, xmlStringBuffer, (size_t)_countof(xmlStringBuffer), process->filename, (size_t)_countof(process->filename));
-
-
+	StringConversion::ToASCII(process->filename, xmlStringBuffer, _countof(xmlStringBuffer));
 	rootElement->SetAttribute("filename", xmlStringBuffer);
 
 	ConvertDwordPtrToString(addressOEP);
-	rootElement->SetAttribute("oep_va",xmlStringBuffer);
+	rootElement->SetAttribute("oep_va", xmlStringBuffer);
 
 	ConvertDwordPtrToString(addressIAT);
-	rootElement->SetAttribute("iat_va",xmlStringBuffer);
+	rootElement->SetAttribute("iat_va", xmlStringBuffer);
 
 	ConvertDwordPtrToString(sizeIAT);
-	rootElement->SetAttribute("iat_size",xmlStringBuffer);
+	rootElement->SetAttribute("iat_size", xmlStringBuffer);
 }
 
 char * TreeImportExport::readXmlFile(const WCHAR * xmlFilePath)
@@ -159,11 +153,9 @@ void TreeImportExport::addModuleListToRootElement( TiXmlElement * rootElement, s
 
 TiXmlElement * TreeImportExport::getModuleXmlElement(const ImportModuleThunk * importModuleThunk)
 {
-	size_t stringLength = 0;
 	TiXmlElement * moduleElement = new TiXmlElement("module");
 
-	wcstombs_s(&stringLength, xmlStringBuffer, (size_t)_countof(xmlStringBuffer), importModuleThunk->moduleName, (size_t)_countof(importModuleThunk->moduleName));
-
+	StringConversion::ToASCII(importModuleThunk->moduleName, xmlStringBuffer, _countof(xmlStringBuffer));
 	moduleElement->SetAttribute("filename", xmlStringBuffer);
 
 	ConvertDwordPtrToString(importModuleThunk->getFirstThunk());
@@ -212,11 +204,11 @@ void TreeImportExport::ConvertBoolToString(const bool boolValue)
 {
 	if (boolValue)
 	{
-		strcpy_s(xmlStringBuffer,_countof(xmlStringBuffer),"1");
+		strcpy_s(xmlStringBuffer,_countof(xmlStringBuffer), "1");
 	}
 	else
 	{
-		strcpy_s(xmlStringBuffer,_countof(xmlStringBuffer),"0");
+		strcpy_s(xmlStringBuffer,_countof(xmlStringBuffer), "0");
 	}
 }
 
@@ -275,7 +267,6 @@ void TreeImportExport::parseAllElementModules( TiXmlElement * targetElement, std
 {
 	TiXmlElement * moduleElement = 0;
 	ImportModuleThunk importModuleThunk;
-	size_t convertedChars = 0;
 	const char * filename = 0;
 
 	for(moduleElement = targetElement->FirstChildElement(); moduleElement; moduleElement = moduleElement->NextSiblingElement())
@@ -284,8 +275,8 @@ void TreeImportExport::parseAllElementModules( TiXmlElement * targetElement, std
 
 		if (filename)
 		{
+			StringConversion::ToUTF16(filename, importModuleThunk.moduleName, _countof(importModuleThunk.moduleName));
 
-			mbstowcs_s(&convertedChars, importModuleThunk.moduleName, _countof(importModuleThunk.moduleName), filename, _TRUNCATE);
 			importModuleThunk.firstThunk = ConvertStringToDwordPtr(moduleElement->Attribute("first_thunk_rva"));
 
 			importModuleThunk.thunkList.clear();

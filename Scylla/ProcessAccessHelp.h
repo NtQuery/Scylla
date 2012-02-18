@@ -1,15 +1,13 @@
 #pragma once
 
-#include <stdio.h>
 #include <windows.h>
 #include <tlhelp32.h>
-#include <hash_map>
-#include <map>
+#include <vector>
 
 /************************************************************************/
 /* distorm                                                              */
 /************************************************************************/
-#include "distorm.h"
+#include <distorm.h>
 
 // The number of the array of instructions the decoder function will use to return the disassembled instructions.
 // Play with this value for performance...
@@ -19,8 +17,10 @@
 
 class ApiInfo;
 
-class ModuleInfo {
+class ModuleInfo
+{
 public:
+
 	WCHAR fullPath[MAX_PATH];
 	DWORD_PTR modBaseAddr;
 	DWORD modBaseSize;
@@ -64,19 +64,23 @@ public:
 	}
 };
 
-class ApiInfo {
-	public:
-		char name[MAX_PATH];
-		WORD hint;
-		DWORD_PTR va;
-		DWORD_PTR rva;
-		WORD ordinal;
-		bool isForwarded;
-		ModuleInfo * module;
+class ApiInfo
+{
+public:
+
+	char name[MAX_PATH];
+	WORD hint;
+	DWORD_PTR va;
+	DWORD_PTR rva;
+	WORD ordinal;
+	bool isForwarded;
+	ModuleInfo * module;
 };
 
-class ProcessAccessHelp {
+class ProcessAccessHelp
+{
 public:
+
 	static HANDLE hProcess; //OpenProcess handle to target process
 
 	static DWORD_PTR targetImageBase;
@@ -88,7 +92,7 @@ public:
 	static std::vector<ModuleInfo> moduleList; //target process module list
 	static std::vector<ModuleInfo> ownModuleList; //own module list
 
-	static const int PE_HEADER_BYTES_COUNT = 2000;
+	static const size_t PE_HEADER_BYTES_COUNT = 2000;
 
 	static BYTE fileHeaderFromDisk[PE_HEADER_BYTES_COUNT];
 

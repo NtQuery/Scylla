@@ -2,8 +2,8 @@
 
 #include "ApiReader.h"
 
-
-class IATSearch : protected ApiReader {
+class IATSearch : protected ApiReader
+{
 public:
 
 	DWORD_PTR memoryAddress;

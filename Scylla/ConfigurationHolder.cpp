@@ -1,7 +1,6 @@
 #include "ConfigurationHolder.h"
 
 #include <shlwapi.h>
-#include <stdio.h>
 #include "Architecture.h"
 
 const WCHAR ConfigurationHolder::CONFIG_FILE_SECTION_NAME[] = L"SCYLLA_CONFIG";
@@ -198,8 +197,6 @@ bool ConfigurationHolder::buildConfigFilePath(const WCHAR* fileName)
 
 	PathRemoveFileSpec(configPath);
 	PathAppend(configPath, fileName);
-
-	//wprintf(L"configPath %s\n\n", configPath);
 
 	return true;
 }

@@ -1,9 +1,11 @@
 #pragma once
 
+#include <map>
 #include "ProcessAccessHelp.h"
 #include "Thunks.h"
 
-class ImportRebuild {
+class ImportRebuild
+{
 public:
 
 	ImportRebuild();

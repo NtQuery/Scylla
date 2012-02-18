@@ -14,7 +14,7 @@
 #include <atlddx.h>        // WTL dialog data exchange
 
 #include <vector>
-#include "ProcessAccessHelp.h"
+#include "ProcessAccessHelp.h" // ModuleInfo
 
 class PickDllGui : public CDialogImpl<PickDllGui>, public CWinDataExchange<PickDllGui>, public CDialogResize<PickDllGui>
 {

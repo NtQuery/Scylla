@@ -1,7 +1,7 @@
 #include "ImportRebuild.h"
 
 #include "Scylla.h"
-//#include "ConfigurationHolder.h"
+#include "StringConversion.h"
 
 //#define DEBUG_COMMENTS
 
@@ -441,7 +441,6 @@ bool ImportRebuild::buildNewImportTable(std::map<DWORD_PTR, ImportModuleThunk> &
 bool ImportRebuild::createNewImportSection(std::map<DWORD_PTR, ImportModuleThunk> & moduleList)
 {
 	char sectionName[9] = {0};
-	size_t i = 0;
 
 	//DWORD sectionSize = calculateMinSize(moduleList);
 	calculateImportSizes(moduleList);
@@ -452,9 +451,8 @@ bool ImportRebuild::createNewImportSection(std::map<DWORD_PTR, ImportModuleThunk
 	}
 	else
 	{
-		wcstombs_s(&i, sectionName, sizeof(sectionName), Scylla::config[IAT_SECTION_NAME].getString(), _TRUNCATE);
+		StringConversion::ToASCII(Scylla::config[IAT_SECTION_NAME].getString(), sectionName, _countof(sectionName));
 	}
-
 
 	return addNewSection(sectionName, (DWORD)sizeOfImportSection, 0);
 }
@@ -655,9 +653,9 @@ size_t ImportRebuild::addImportToImportTable( ImportThunk * pImport, PIMAGE_THUN
 size_t ImportRebuild::addImportDescriptor(ImportModuleThunk * pImportModule, DWORD sectionOffset)
 {
 	char dllName[MAX_PATH];
-	size_t stringLength = 0;
 
-	wcstombs_s(&stringLength, dllName, (size_t)_countof(dllName), pImportModule->moduleName, (size_t)_countof(pImportModule->moduleName));
+	StringConversion::ToASCII(pImportModule->moduleName, dllName, _countof(dllName));
+	size_t stringLength = strlen(dllName);
 
 	memcpy((vecSectionData[importSectionIndex] + sectionOffset), dllName, stringLength); //copy module name to section
 

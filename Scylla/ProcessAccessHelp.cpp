@@ -1,7 +1,7 @@
 
 #include "ProcessAccessHelp.h"
 
-#include "Logger.h"
+#include "Scylla.h"
 #include "NativeWinApi.h"
 
 HANDLE ProcessAccessHelp::hProcess = 0;

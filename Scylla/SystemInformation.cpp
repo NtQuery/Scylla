@@ -43,7 +43,7 @@ bool SystemInformation::getSystemInformation()
 	{
 		currenOS = WIN_XP_32;
 	}
-	if(isX64 && major == 6 && minor == 0)
+	else if(isX64 && major == 6 && minor == 0)
 	{
 		currenOS = WIN_VISTA_64;
 	}

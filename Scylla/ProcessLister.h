@@ -3,10 +3,7 @@
 #include <windows.h>
 #include <tlhelp32.h>
 #include <vector>
-#include <Psapi.h>
-
-#pragma comment(lib, "Psapi.lib")
-
+#include <psapi.h>
 
 typedef BOOL (WINAPI *def_IsWow64Process)(HANDLE hProcess,PBOOL Wow64Process);
 

@@ -16,9 +16,10 @@ enum OPERATING_SYSTEM {
 
 typedef void (WINAPI *def_GetNativeSystemInfo)(LPSYSTEM_INFO lpSystemInfo);
 
-class SystemInformation {
+class SystemInformation
+{
 public:
+
 	static OPERATING_SYSTEM currenOS;
 	static bool getSystemInformation();
-private:
 };

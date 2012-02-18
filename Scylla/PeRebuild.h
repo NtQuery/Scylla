@@ -1,7 +1,9 @@
-#include <Windows.h>
-#include <stdlib.h>
+#pragma once
 
-typedef enum _ReBaseErr
+#include <Windows.h>
+#include <cstdlib>
+
+enum ReBaseErr
 {
 	RB_OK = 0,
 	RB_INVALIDPE,
@@ -9,14 +11,16 @@ typedef enum _ReBaseErr
 	RB_INVALIDRVA,
 	RB_INVALIDNEWBASE,
 	RB_ACCESSVIOLATION
-} ReBaseErr;
-
-class PeRebuild {
+};
 
 /*****************************************************************************
   Improved Realign DLL version 1.5 by yoda
 *****************************************************************************/
+
+class PeRebuild
+{
 public:
+
 	bool truncateFile(WCHAR * szFilePath, DWORD dwNewFsize);
 	DWORD realignPE(LPVOID AddressOfMapFile,DWORD dwFsize);
 	DWORD wipeReloc(void* pMap, DWORD dwFsize);
@@ -28,14 +32,14 @@ public:
 	LPVOID createFileMappingViewFull(const WCHAR * filePath);
 	void closeAllMappingHandles();
 
-
 private:
-	// constants
-#define MAX_SEC_NUM 30
 
-	const static DWORD ScanStartDS = 0x40;
-	const static int MinSectionTerm = 5;
-	const static int FileAlignmentConstant = 0x200;
+	// constants
+	static const size_t MAX_SEC_NUM = 30;
+
+	static const DWORD ScanStartDS = 0x40;
+	static const int MinSectionTerm = 5;
+	static const int FileAlignmentConstant = 0x200;
 
 	// variables
 	DWORD_PTR            dwMapBase;

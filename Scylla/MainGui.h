@@ -15,12 +15,6 @@
 #include "multitree.h"
 #include "hexedit.h"
 
-//#define _CRTDBG_MAP_ALLOC
-//#include <cstdlib>
-//#include <crtdbg.h>
-
-//#include <cstdio>
-
 #include "Logger.h"
 #include "ProcessLister.h"
 #include "IATSearch.h"

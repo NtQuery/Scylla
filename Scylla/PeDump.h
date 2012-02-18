@@ -1,8 +1,11 @@
+#pragma once
 
 #include <windows.h>
 
-class PeDump {
+class PeDump
+{
 public:
+
 	DWORD_PTR entryPoint; //VA
 	DWORD_PTR imageBase;  //VA
 	DWORD sizeOfImage;
@@ -46,6 +49,7 @@ public:
 	bool getOverlayData(const WCHAR * filepath, DWORD_PTR * overlayFileOffset, DWORD * overlaySize);
 
 private:
+
 	BYTE * dumpData;
 	BYTE * headerData;
 

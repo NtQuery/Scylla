@@ -2,8 +2,8 @@
 #include "Logger.h"
 
 #include "ProcessAccessHelp.h"
+#include "StringConversion.h"
 #include <shlwapi.h>
-#include <stdio.h>
 
 const WCHAR PluginLoader::PLUGIN_DIR[] = L"Plugins\\";
 const WCHAR PluginLoader::PLUGIN_SEARCH_STRING[] = L"*.dll";
@@ -159,7 +159,6 @@ bool PluginLoader::getScyllaPluginName(Plugin * pluginData)
 {
 	bool retValue = false;
 	char * pluginName = 0;
-	size_t convertedChars = 0;
 	def_ScyllaPluginNameW ScyllaPluginNameW = 0;
 	def_ScyllaPluginNameA ScyllaPluginNameA = 0;
 
@@ -187,13 +186,13 @@ bool PluginLoader::getScyllaPluginName(Plugin * pluginData)
 			{
 				pluginName = ScyllaPluginNameA();
 
-				mbstowcs_s(&convertedChars, pluginData->pluginName, strlen(pluginName) + 1, pluginName, _TRUNCATE);
+				StringConversion::ToUTF16(pluginName, pluginData->pluginName, _countof(pluginData->pluginName));
 
 #ifdef DEBUG_COMMENTS
 				Scylla::debugLog.log(L"getPluginName :: Plugin name mbstowcs_s %s", pluginData->pluginName);
 #endif
 
-				if (convertedChars > 1)
+				if (wcslen(pluginData->pluginName) > 1)
 				{
 					retValue = true;
 				}

@@ -1,8 +1,9 @@
+#pragma once
+
 #include "DllInjection.h"
 #include "PluginLoader.h"
 #include "Thunks.h"
 #include "ApiReader.h"
-
 
 #define PLUGIN_IMPREC_EXCHANGE_DLL_PATH "ScyllaImprecPluginExchangePath"
 

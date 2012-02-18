@@ -1,13 +1,12 @@
 #pragma once
 
 #include <windows.h>
-#include <Commctrl.h>
 #include <map>
 
 // WTL
 #include <atlbase.h>
 #include <atlapp.h>
-#include <atlctrls.h> //CTreeItem
+#include <atlctrls.h> // CTreeItem
 
 class ImportThunk
 {

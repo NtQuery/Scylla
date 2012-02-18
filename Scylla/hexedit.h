@@ -9,7 +9,7 @@
 #endif
 
 #ifndef __ATLCTRLS_H__
-  #error hexedit.h requires atlmisc.h to be included first requires atlctrls.h to be included first
+  #error hexedit.h requires atlctrls.h to be included first
 #endif
 
 /*

@@ -1,6 +1,6 @@
 #include "DllInjection.h"
-#include "Logger.h"
 #include <Psapi.h>
+#include "Scylla.h"
 
 #include "NativeWinApi.h"
 

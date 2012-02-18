@@ -1,12 +1,8 @@
 #include "PeRebuild.h"
 
 #include <imagehlp.h>
-#pragma comment(lib,"imagehlp.lib")
-
 #include "ProcessAccessHelp.h"
-
 #include "Scylla.h"
-//#include "ConfigurationHolder.h"
 
 //#define DEBUG_COMMENTS
 

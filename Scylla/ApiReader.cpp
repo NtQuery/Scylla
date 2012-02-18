@@ -4,8 +4,9 @@
 #include "Scylla.h"
 #include "Architecture.h"
 #include "SystemInformation.h"
+#include "StringConversion.h"
 
-stdext::hash_multimap<DWORD_PTR, ApiInfo *> ApiReader::apiList; //api look up table
+std::unordered_map<DWORD_PTR, ApiInfo *> ApiReader::apiList; //api look up table
 std::map<DWORD_PTR, ImportModuleThunk> *  ApiReader::moduleThunkList; //store found apis
 
 DWORD_PTR ApiReader::minApiAddress = 0xFFFFFFFF;
@@ -139,10 +140,9 @@ void ApiReader::handleForwardedApi(DWORD_PTR vaStringPointer,char * functionName
 		return;
 	}
 
-	strcat_s(dllName,sizeof(dllName),".dll");
+	strcat_s(dllName, sizeof(dllName), ".dll");
 	
-	size_t convertedChars = 0;
-	mbstowcs_s(&convertedChars, dllNameW, strlen(dllName) + 1, dllName, _TRUNCATE);
+	StringConversion::ToUTF16(dllName, dllNameW, _countof(dllNameW));
 	
 	if (!_wcsicmp(dllNameW, moduleParent->getFilename()))
 	{
@@ -637,7 +637,7 @@ bool ApiReader::isApiAddressValid(DWORD_PTR virtualAddress)
 
 ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isSuspect)
 {
-	stdext::hash_multimap<DWORD_PTR, ApiInfo *>::iterator it1, it2;
+	std::unordered_map<DWORD_PTR, ApiInfo *>::iterator it1, it2;
 	size_t c = 0;
 	size_t countDuplicates = apiList.count(virtualAddress);
 	int countHighPriority = 0;
@@ -723,7 +723,7 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 
 /*ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isSuspect)
 {
-	stdext::hash_multimap<DWORD_PTR, ApiInfo *>::iterator it1, it2;
+	std::unordered_map<DWORD_PTR, ApiInfo *>::iterator it1, it2;
 	size_t c = 0;
 	size_t countDuplicates = apiList.count(virtualAddress);
 	int countHighPriority = 0;
@@ -862,7 +862,7 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 	return (ApiInfo *) 1; 
 }*/
 
-ApiInfo * ApiReader::getScoredApi(stdext::hash_multimap<DWORD_PTR, ApiInfo *>::iterator it1,size_t countDuplicates, bool hasName, bool hasUnicodeAnsiName, bool hasNoUnderlineInName, bool hasPrioDll,bool hasPrio0Dll,bool hasPrio1Dll, bool hasPrio2Dll, bool firstWin )
+ApiInfo * ApiReader::getScoredApi(std::unordered_map<DWORD_PTR, ApiInfo *>::iterator it1,size_t countDuplicates, bool hasName, bool hasUnicodeAnsiName, bool hasNoUnderlineInName, bool hasPrioDll,bool hasPrio0Dll,bool hasPrio1Dll, bool hasPrio2Dll, bool firstWin )
 {
 	ApiInfo * foundApi = 0;
 	ApiInfo * foundMatchingApi = 0;
@@ -1191,7 +1191,7 @@ void ApiReader::clearAll()
 	minApiAddress = -1;
 	maxApiAddress = 0;
 
-	for ( stdext::hash_multimap<DWORD_PTR, ApiInfo *>::iterator it = apiList.begin(); it != apiList.end(); ++it )
+	for ( std::unordered_map<DWORD_PTR, ApiInfo *>::iterator it = apiList.begin(); it != apiList.end(); ++it )
 	{
 		delete it->second;
 	}
