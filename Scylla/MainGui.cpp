@@ -668,15 +668,15 @@ void MainGui::loadTreeActionHandler()
 		return;
 
 	WCHAR selectedFilePath[MAX_PATH];
-	TreeImportExport treeIO;
-	DWORD_PTR addrOEP = 0;
-	DWORD_PTR addrIAT = 0;
-	DWORD sizeIAT = 0;
-
 	getCurrentModulePath(stringBuffer, _countof(stringBuffer));
 	if(showFileDialog(selectedFilePath, false, NULL, filterXml, NULL, stringBuffer))
 	{
-		if(!treeIO.importTreeList(selectedFilePath, importsHandling.moduleList, &addrOEP, &addrIAT, &sizeIAT))
+		TreeImportExport treeIO(selectedFilePath);
+		DWORD_PTR addrOEP = 0;
+		DWORD_PTR addrIAT = 0;
+		DWORD sizeIAT = 0;
+
+		if(!treeIO.importTreeList(importsHandling.moduleList, &addrOEP, &addrIAT, &sizeIAT))
 		{
 			Scylla::windowLog.log(L"Loading tree file failed %s", selectedFilePath);
 			MessageBox(L"Loading tree file failed.", L"Failure", MB_ICONERROR);
@@ -703,19 +703,15 @@ void MainGui::saveTreeActionHandler()
 		return;
 
 	WCHAR selectedFilePath[MAX_PATH];
-	TreeImportExport treeIO;
-	DWORD_PTR addrOEP;
-	DWORD_PTR addrIAT;
-	DWORD sizeIAT;
-
 	getCurrentModulePath(stringBuffer, _countof(stringBuffer));
 	if(showFileDialog(selectedFilePath, true, NULL, filterXml, L"xml", stringBuffer))
 	{
-		addrOEP = EditOEPAddress.GetValue();
-		addrIAT = EditIATAddress.GetValue();
-		sizeIAT = EditIATSize.GetValue();
+		TreeImportExport treeIO(selectedFilePath);
+		DWORD_PTR addrOEP = EditOEPAddress.GetValue();
+		DWORD_PTR addrIAT = EditIATAddress.GetValue();
+		DWORD sizeIAT = EditIATSize.GetValue();
 
-		if(!treeIO.exportTreeList(selectedFilePath, importsHandling.moduleList, selectedProcess, addrOEP, addrIAT, sizeIAT))
+		if(!treeIO.exportTreeList(importsHandling.moduleList, selectedProcess, addrOEP, addrIAT, sizeIAT))
 		{
 			Scylla::windowLog.log(L"Saving tree file failed %s", selectedFilePath);
 			MessageBox(L"Saving tree file failed.", L"Failure", MB_ICONERROR);
