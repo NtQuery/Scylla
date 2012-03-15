@@ -152,6 +152,12 @@ public:
 	 */
 	static bool writeMemoryToFile(HANDLE hFile, LONG offset, DWORD size, LPCVOID dataBuffer);
 
+
+	/*
+	 * Write memory to new file
+	 */
+	static bool writeMemoryToNewFile(const WCHAR * file,DWORD size, LPCVOID dataBuffer);
+
 	/*
 	 * Write memory to file end
 	 */

@@ -220,7 +220,7 @@ typedef NTSTATUS (WINAPI *def_NtTerminateProcess)(HANDLE ProcessHandle, NTSTATUS
 typedef NTSTATUS (WINAPI *def_NtQueryObject)(HANDLE Handle,OBJECT_INFORMATION_CLASS ObjectInformationClass,PVOID ObjectInformation,ULONG ObjectInformationLength,PULONG ReturnLength);
 typedef NTSTATUS (WINAPI *def_NtDuplicateObject)(HANDLE SourceProcessHandle, HANDLE SourceHandle, HANDLE TargetProcessHandle, PHANDLE TargetHandle, ACCESS_MASK DesiredAccess, BOOLEAN InheritHandle, ULONG Options ); 
 typedef NTSTATUS (WINAPI *def_NtQueryInformationFile)(HANDLE FileHandle, PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, ULONG Length, FILE_INFORMATION_CLASS FileInformationClass);
-typedef ULONG	 (WINAPI *def_NtQueryInformationThread)(HANDLE ThreadHandle,THREADINFOCLASS ThreadInformationClass,PVOID ThreadInformation,ULONG ThreadInformationLength,PULONG ReturnLength);
+typedef NTSTATUS (WINAPI *def_NtQueryInformationThread)(HANDLE ThreadHandle,THREADINFOCLASS ThreadInformationClass,PVOID ThreadInformation,ULONG ThreadInformationLength,PULONG ReturnLength);
 typedef NTSTATUS (WINAPI *def_NtQueryInformationProcess)(HANDLE ProcessHandle,PROCESSINFOCLASS ProcessInformationClass,PVOID ProcessInformation,ULONG ProcessInformationLength,PULONG ReturnLength);
 typedef NTSTATUS (WINAPI *def_NtQuerySystemInformation)(SYSTEM_INFORMATION_CLASS SystemInformationClass,PVOID SystemInformation,ULONG SystemInformationLength, PULONG ReturnLength);
 typedef NTSTATUS (WINAPI *def_NtOpenProcess)(PHANDLE ProcessHandle, ACCESS_MASK AccessMask, PVOID ObjectAttributes, PCLIENT_ID ClientId );

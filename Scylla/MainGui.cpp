@@ -23,6 +23,7 @@ const WCHAR MainGui::filterDll[]    = L"Dynamic Link Library (*.dll)\0*.dll\0All
 const WCHAR MainGui::filterExeDll[] = L"Executable (*.exe)\0*.exe\0Dynamic Link Library (*.dll)\0*.dll\0All files\0*.*\0";
 const WCHAR MainGui::filterTxt[]    = L"Text file (*.txt)\0*.txt\0All files\0*.*\0";
 const WCHAR MainGui::filterXml[]    = L"XML file (*.xml)\0*.xml\0All files\0*.*\0";
+const WCHAR MainGui::filterMem[]    = L"MEM file (*.mem)\0*.mem\0All files\0*.*\0";
 
 MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports), TreeImportsSubclass(this, IDC_TREE_IMPORTS)
 {
@@ -226,6 +227,11 @@ void MainGui::OnOptions(UINT uNotifyCode, int nID, CWindow wndCtl)
 void MainGui::OnDump(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	dumpActionHandler();
+}
+
+void MainGui::OnDumpMemory(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	dumpMemoryActionHandler();
 }
 
 void MainGui::OnFixDump(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -930,6 +936,28 @@ void MainGui::appendPluginListToMenu(CMenuHandle hMenu)
 	}
 }
 
+void MainGui::dumpMemoryActionHandler()
+{
+	WCHAR selectedFilePath[MAX_PATH];
+	DumpMemoryGui dlgDumpMemory;
+
+	if(dlgDumpMemory.DoModal())
+	{
+		getCurrentModulePath(stringBuffer, _countof(stringBuffer));
+		if(showFileDialog(selectedFilePath, true, dlgDumpMemory.dumpFilename, filterMem, L"mem", stringBuffer))
+		{
+			if (ProcessAccessHelp::writeMemoryToNewFile(selectedFilePath,dlgDumpMemory.dumpedMemorySize,dlgDumpMemory.dumpedMemory))
+			{
+				Scylla::windowLog.log(L"Memory dump saved %s", selectedFilePath);
+			}
+			else
+			{
+				Scylla::windowLog.log(L"Error! Cannot write memory dump to disk");
+			}
+		}
+	}
+}
+
 void MainGui::dumpActionHandler()
 {
 	if(!selectedProcess)
@@ -1100,6 +1128,7 @@ void MainGui::enableDialogControls(BOOL value)
 	UINT valMenu = value ? MF_ENABLED : MF_GRAYED;
 
 	menu.EnableMenuItem(ID_FILE_DUMP, valMenu);
+	menu.EnableMenuItem(ID_FILE_DUMPMEMORY, valMenu);
 	menu.EnableMenuItem(ID_FILE_FIXDUMP, valMenu);
 	menu.EnableMenuItem(ID_IMPORTS_INVALIDATESELECTED, valMenu);
 	menu.EnableMenuItem(ID_IMPORTS_CUTSELECTED, valMenu);

@@ -85,7 +85,7 @@ bool ImportsHandling::isImport(CTreeItem item)
 
 ImportModuleThunk * ImportsHandling::getModuleThunk(CTreeItem item)
 {
-	std::unordered_map<HTREEITEM, TreeItemData>::const_iterator it;
+	stdext::hash_map<HTREEITEM, TreeItemData>::const_iterator it;
 	it = itemData.find(item);
 	if(it != itemData.end())
 	{
@@ -100,7 +100,7 @@ ImportModuleThunk * ImportsHandling::getModuleThunk(CTreeItem item)
 
 ImportThunk * ImportsHandling::getImportThunk(CTreeItem item)
 {
-	std::unordered_map<HTREEITEM, TreeItemData>::const_iterator it;
+	stdext::hash_map<HTREEITEM, TreeItemData>::const_iterator it;
 	TreeItemData * data = getItemData(item);
 	if(data && !data->isModule)
 	{
@@ -116,7 +116,7 @@ void ImportsHandling::setItemData(CTreeItem item, const TreeItemData * data)
 
 ImportsHandling::TreeItemData * ImportsHandling::getItemData(CTreeItem item)
 {
-	std::unordered_map<HTREEITEM, TreeItemData>::iterator it;
+	stdext::hash_map<HTREEITEM, TreeItemData>::iterator it;
 	it = itemData.find(item);
 	if(it != itemData.end())
 	{

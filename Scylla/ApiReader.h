@@ -2,7 +2,7 @@
 
 #include <windows.h>
 #include <map>
-#include <unordered_map>
+#include <hash_map>
 #include "ProcessAccessHelp.h"
 #include "Thunks.h"
 
@@ -11,7 +11,7 @@ typedef std::pair<DWORD_PTR, ApiInfo *> API_Pair;
 class ApiReader : public ProcessAccessHelp
 {
 public:
-	static std::unordered_map<DWORD_PTR, ApiInfo *> apiList; //api look up table
+	static stdext::hash_map<DWORD_PTR, ApiInfo *> apiList; //api look up table
 
 	static std::map<DWORD_PTR, ImportModuleThunk> * moduleThunkList; //store found apis
 
@@ -70,5 +70,5 @@ private:
 	bool isApiBlacklisted( const char * functionName );
 	bool isWinSxSModule( ModuleInfo * module );
 
-	ApiInfo * getScoredApi(std::unordered_map<DWORD_PTR, ApiInfo *>::iterator it1,size_t countDuplicates, bool hasName, bool hasUnicodeAnsiName, bool hasNoUnderlineInName, bool hasPrioDll,bool hasPrio0Dll,bool hasPrio1Dll, bool hasPrio2Dll, bool firstWin );
+	ApiInfo * getScoredApi(stdext::hash_map<DWORD_PTR, ApiInfo *>::iterator it1,size_t countDuplicates, bool hasName, bool hasUnicodeAnsiName, bool hasNoUnderlineInName, bool hasPrioDll,bool hasPrio0Dll,bool hasPrio1Dll, bool hasPrio2Dll, bool firstWin );
 };

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <map>
-#include <unordered_map>
+#include <hash_map>
 
 // WTL
 #include <atlbase.h>
@@ -66,7 +66,7 @@ private:
 		};
 	};
 
-	std::unordered_map<HTREEITEM, TreeItemData> itemData;
+	stdext::hash_map<HTREEITEM, TreeItemData> itemData;
 
 	void setItemData(CTreeItem item, const TreeItemData * data);
 	TreeItemData * getItemData(CTreeItem item);

@@ -200,8 +200,8 @@ bool ImportRebuild::saveNewFile(const WCHAR * filepath)
 
 	if(pOverlay)
 	{
-		ProcessAccessHelp::writeMemoryToFile(hFile, fileOffset, sizeOfOverlay, pOverlay);
-		fileOffset += sizeOfOverlay;
+		ProcessAccessHelp::writeMemoryToFile(hFile, fileOffset, (DWORD)sizeOfOverlay, pOverlay);
+		fileOffset += (DWORD)sizeOfOverlay;
 	}
 
 	CloseHandle(hFile);

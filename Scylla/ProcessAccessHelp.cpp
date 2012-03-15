@@ -343,6 +343,20 @@ bool ProcessAccessHelp::readMemoryFromFile(HANDLE hFile, LONG offset, DWORD size
 	}
 }
 
+bool ProcessAccessHelp::writeMemoryToNewFile(const WCHAR * file,DWORD size, LPCVOID dataBuffer)
+{
+	HANDLE hFile = CreateFile(file, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
+
+	if (hFile != INVALID_HANDLE_VALUE)
+	{
+		return writeMemoryToFile(hFile,0,size,dataBuffer);
+	}
+	else
+	{
+		return false;
+	}
+}
+
 bool ProcessAccessHelp::writeMemoryToFile(HANDLE hFile, LONG offset, DWORD size, LPCVOID dataBuffer)
 {
 	DWORD lpNumberOfBytesWritten = 0;

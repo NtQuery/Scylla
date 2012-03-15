@@ -4,6 +4,8 @@
 #include "Logger.h"
 #include "ProcessAccessHelp.h"
 
+#include <algorithm>
+
 //#define DEBUG_COMMENTS
 
 def_IsWow64Process ProcessLister::_IsWow64Process = 0;
@@ -192,12 +194,17 @@ std::vector<Process>& ProcessLister::getProcessListSnapshot()
 	MODULEENTRY32 me32 = {0};
 	Process process;
 
-	processList.reserve(34);
 
 	if (!processList.empty())
 	{
+		//clear elements, but keep reversed memory
 		processList.clear();
-	}	
+	}
+	else
+	{
+		//first time, reserve memory
+		processList.reserve(34);
+	}
 
 	hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 	if(hProcessSnap == INVALID_HANDLE_VALUE)
@@ -257,8 +264,9 @@ std::vector<Process>& ProcessLister::getProcessListSnapshot()
 
 	CloseHandle(hProcessSnap);
 
-	//get module informations
-	//getAllModuleInformation();
+
+	//reverse process list
+	std::reverse(processList.begin(), processList.end());
 
 	return processList;
 }
