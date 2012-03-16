@@ -103,7 +103,6 @@ void ProcessAccessHelp::closeProcessHandle()
 
 bool ProcessAccessHelp::readMemoryPartlyFromProcess(DWORD_PTR address, SIZE_T size, LPVOID dataBuffer)
 {
-	SIZE_T lpNumberOfBytesRead = 0;
 	DWORD_PTR addressPart = 0;
 	DWORD_PTR readBytes = 0;
 	DWORD_PTR bytesToRead = 0;
@@ -118,7 +117,7 @@ bool ProcessAccessHelp::readMemoryPartlyFromProcess(DWORD_PTR address, SIZE_T si
 		return returnValue;
 	}
 
-	if (!ReadProcessMemory(hProcess, (LPVOID)address, dataBuffer, size, &lpNumberOfBytesRead))
+	if (!readMemoryFromProcess(address, size, dataBuffer))
 	{
 		addressPart = address;
 

@@ -53,3 +53,4 @@ bool DeviceNameResolver::resolveDeviceLongNameToShort( WCHAR * sourcePath, WCHAR
 
 	return false;
 }
+
