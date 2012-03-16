@@ -1,6 +1,6 @@
 #include "PickDllGui.h"
 
-#include "definitions.h"
+#include "Architecture.h"
 
 PickDllGui::PickDllGui(std::vector<ModuleInfo> &moduleList) : moduleList(moduleList)
 {
@@ -95,7 +95,7 @@ void PickDllGui::displayModuleList(CListViewCtrl& list)
 	{
 		list.InsertItem(count, iter->getFilename());
 
-		swprintf_s(temp, TEXT(PRINTF_DWORD_PTR_FULL), iter->modBaseAddr);
+		swprintf_s(temp, PRINTF_DWORD_PTR_FULL, iter->modBaseAddr);
 		
 		list.SetItemText(count, COL_IMAGEBASE, temp);
 

@@ -5,6 +5,8 @@
 #include <vector>
 #include <psapi.h>
 
+#include "DeviceNameResolver.h"
+
 typedef BOOL (WINAPI *def_IsWow64Process)(HANDLE hProcess,PBOOL Wow64Process);
 
 class Process {
@@ -22,13 +24,6 @@ public:
 	}
 };
 
-class HardDisk {
-public:
-	WCHAR shortName[3];
-	WCHAR longName[MAX_PATH];
-	size_t longNameLength;
-};
-
 enum ProcessType {
 	PROCESS_UNKNOWN,
 	PROCESS_MISSING_RIGHTS,
@@ -43,8 +38,12 @@ public:
 
 	ProcessLister()
 	{
-		initDeviceNameList();
+		deviceNameResolver = new DeviceNameResolver();
 		_IsWow64Process = (def_IsWow64Process)GetProcAddress(GetModuleHandle(L"kernel32.dll"), "IsWow64Process");
+	}
+	~ProcessLister()
+	{
+		delete deviceNameResolver;
 	}
 
 	std::vector<Process>& getProcessList();
@@ -55,16 +54,12 @@ public:
 private:
 	std::vector<Process> processList;
 
-	std::vector<HardDisk> deviceNameList;
+	DeviceNameResolver * deviceNameResolver;
 
 	ProcessType checkIsProcess64(DWORD dwPID);
-
-	void initDeviceNameList();
-
 
 	bool getAbsoluteFilePath(Process * process);
 
 	void getAllModuleInformation();
 	void getModuleInformationByProcess(Process *process);
-	bool resolveDeviceLongNameToShort( WCHAR * sourcePath, WCHAR * targetPath );
 };

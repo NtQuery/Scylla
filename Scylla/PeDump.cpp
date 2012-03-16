@@ -98,7 +98,7 @@ bool PeDump::dumpCompleteProcessToDisk(const WCHAR * dumpFilePath)
 
 	if (dumpData)
 	{
-		if (!ProcessAccessHelp::readMemoryFromProcess(imageBase,sizeOfImage,dumpData))
+		if (!ProcessAccessHelp::readMemoryPartlyFromProcess(imageBase,sizeOfImage,dumpData))
 		{
 #ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"dumpCompleteProcessToDisk -> readMemoryFromProcess failed");

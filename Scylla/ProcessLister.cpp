@@ -47,32 +47,6 @@ bool ProcessLister::isWindows64()
 #endif	
 }
 
-
-void ProcessLister::initDeviceNameList()
-{
-	TCHAR shortName[3] = {0};
-	TCHAR longName[MAX_PATH] = {0};
-	HardDisk hardDisk;
-
-	shortName[1] = L':';
-
-	for ( WCHAR shortD = L'a'; shortD < L'z'; shortD++ )
-	{
-		shortName[0] = shortD;
-		if (QueryDosDeviceW( shortName, longName, MAX_PATH ) > 0)
-		{
-			hardDisk.shortName[0] = towupper(shortD);
-			hardDisk.shortName[1] = L':';
-			hardDisk.shortName[2] = 0;
-
-			hardDisk.longNameLength = wcslen(longName);
-
-			wcscpy_s(hardDisk.longName, longName);
-			deviceNameList.push_back(hardDisk);
-		}
-	}
-}
-
 //only needed in windows xp
 DWORD ProcessLister::setDebugPrivileges()
 {
@@ -166,7 +140,7 @@ bool ProcessLister::getAbsoluteFilePath(Process * process)
 	{
 		CloseHandle(hProcess);
 
-		if (!resolveDeviceLongNameToShort(processPath, process->fullPath))
+		if (!deviceNameResolver->resolveDeviceLongNameToShort(processPath, process->fullPath))
 		{
 #ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"getAbsoluteFilePath :: resolveDeviceLongNameToShort failed with path %s", processPath);
@@ -354,19 +328,4 @@ void ProcessLister::getModuleInformationByProcess(Process *process)
 
 	CloseHandle(hModuleSnap);*/
 
-}
-
-bool ProcessLister::resolveDeviceLongNameToShort( WCHAR * sourcePath, WCHAR * targetPath )
-{
-	for (unsigned int i = 0; i < deviceNameList.size(); i++)
-	{
-		if (!_wcsnicmp(deviceNameList[i].longName, sourcePath, deviceNameList[i].longNameLength))
-		{
-			wcscpy_s(targetPath, MAX_PATH,deviceNameList[i].shortName);
-			wcscat_s(targetPath, MAX_PATH, sourcePath + deviceNameList[i].longNameLength);
-			return true;
-		}
-	}
-
-	return false;
 }

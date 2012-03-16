@@ -101,6 +101,77 @@ void ProcessAccessHelp::closeProcessHandle()
 	selectedModule = 0;
 }
 
+bool ProcessAccessHelp::readMemoryPartlyFromProcess(DWORD_PTR address, SIZE_T size, LPVOID dataBuffer)
+{
+	SIZE_T lpNumberOfBytesRead = 0;
+	DWORD_PTR addressPart = 0;
+	DWORD_PTR readBytes = 0;
+	DWORD_PTR bytesToRead = 0;
+	MEMORY_BASIC_INFORMATION memBasic = {0};
+	bool returnValue = false;
+
+	if (!hProcess)
+	{
+#ifdef DEBUG_COMMENTS
+		Scylla::debugLog.log(L"readMemoryPartlyFromProcess :: hProcess == NULL");
+#endif
+		return returnValue;
+	}
+
+	if (!ReadProcessMemory(hProcess, (LPVOID)address, dataBuffer, size, &lpNumberOfBytesRead))
+	{
+		addressPart = address;
+
+		do 
+		{
+			if (!VirtualQueryEx(ProcessAccessHelp::hProcess,(LPCVOID)addressPart,&memBasic,sizeof(memBasic)))
+			{
+#ifdef DEBUG_COMMENTS
+				Scylla::debugLog.log(L"readMemoryPartlyFromProcess :: Error VirtualQueryEx %X %X err: %u", addressPart,size, GetLastError());
+#endif
+				break;
+			}
+
+			bytesToRead = memBasic.RegionSize;
+
+			if ( (readBytes+bytesToRead) > size)
+			{
+				bytesToRead = size - readBytes;
+			}
+
+			if (memBasic.State != MEM_FREE && memBasic.State != MEM_RESERVE)
+			{
+				if (!readMemoryFromProcess(addressPart, bytesToRead, (LPVOID)((DWORD_PTR)dataBuffer + readBytes)) )
+				{
+					break;
+				}
+			}
+			else
+			{
+				ZeroMemory((LPVOID)((DWORD_PTR)dataBuffer + readBytes),bytesToRead);
+			}
+
+
+			readBytes += bytesToRead;
+
+			addressPart += memBasic.RegionSize;
+
+		} while (readBytes < size);
+
+		if (readBytes == size)
+		{
+			returnValue = true;
+		}
+		
+	}
+	else
+	{
+		returnValue = true;
+	}
+
+	return returnValue;
+}
+
 bool ProcessAccessHelp::readMemoryFromProcess(DWORD_PTR address, SIZE_T size, LPVOID dataBuffer)
 {
 	SIZE_T lpNumberOfBytesRead = 0;
@@ -117,6 +188,9 @@ bool ProcessAccessHelp::readMemoryFromProcess(DWORD_PTR address, SIZE_T size, LP
 
 	if (!ReadProcessMemory(hProcess, (LPVOID)address, dataBuffer, size, &lpNumberOfBytesRead))
 	{
+#ifdef DEBUG_COMMENTS
+		Scylla::debugLog.log(L"readMemoryFromProcess :: Error ReadProcessMemory %X %X err: %u", address, size, GetLastError());
+#endif
 		if (!VirtualProtectEx(hProcess, (LPVOID)address, size, PAGE_READWRITE, &dwProtect))
 		{
 #ifdef DEBUG_COMMENTS
@@ -505,7 +579,7 @@ LPVOID ProcessAccessHelp::createFileMappingView(const WCHAR * filePath, DWORD ac
 	if (GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 #ifdef DEBUG_COMMENTS
-		Scylla::debugLog.log(L"createFileMappingView :: GetLastError() == ERROR_ALREADY_EXISTS);
+		Scylla::debugLog.log(L"createFileMappingView :: GetLastError() == ERROR_ALREADY_EXISTS");
 #endif
 		return NULL;
 	}

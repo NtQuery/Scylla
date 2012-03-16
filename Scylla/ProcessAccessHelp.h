@@ -143,6 +143,11 @@ public:
 	static bool readMemoryFromProcess(DWORD_PTR address, SIZE_T size, LPVOID dataBuffer);
 
 	/*
+	 * Read memory from target process and ignore no data pages
+	 */
+	static bool readMemoryPartlyFromProcess(DWORD_PTR address, SIZE_T size, LPVOID dataBuffer);
+
+	/*
 	 * Read memory from file
 	 */
 	static bool readMemoryFromFile(HANDLE hFile, LONG offset, DWORD size, LPVOID dataBuffer);

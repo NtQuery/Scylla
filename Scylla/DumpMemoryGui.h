@@ -15,6 +15,7 @@
 
 #include <vector>
 #include "hexedit.h"
+#include "DeviceNameResolver.h"
 
 class Memory
 {
@@ -22,6 +23,7 @@ public:
 	DWORD_PTR address;
 	DWORD size;
 	WCHAR filename[MAX_PATH];
+	WCHAR mappedFilename[MAX_PATH];
 	WCHAR peSection[IMAGE_SIZEOF_SHORT_NAME *4];
 	DWORD  state;
 	DWORD  protect;
@@ -37,6 +39,7 @@ public:
 		DDX_CONTROL_HANDLE(IDC_LIST_DUMPMEMORY, ListMemorySelect)
 		DDX_CONTROL(IDC_EDIT_DUMPADDRESS, EditMemoryAddress)
 		DDX_CONTROL(IDC_EDIT_DUMPSIZE, EditMemorySize)
+		DDX_CHECK(IDC_CHECK_FORCEDUMP, forceDump)
 	END_DDX_MAP()
 
 	BEGIN_MSG_MAP(DumpMemoryGui)
@@ -60,6 +63,7 @@ public:
 		DLGRESIZE_CONTROL(IDC_EDIT_DUMPSIZE,      DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDC_STATIC_SIZE,   DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDC_STATIC_ADDRESS,      DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_CHECK_FORCEDUMP,      DLSZ_MOVE_Y)
 	END_DLGRESIZE_MAP()
 
 	DumpMemoryGui();
@@ -77,6 +81,7 @@ protected:
 	std::vector<Memory> memoryList;
 	Memory * selectedMemory;
 
+	DeviceNameResolver * deviceNameResolver;
 
 	enum ListColumns {
 		COL_ADDRESS = 0,
@@ -85,11 +90,14 @@ protected:
 		COL_PESECTION,
 		COL_TYPE,
 		COL_PROTECTION,
-		COL_STATE
+		COL_STATE,
+		COL_MAPPED_FILE
 	};
 
 	int prevColumn;
 	bool ascending;
+
+	bool forceDump;
 
 	// Message handlers
 
@@ -119,8 +127,7 @@ private:
 	enum enumMemoryTypeValues {
 		TYPE_IMAGE = 0,
 		TYPE_MAPPED,
-		TYPE_PRIVATE,
-		TYPE_NONE
+		TYPE_PRIVATE
 	};
 
 	//"EXECUTE",L"EXECUTE_READ",L"EXECUTE_READWRITE",L"EXECUTE_WRITECOPY",L"NOACCESS",L"READONLY",L"READWRITE",L"WRITECOPY",L"GUARD",L"NOCACHE",L"WRITECOMBINE"
@@ -142,6 +149,7 @@ private:
 	static const WCHAR * MemoryTypeValues[];
 	static const WCHAR * MemoryProtectionValues[];
 	static const WCHAR MemoryUnknown[];
+	static const WCHAR MemoryUndefined[];
 
 	static WCHAR protectionString[100];
 
@@ -156,4 +164,5 @@ private:
 
 	void setSectionName(DWORD_PTR sectionAddress, DWORD sectionSize, const WCHAR * sectionName);
 	bool dumpMemory();
+	bool getMappedFilename( Memory* memory );
 };

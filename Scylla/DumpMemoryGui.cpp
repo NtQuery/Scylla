@@ -1,13 +1,14 @@
 #include "DumpMemoryGui.h"
 
-#include "definitions.h"
+#include "Architecture.h"
 #include "ProcessAccessHelp.h"
 #include <Psapi.h>
 
 WCHAR DumpMemoryGui::protectionString[100];
+const WCHAR DumpMemoryGui::MemoryUndefined[] = L"UNDEF";
 const WCHAR DumpMemoryGui::MemoryUnknown[] = L"UNKNOWN";
 const WCHAR * DumpMemoryGui::MemoryStateValues[] = {L"COMMIT",L"FREE",L"RESERVE"};
-const WCHAR * DumpMemoryGui::MemoryTypeValues[] = {L"IMAGE",L"MAPPED",L"PRIVATE", L"NONE"};
+const WCHAR * DumpMemoryGui::MemoryTypeValues[] = {L"IMAGE",L"MAPPED",L"PRIVATE"};
 const WCHAR * DumpMemoryGui::MemoryProtectionValues[] = {L"EXECUTE",L"EXECUTE_READ",L"EXECUTE_READWRITE",L"EXECUTE_WRITECOPY",L"NOACCESS",L"READONLY",L"READWRITE",L"WRITECOPY",L"GUARD",L"NOCACHE",L"WRITECOMBINE"};
 
 
@@ -15,12 +16,18 @@ DumpMemoryGui::DumpMemoryGui()
 {
 	dumpedMemory = 0;
 	dumpedMemorySize = 0;
+	deviceNameResolver = new DeviceNameResolver();
 }
 DumpMemoryGui::~DumpMemoryGui()
 {
 	if (dumpedMemory)
 	{
 		delete [] dumpedMemory;
+	}
+
+	if (deviceNameResolver)
+	{
+		delete deviceNameResolver;
 	}
 }
 BOOL DumpMemoryGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
@@ -30,6 +37,9 @@ BOOL DumpMemoryGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	addColumnsToMemoryList(ListMemorySelect);
 	displayMemoryList(ListMemorySelect);
+
+	forceDump = false;
+	DoDataExchange(DDX_LOAD);
 
 	EditMemoryAddress.SetValue(ProcessAccessHelp::targetImageBase);
 	EditMemorySize.SetValue((DWORD)ProcessAccessHelp::targetSizeOfImage);
@@ -50,6 +60,8 @@ void DumpMemoryGui::addColumnsToMemoryList(CListViewCtrl& list)
 	list.InsertColumn(COL_TYPE, L"Type", LVCFMT_CENTER);
 	list.InsertColumn(COL_PROTECTION, L"Protection", LVCFMT_CENTER);
 	list.InsertColumn(COL_STATE, L"State", LVCFMT_CENTER);
+
+	list.InsertColumn(COL_MAPPED_FILE, L"Mapped File", LVCFMT_LEFT);
 }
 
 void DumpMemoryGui::displayMemoryList(CListViewCtrl& list)
@@ -65,7 +77,7 @@ void DumpMemoryGui::displayMemoryList(CListViewCtrl& list)
 
 	for( iter = memoryList.begin(); iter != memoryList.end(); iter++ , count++)
 	{
-		swprintf_s(temp, TEXT(PRINTF_DWORD_PTR_FULL), iter->address);
+		swprintf_s(temp, PRINTF_DWORD_PTR_FULL, iter->address);
 		list.InsertItem(count,temp);
 
 		swprintf_s(temp, L"%08X", iter->size);
@@ -74,9 +86,29 @@ void DumpMemoryGui::displayMemoryList(CListViewCtrl& list)
 		list.SetItemText(count, COL_FILENAME, iter->filename);
 		list.SetItemText(count, COL_PESECTION, iter->peSection);
 
-		list.SetItemText(count, COL_TYPE, getMemoryTypeString(iter->type));
-		list.SetItemText(count, COL_PROTECTION, getMemoryProtectionString(iter->protect));
+
+		if (iter->state == MEM_FREE)
+		{
+			list.SetItemText(count, COL_TYPE, MemoryUndefined);
+		}
+		else
+		{
+			list.SetItemText(count, COL_TYPE, getMemoryTypeString(iter->type));
+		}
+
+		if ( (iter->state == MEM_RESERVE) || (iter->state == MEM_FREE) )
+		{
+			list.SetItemText(count, COL_PROTECTION, MemoryUndefined);
+		}
+		else
+		{
+			list.SetItemText(count, COL_PROTECTION, getMemoryProtectionString(iter->protect));
+		}
+		
 		list.SetItemText(count, COL_STATE, getMemoryStateString(iter->state));
+
+		list.SetItemText(count, COL_MAPPED_FILE, iter->mappedFilename);
+
 		list.SetItemData(count, (DWORD_PTR)&(*iter));
 	}
 
@@ -87,14 +119,13 @@ void DumpMemoryGui::displayMemoryList(CListViewCtrl& list)
 	list.SetColumnWidth(COL_TYPE, LVSCW_AUTOSIZE_USEHEADER);
 	list.SetColumnWidth(COL_PROTECTION, LVSCW_AUTOSIZE_USEHEADER);
 	list.SetColumnWidth(COL_STATE, LVSCW_AUTOSIZE_USEHEADER);
+	list.SetColumnWidth(COL_MAPPED_FILE, LVSCW_AUTOSIZE_USEHEADER);
 }
 
 const WCHAR * DumpMemoryGui::getMemoryTypeString(DWORD value)
 {
 	switch(value)
 	{
-	case 0:
-		return MemoryTypeValues[TYPE_NONE];
 	case MEM_IMAGE:
 		return MemoryTypeValues[TYPE_IMAGE];
 	case MEM_MAPPED:
@@ -145,11 +176,6 @@ WCHAR * DumpMemoryGui::getMemoryProtectionString(DWORD value)
 
 	switch(value)
 	{
-	case 0:
-		{
-			wcscat_s(protectionString,_countof(protectionString), MemoryProtectionValues[PROT_NOACCESS]);
-			break;
-		}
 	case PAGE_EXECUTE:
 		{
 			wcscat_s(protectionString,_countof(protectionString), MemoryProtectionValues[PROT_EXECUTE]);
@@ -236,6 +262,7 @@ LRESULT DumpMemoryGui::OnListMemoryClick(NMHDR* pnmh)
 }
 void DumpMemoryGui::OnOK(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
+	DoDataExchange(DDX_SAVE);
 
 	if (EditMemoryAddress.GetValue() == 0 || EditMemorySize.GetValue() == 0)
 	{
@@ -297,6 +324,9 @@ int DumpMemoryGui::listviewCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lP
 	case COL_STATE:
 		diff = module1->state < module2->state ? -1 : 1;
 		break;
+	case COL_MAPPED_FILE:
+		diff = _wcsicmp(module1->mappedFilename, module2->mappedFilename);
+		break;
 	}
 
 	return ascending ? diff : -diff;
@@ -327,6 +357,7 @@ void DumpMemoryGui::getMemoryList()
 
 	memory.filename[0] = 0;
 	memory.peSection[0] = 0;
+	memory.mappedFilename[0] = 0;
 
 	while(VirtualQueryEx(ProcessAccessHelp::hProcess,(LPCVOID)address,&memBasic,sizeof(memBasic)))
 	{
@@ -335,7 +366,19 @@ void DumpMemoryGui::getMemoryList()
 		memory.state = memBasic.State;
 		memory.size = (DWORD)memBasic.RegionSize;
 		memory.protect = memBasic.Protect;
+		
+
+		if (memory.type == MEM_MAPPED)
+		{
+			if (!getMappedFilename(&memory))
+			{
+				memory.mappedFilename[0] = 0;
+			}
+		}
+
 		memoryList.push_back(memory);
+
+		memory.mappedFilename[0] = 0;
 
 		address += memBasic.RegionSize;
 	}
@@ -525,16 +568,37 @@ bool DumpMemoryGui::dumpMemory()
 	DWORD_PTR address = EditMemoryAddress.GetValue();
 	dumpedMemorySize = EditMemorySize.GetValue();
 
-	swprintf_s(dumpFilename,_countof(dumpFilename),TEXT("MEM_")TEXT(PRINTF_DWORD_PTR_FULL)TEXT("_")TEXT("%08X"),address,dumpedMemorySize);
+	swprintf_s(dumpFilename,_countof(dumpFilename),TEXT("MEM_")TEXT(PRINTF_DWORD_PTR_FULL_S)TEXT("_")TEXT("%08X"),address,dumpedMemorySize);
 
 	dumpedMemory = new BYTE[dumpedMemorySize];
 
 	if (dumpedMemory)
 	{
-		return ProcessAccessHelp::readMemoryFromProcess(address,dumpedMemorySize,dumpedMemory);
+		if (forceDump)
+		{
+			return ProcessAccessHelp::readMemoryPartlyFromProcess(address,dumpedMemorySize,dumpedMemory);
+		}
+		else
+		{
+			return ProcessAccessHelp::readMemoryFromProcess(address,dumpedMemorySize,dumpedMemory);
+		}
+		
 	}
 	else
 	{
 		return false;
 	}
+}
+
+bool DumpMemoryGui::getMappedFilename( Memory* memory )
+{
+	WCHAR filename[MAX_PATH] = {0};
+
+	//TODO replace with Nt direct syscall
+	if (GetMappedFileNameW(ProcessAccessHelp::hProcess, (LPVOID)memory->address, filename, _countof(filename)) > 0)
+	{
+		return deviceNameResolver->resolveDeviceLongNameToShort(filename,memory->mappedFilename);
+	}
+
+	return false;
 }
