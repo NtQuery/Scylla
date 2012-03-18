@@ -6,7 +6,7 @@
 #include "SystemInformation.h"
 #include "StringConversion.h"
 
-stdext::hash_map<DWORD_PTR, ApiInfo *> ApiReader::apiList; //api look up table
+stdext::hash_multimap<DWORD_PTR, ApiInfo *> ApiReader::apiList; //api look up table
 std::map<DWORD_PTR, ImportModuleThunk> *  ApiReader::moduleThunkList; //store found apis
 
 DWORD_PTR ApiReader::minApiAddress = 0xFFFFFFFF;
@@ -637,7 +637,7 @@ bool ApiReader::isApiAddressValid(DWORD_PTR virtualAddress)
 
 ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isSuspect)
 {
-	stdext::hash_map<DWORD_PTR, ApiInfo *>::iterator it1, it2;
+	stdext::hash_multimap<DWORD_PTR, ApiInfo *>::iterator it1, it2;
 	size_t c = 0;
 	size_t countDuplicates = apiList.count(virtualAddress);
 	int countHighPriority = 0;
@@ -721,148 +721,7 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 	return (ApiInfo *) 1; 
 }
 
-/*ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isSuspect)
-{
-	std::unordered_map<DWORD_PTR, ApiInfo *>::iterator it1, it2;
-	size_t c = 0;
-	size_t countDuplicates = apiList.count(virtualAddress);
-	int countHighPriority = 0;
-	ApiInfo *apiFound = 0;
-
-
-	if (countDuplicates == 0)
-	{
-		Scylla::windowLog.log(L"getApiByVirtualAddress :: No Api found " PRINTF_DWORD_PTR_FULL, virtualAddress);
-		return 0;
-	}
-	else if (countDuplicates == 1)
-	{
-		//API is 100% correct
-		*isSuspect = false;
-		it1 = apiList.find(virtualAddress); // Find first match.
-		return (ApiInfo *)((*it1).second);
-	}
-	else
-	{
-		it1 = apiList.find(virtualAddress); // Find first match.
-		it2 = it1;
-		for (c = 0; c < countDuplicates; c++, it1++)
-		{
-			apiFound = (ApiInfo *)((*it1).second);
-			
-			if (apiFound->module->priority >= 1) //1 == high priority
-			{
-				countHighPriority++;
-			}
-		}
-
-		it1 = it2;
-
-		
-		  This is flawed:
-		  It chooses api(prio:1, name:no) over api(prio:0, name:yes)
-		  (e.g. SHLWAPI.PathCombineW vs SHELL32.#25)
-
-		  Maybe there should be a check higher up in the code, to see if this API is surrounded
-		  by APIs of a DLL and pick the duplicate from that DLL
-		 
-
-		if (countHighPriority == 0)
-		{
-#ifdef DEBUG_COMMENTS
-			Scylla::debugLog.log(L"getApiByVirtualAddress :: countHighPriority == 0 " PRINTF_DWORD_PTR_FULL, virtualAddress);
-#endif
-			*isSuspect = true;
-			return (ApiInfo *)((*it1).second);
-		}
-		else if (countHighPriority == 1) // what about kernel32, it has priority 2
-		{
-			//API is 100% correct if countHighPriority == 1 and name export
-
-			*isSuspect = false;
-			for (c = 0; c < countDuplicates; c++, it1++)
-			{
-				apiFound = (ApiInfo *)((*it1).second);
-
-				if (apiFound->module->priority >= 1 && apiFound->name[0] != 0x00) //1 == high priority
-				{
-					return apiFound;
-				}
-			}
-		}
-		//else // fall through for case api1(priority:1, name:false) <> api2(priority:0, name:true)
-		{
-			//API not 100% correct
-#ifdef DEBUG_COMMENTS
-			Scylla::debugLog.log(L"getApiByVirtualAddress :: countHighPriority == %d " PRINTF_DWORD_PTR_FULL, countHighPriority, virtualAddress);
-#endif
-			*isSuspect = true;
-			for (c = 0; c < countDuplicates; c++, it1++)
-			{
-				apiFound = (ApiInfo *)((*it1).second);
-				Scylla::windowLog.log(L"%s - %s %X %X\n",apiFound->name, apiFound->module->getFilename(), apiFound->rva, apiFound->ordinal);
-			}
-			it1 = it2;
-
-			for (c = 0; c < countDuplicates; c++, it1++)
-			{
-				apiFound = (ApiInfo *)((*it1).second);
-
-				//prefer APIs with a name
-				if (apiFound->module->priority >= 1 && apiFound->name[0] != 0x00) //1 == high priority
-				{
-					//prefer ANSI/UNICODE APIs
-					if (strrchr(apiFound->name, 'W') || strrchr(apiFound->name, 'A'))
-					{
-						return apiFound;
-					}
-				}
-			}
-
-			it1 = it2;
-
-			for (c = 0; c < countDuplicates; c++, it1++)
-			{
-				apiFound = (ApiInfo *)((*it1).second);
-
-				//prefer APIs with a name
-				if (apiFound->module->priority == 2 && !strrchr(apiFound->name, '_')) //1 == high priority
-				{
-					return apiFound;
-				}
-			}
-
-			it1 = it2;
-
-			for (c = 0; c < countDuplicates; c++, it1++)
-			{
-				apiFound = (ApiInfo *)((*it1).second);
-				if (apiFound->module->priority == 1 && apiFound->name[0] != 0x00) //1 == high priority
-				{
-					return apiFound;
-				}
-			}
-
-			it1 = it2;
-
-			for (c = 0; c < countDuplicates; c++, it1++)
-			{
-				apiFound = (ApiInfo *)((*it1).second);
-
-				if (apiFound->module->priority == 1) //1 == high priority
-				{
-					return apiFound;
-				}
-			}
-		}
-	}
-
-	//is never reached
-	Scylla::windowLog.log(L"getApiByVirtualAddress :: There is a big bug");
-	return (ApiInfo *) 1; 
-}*/
-
-ApiInfo * ApiReader::getScoredApi(stdext::hash_map<DWORD_PTR, ApiInfo *>::iterator it1,size_t countDuplicates, bool hasName, bool hasUnicodeAnsiName, bool hasNoUnderlineInName, bool hasPrioDll,bool hasPrio0Dll,bool hasPrio1Dll, bool hasPrio2Dll, bool firstWin )
+ApiInfo * ApiReader::getScoredApi(stdext::hash_multimap<DWORD_PTR, ApiInfo *>::iterator it1,size_t countDuplicates, bool hasName, bool hasUnicodeAnsiName, bool hasNoUnderlineInName, bool hasPrioDll,bool hasPrio0Dll,bool hasPrio1Dll, bool hasPrio2Dll, bool firstWin )
 {
 	ApiInfo * foundApi = 0;
 	ApiInfo * foundMatchingApi = 0;

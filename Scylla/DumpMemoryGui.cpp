@@ -86,7 +86,6 @@ void DumpMemoryGui::displayMemoryList(CListViewCtrl& list)
 		list.SetItemText(count, COL_FILENAME, iter->filename);
 		list.SetItemText(count, COL_PESECTION, iter->peSection);
 
-
 		if (iter->state == MEM_FREE)
 		{
 			list.SetItemText(count, COL_TYPE, MemoryUndefined);
@@ -157,20 +156,20 @@ WCHAR * DumpMemoryGui::getMemoryProtectionString(DWORD value)
 
 	if (value & PAGE_GUARD)
 	{
-		wcscpy_s(protectionString,_countof(protectionString), MemoryProtectionValues[PROT_GUARD]);
-		wcscat_s(protectionString,_countof(protectionString), L" | ");
+		wcscpy_s(protectionString, MemoryProtectionValues[PROT_GUARD]);
+		wcscat_s(protectionString, L" | ");
 		value ^= PAGE_GUARD;
 	}
 	if (value & PAGE_NOCACHE)
 	{
-		wcscpy_s(protectionString,_countof(protectionString), MemoryProtectionValues[PROT_NOCACHE]);
-		wcscat_s(protectionString,_countof(protectionString), L" | ");
+		wcscpy_s(protectionString, MemoryProtectionValues[PROT_NOCACHE]);
+		wcscat_s(protectionString, L" | ");
 		value ^= PAGE_NOCACHE;
 	}
 	if (value & PAGE_WRITECOMBINE)
 	{
-		wcscpy_s(protectionString,_countof(protectionString), MemoryProtectionValues[PROT_WRITECOMBINE]);
-		wcscat_s(protectionString,_countof(protectionString), L" | ");
+		wcscpy_s(protectionString, MemoryProtectionValues[PROT_WRITECOMBINE]);
+		wcscat_s(protectionString, L" | ");
 		value ^= PAGE_WRITECOMBINE;
 	}
 
@@ -178,47 +177,47 @@ WCHAR * DumpMemoryGui::getMemoryProtectionString(DWORD value)
 	{
 	case PAGE_EXECUTE:
 		{
-			wcscat_s(protectionString,_countof(protectionString), MemoryProtectionValues[PROT_EXECUTE]);
+			wcscat_s(protectionString, MemoryProtectionValues[PROT_EXECUTE]);
 			break;
 		}
 	case PAGE_EXECUTE_READ:
 		{
-			wcscat_s(protectionString,_countof(protectionString), MemoryProtectionValues[PROT_EXECUTE_READ]);
+			wcscat_s(protectionString, MemoryProtectionValues[PROT_EXECUTE_READ]);
 			break;
 		}
 	case PAGE_EXECUTE_READWRITE:
 		{
-			wcscat_s(protectionString,_countof(protectionString), MemoryProtectionValues[PROT_EXECUTE_READWRITE]);
+			wcscat_s(protectionString, MemoryProtectionValues[PROT_EXECUTE_READWRITE]);
 			break;
 		}
 	case PAGE_EXECUTE_WRITECOPY:
 		{
-			wcscat_s(protectionString,_countof(protectionString), MemoryProtectionValues[PROT_EXECUTE_WRITECOPY]);
+			wcscat_s(protectionString, MemoryProtectionValues[PROT_EXECUTE_WRITECOPY]);
 			break;
 		}
 	case PAGE_NOACCESS:
 		{
-			wcscat_s(protectionString,_countof(protectionString), MemoryProtectionValues[PROT_NOACCESS]);
+			wcscat_s(protectionString, MemoryProtectionValues[PROT_NOACCESS]);
 			break;
 		}
 	case PAGE_READONLY:
 		{
-			wcscat_s(protectionString,_countof(protectionString), MemoryProtectionValues[PROT_READONLY]);
+			wcscat_s(protectionString, MemoryProtectionValues[PROT_READONLY]);
 			break;
 		}
 	case PAGE_READWRITE:
 		{
-			wcscat_s(protectionString,_countof(protectionString), MemoryProtectionValues[PROT_READWRITE]);
+			wcscat_s(protectionString, MemoryProtectionValues[PROT_READWRITE]);
 			break;
 		}
 	case PAGE_WRITECOPY:
 		{
-			wcscat_s(protectionString,_countof(protectionString), MemoryProtectionValues[PROT_WRITECOPY]);
+			wcscat_s(protectionString, MemoryProtectionValues[PROT_WRITECOPY]);
 			break;
 		}
 	default:
 		{
-			wcscat_s(protectionString,_countof(protectionString), MemoryUnknown);
+			wcscat_s(protectionString, MemoryUnknown);
 		}
 	}
 
@@ -276,7 +275,7 @@ void DumpMemoryGui::OnOK(UINT uNotifyCode, int nID, CWindow wndCtl)
 		}
 		else
 		{
-			wndCtl.MessageBoxW(L"Read memory from process failed",L"Error",MB_ICONERROR);
+			wndCtl.MessageBoxW(L"Reading memory from process failed",L"Error",MB_ICONERROR);
 		}		
 	}	
 }
@@ -322,7 +321,8 @@ int DumpMemoryGui::listviewCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lP
 		diff = module1->protect < module2->protect ? -1 : 1;
 		break;
 	case COL_STATE:
-		diff = module1->state < module2->state ? -1 : 1;
+		diff = _wcsicmp(getMemoryStateString(module1->state), getMemoryStateString(module2->state));
+		//diff = module1->state < module2->state ? -1 : 1;
 		break;
 	case COL_MAPPED_FILE:
 		diff = _wcsicmp(module1->mappedFilename, module2->mappedFilename);
@@ -440,12 +440,12 @@ void DumpMemoryGui::setSectionName(DWORD_PTR sectionAddress, DWORD sectionSize, 
 			{
 				if (wcslen(iter->peSection) == 0)
 				{
-					wcscpy_s((WCHAR *)iter->peSection, IMAGE_SIZEOF_SHORT_NAME + 1, sectionName);
+					wcscpy_s((WCHAR *)iter->peSection, IMAGE_SIZEOF_SHORT_NAME * 4, sectionName);
 				}
 				else
 				{
-					wcscat_s((WCHAR *)iter->peSection, IMAGE_SIZEOF_SHORT_NAME *4,L"|");
-					wcscat_s((WCHAR *)iter->peSection, IMAGE_SIZEOF_SHORT_NAME *4,sectionName);
+					wcscat_s((WCHAR *)iter->peSection, IMAGE_SIZEOF_SHORT_NAME * 4, L"|");
+					wcscat_s((WCHAR *)iter->peSection, IMAGE_SIZEOF_SHORT_NAME * 4, sectionName);
 				}
 				
 				found = true;
@@ -459,12 +459,12 @@ void DumpMemoryGui::setSectionName(DWORD_PTR sectionAddress, DWORD sectionSize, 
 			}
 			if (wcslen(iter->peSection) == 0)
 			{
-				wcscpy_s((WCHAR *)iter->peSection, IMAGE_SIZEOF_SHORT_NAME + 1, sectionName);
+				wcscpy_s((WCHAR *)iter->peSection, IMAGE_SIZEOF_SHORT_NAME * 4, sectionName);
 			}
 			else
 			{
-				wcscat_s((WCHAR *)iter->peSection, IMAGE_SIZEOF_SHORT_NAME *4,L"|");
-				wcscat_s((WCHAR *)iter->peSection, IMAGE_SIZEOF_SHORT_NAME *4,sectionName);
+				wcscat_s((WCHAR *)iter->peSection, IMAGE_SIZEOF_SHORT_NAME * 4, L"|");
+				wcscat_s((WCHAR *)iter->peSection, IMAGE_SIZEOF_SHORT_NAME * 4, sectionName);
 			}
 		}
 
@@ -549,8 +549,9 @@ void DumpMemoryGui::setAllSectionNames( DWORD_PTR moduleBase, WCHAR * moduleName
 
 				for (WORD i = 0; i < numSections; i++)
 				{
+					ZeroMemory(sectionNameA, sizeof(sectionNameA));
 					memcpy(sectionNameA,pSec->Name,8);
-					swprintf_s(sectionNameW,_countof(sectionNameW),L"%S",sectionNameA);
+					swprintf_s(sectionNameW,L"%S",sectionNameA);
 
 					setSectionName(moduleBase + pSec->VirtualAddress, pSec->Misc.VirtualSize,sectionNameW);
 					pSec++;
@@ -568,7 +569,7 @@ bool DumpMemoryGui::dumpMemory()
 	DWORD_PTR address = EditMemoryAddress.GetValue();
 	dumpedMemorySize = EditMemorySize.GetValue();
 
-	swprintf_s(dumpFilename,_countof(dumpFilename),TEXT("MEM_")TEXT(PRINTF_DWORD_PTR_FULL_S)TEXT("_")TEXT("%08X"),address,dumpedMemorySize);
+	swprintf_s(dumpFilename,TEXT("MEM_")TEXT(PRINTF_DWORD_PTR_FULL_S)TEXT("_")TEXT("%08X"),address,dumpedMemorySize);
 
 	dumpedMemory = new BYTE[dumpedMemorySize];
 

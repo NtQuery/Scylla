@@ -234,6 +234,11 @@ void MainGui::OnDumpMemory(UINT uNotifyCode, int nID, CWindow wndCtl)
 	dumpMemoryActionHandler();
 }
 
+void MainGui::OnDumpSection(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	dumpSectionActionHandler();
+}
+
 void MainGui::OnFixDump(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	dumpFixActionHandler();
@@ -958,6 +963,45 @@ void MainGui::dumpMemoryActionHandler()
 	}
 }
 
+void MainGui::dumpSectionActionHandler()
+{
+	WCHAR selectedFilePath[MAX_PATH];
+	DumpSectionGui dlgDumpSection;
+
+	if (ProcessAccessHelp::selectedModule)
+	{
+		//dump DLL
+
+		dlgDumpSection.imageBase = ProcessAccessHelp::selectedModule->modBaseAddr;
+		dlgDumpSection.sizeOfImage = ProcessAccessHelp::selectedModule->modBaseSize;
+		//get it from gui
+		wcscpy_s(dlgDumpSection.fullpath, ProcessAccessHelp::selectedModule->fullPath);
+	}
+	else
+	{
+		dlgDumpSection.imageBase = ProcessAccessHelp::targetImageBase;
+		dlgDumpSection.sizeOfImage = (DWORD)ProcessAccessHelp::targetSizeOfImage;
+		//get it from gui
+		wcscpy_s(dlgDumpSection.fullpath, selectedProcess->fullPath);
+	}
+
+	if(dlgDumpSection.DoModal())
+	{
+		//getCurrentModulePath(stringBuffer, _countof(stringBuffer));
+		//if(showFileDialog(selectedFilePath, true, dlgDumpMemory.dumpFilename, filterMem, L"mem", stringBuffer))
+		//{
+		//	if (ProcessAccessHelp::writeMemoryToNewFile(selectedFilePath,dlgDumpMemory.dumpedMemorySize,dlgDumpMemory.dumpedMemory))
+		//	{
+		//		Scylla::windowLog.log(L"Memory dump saved %s", selectedFilePath);
+		//	}
+		//	else
+		//	{
+		//		Scylla::windowLog.log(L"Error! Cannot write memory dump to disk");
+		//	}
+		//}
+	}
+}
+
 void MainGui::dumpActionHandler()
 {
 	if(!selectedProcess)
@@ -1129,6 +1173,7 @@ void MainGui::enableDialogControls(BOOL value)
 
 	menu.EnableMenuItem(ID_FILE_DUMP, valMenu);
 	menu.EnableMenuItem(ID_FILE_DUMPMEMORY, valMenu);
+	menu.EnableMenuItem(ID_FILE_DUMPSECTION, valMenu);
 	menu.EnableMenuItem(ID_FILE_FIXDUMP, valMenu);
 	menu.EnableMenuItem(ID_IMPORTS_INVALIDATESELECTED, valMenu);
 	menu.EnableMenuItem(ID_IMPORTS_CUTSELECTED, valMenu);

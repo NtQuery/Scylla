@@ -11,7 +11,7 @@ typedef std::pair<DWORD_PTR, ApiInfo *> API_Pair;
 class ApiReader : public ProcessAccessHelp
 {
 public:
-	static stdext::hash_map<DWORD_PTR, ApiInfo *> apiList; //api look up table
+	static stdext::hash_multimap<DWORD_PTR, ApiInfo *> apiList; //api look up table
 
 	static std::map<DWORD_PTR, ImportModuleThunk> * moduleThunkList; //store found apis
 

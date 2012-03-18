@@ -655,7 +655,11 @@ size_t ImportRebuild::addImportDescriptor(ImportModuleThunk * pImportModule, DWO
 	char dllName[MAX_PATH];
 
 	StringConversion::ToASCII(pImportModule->moduleName, dllName, _countof(dllName));
-	size_t stringLength = strlen(dllName);
+	size_t stringLength = strlen(dllName) + 1;
+
+	/*
+		Warning: stringLength MUST include null termination char
+	*/
 
 	memcpy((vecSectionData[importSectionIndex] + sectionOffset), dllName, stringLength); //copy module name to section
 

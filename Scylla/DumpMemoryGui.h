@@ -153,9 +153,10 @@ private:
 
 	static WCHAR protectionString[100];
 
-	const WCHAR * getMemoryTypeString(DWORD value);
-	const WCHAR * getMemoryStateString(DWORD value);
-	WCHAR * getMemoryProtectionString(DWORD value);
+	static const WCHAR * getMemoryTypeString(DWORD value);
+	static const WCHAR * getMemoryStateString(DWORD value);
+	static WCHAR * getMemoryProtectionString(DWORD value);
+
 	void updateAddressAndSize( Memory * selectedMemory );
 	void getMemoryList();
 	SIZE_T getSizeOfImage(DWORD_PTR moduleBase);

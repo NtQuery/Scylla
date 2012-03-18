@@ -20,6 +20,7 @@
 #include "IATSearch.h"
 #include "PickDllGui.h"
 #include "DumpMemoryGui.h"
+#include "DumpSectionGui.h"
 #include "ImportsHandling.h"
 
 class MainGui : public CDialogImpl<MainGui>, public CWinDataExchange<MainGui>, public CDialogResize<MainGui>, public CMessageFilter
@@ -70,6 +71,7 @@ public:
 		COMMAND_ID_HANDLER_EX(IDC_BTN_CLEARIMPORTS, OnClearImports)
 		COMMAND_ID_HANDLER_EX(ID_FILE_DUMP, OnDump)
 		COMMAND_ID_HANDLER_EX(ID_FILE_DUMPMEMORY, OnDumpMemory)
+		COMMAND_ID_HANDLER_EX(ID_FILE_DUMPSECTION, OnDumpSection)
 		COMMAND_ID_HANDLER_EX(ID_FILE_PEREBUILD, OnPERebuild)
 		COMMAND_ID_HANDLER_EX(ID_FILE_FIXDUMP, OnFixDump)
 		COMMAND_ID_HANDLER_EX(ID_FILE_EXIT, OnExit)
@@ -227,6 +229,7 @@ protected:
 	void OnOptions(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnDump(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnDumpMemory(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void OnDumpSection(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnFixDump(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnPERebuild(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnDLLInject(UINT uNotifyCode, int nID, CWindow wndCtl);
@@ -273,6 +276,7 @@ protected:
 	void getImportsActionHandler();
 	void dumpActionHandler();
 	void dumpMemoryActionHandler();
+	void dumpSectionActionHandler();
 	void peRebuildActionHandler();
 	void startDisassemblerGui(CTreeItem selectedTreeNode);
 	void dumpFixActionHandler();
