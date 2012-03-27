@@ -102,6 +102,15 @@
     <ClCompile Include="StringConversion.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="DeviceNameResolver.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="DumpMemoryGui.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="DumpSectionGui.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -192,6 +201,15 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="StringConversion.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="DeviceNameResolver.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="DumpMemoryGui.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="DumpSectionGui.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>
