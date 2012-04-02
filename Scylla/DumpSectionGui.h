@@ -27,6 +27,8 @@ public:
 	DWORD  rawSize;
 	DWORD characteristics;
 
+	bool isDumped;
+
 	bool highlightVirtualSize();
 };
 
@@ -50,6 +52,7 @@ class DumpSectionGui : public CDialogImpl<DumpSectionGui>, public CWinDataExchan
 
 			COMMAND_ID_HANDLER_EX(IDC_BUTTON_SELECT_DESELECT, OnSectionSelectAll)
 			COMMAND_ID_HANDLER_EX(IDC_BTN_DUMPSECTION_OK, OnOK)
+			COMMAND_ID_HANDLER_EX(IDC_EDIT_LISTCONTROL, OnEditList)
 			COMMAND_ID_HANDLER_EX(IDC_BTN_DUMPSECTION_CANCEL, OnCancel)
 			COMMAND_ID_HANDLER_EX(IDCANCEL, OnCancel)
 
@@ -74,6 +77,9 @@ class DumpSectionGui : public CDialogImpl<DumpSectionGui>, public CWinDataExchan
 		DWORD_PTR imageBase;  //VA
 		DWORD sizeOfImage;
 		WCHAR fullpath[MAX_PATH];
+
+		std::vector<PeSection> & getSectionList();
+
 private:
 	CListViewCtrl ListSectionSelect;
 	CHexEdit<DWORD> EditListControl;
@@ -81,6 +87,8 @@ private:
 	std::vector<PeSection> sectionList;
 
 	PeSection *selectedSection;
+
+	bool isEditing;
 
 	enum ListColumns {
 		COL_NAME = 0,
@@ -104,6 +112,7 @@ private:
 	LRESULT OnListDoubleClick(NMHDR* pnmh);
 
 	void OnSectionSelectAll(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void OnEditList(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnOK(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl);
 
@@ -115,4 +124,7 @@ private:
 	static int CALLBACK listviewCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 	WCHAR * getCharacteristicsString( DWORD characteristics );
 	void getAllSectionsFromFile();
+	void updateEditedItem();
+	void updateCheckState();
+	void selectOrDeselectAll();
 };

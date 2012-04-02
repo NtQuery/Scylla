@@ -598,7 +598,7 @@ bool DumpMemoryGui::getMappedFilename( Memory* memory )
 	//TODO replace with Nt direct syscall
 	if (GetMappedFileNameW(ProcessAccessHelp::hProcess, (LPVOID)memory->address, filename, _countof(filename)) > 0)
 	{
-		return deviceNameResolver->resolveDeviceLongNameToShort(filename,memory->mappedFilename);
+		return deviceNameResolver->resolveDeviceLongNameToShort(filename, memory->mappedFilename);
 	}
 
 	return false;

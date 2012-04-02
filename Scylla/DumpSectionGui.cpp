@@ -6,7 +6,7 @@
 
 bool PeSection::highlightVirtualSize()
 {
-	//highlight too big virtual sizes -> anti-dump protection
+	//highlight big virtual sizes -> anti-dump protection
 	if (virtualSize > 0x2000000)
 	{
 		return true;
@@ -17,6 +17,11 @@ bool PeSection::highlightVirtualSize()
 	}
 }
 
+std::vector<PeSection> & DumpSectionGui::getSectionList()
+{
+	return sectionList;
+}
+
 BOOL DumpSectionGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
 	DoDataExchange(); // attach controls
@@ -25,6 +30,10 @@ BOOL DumpSectionGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	addColumnsToSectionList(ListSectionSelect);
 	displaySectionList(ListSectionSelect);
 
+	selectOrDeselectAll();
+
+	isEditing = false;
+	selectedSection = 0;
 
 	CenterWindow();
 	return TRUE;
@@ -52,16 +61,11 @@ LRESULT DumpSectionGui::OnListSectionColumnClicked(NMHDR* pnmh)
 }
 LRESULT DumpSectionGui::OnListSectionClick(NMHDR* pnmh)
 {
-	int index = ListSectionSelect.GetSelectionMark();
-	if (index != -1)
-	{
-		//selectedMemory = (Memory *)ListMemorySelect.GetItemData(index);
-		//if (selectedMemory)
-		//{
-		//	//updateAddressAndSize(selectedMemory);
-		//}
+	//int index = ListSectionSelect.GetSelectionMark();
+	//if (index != -1)
+	//{
 
-	}
+	//}
 	return 0;
 }
 
@@ -76,15 +80,14 @@ LRESULT DumpSectionGui::OnListDoubleClick(NMHDR* pnmh)
 		return 0;
 	}
 
-
 	LVHITTESTINFO hti;
 	hti.pt = ia->ptAction;
 	int clicked = ListSectionSelect.HitTest(&hti);
 	if(clicked != -1)
 	{
 		selectedSection = (PeSection *)ListSectionSelect.GetItemData(clicked);
-		
 	}
+
 
 	ListSectionSelect.GetSubItemRect(ia->iItem,ia->iSubItem,LVIR_BOUNDS,&rect);
 
@@ -95,6 +98,8 @@ LRESULT DumpSectionGui::OnListDoubleClick(NMHDR* pnmh)
 
 	int x = rect1.left - rect2.left;
 	int y = rect1.top - rect2.top;
+
+	isEditing = true;
 
 	EditListControl.SetWindowPos(HWND_TOP,rect.left + 7, rect.top + 7, rect.right - rect.left, rect.bottom - rect.top, NULL);
 	EditListControl.ShowWindow(SW_SHOW);
@@ -110,14 +115,34 @@ LRESULT DumpSectionGui::OnListDoubleClick(NMHDR* pnmh)
 
 void DumpSectionGui::OnSectionSelectAll(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	for (size_t i = 0; i < sectionList.size(); i++)
+	selectOrDeselectAll();
+}
+
+void DumpSectionGui::OnEditList(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	switch (uNotifyCode)
 	{
-		ListSectionSelect.SetCheckState((int)i, ListSectionSelect.GetCheckState((int)i) ? FALSE : TRUE);
+	case EN_KILLFOCUS:
+		{
+			isEditing = false;
+			
+			updateEditedItem();
+			
+			EditListControl.ShowWindow(SW_HIDE);
+		}
+		break;
 	}
 }
 
 void DumpSectionGui::OnOK(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
+	if (isEditing) //EN_KILLFOCUS not sent?
+	{
+		updateEditedItem();
+	}
+
+	updateCheckState();
+
 	EndDialog(1);
 }
 void DumpSectionGui::OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -176,9 +201,14 @@ void DumpSectionGui::displaySectionList(CListViewCtrl& list)
 {
 	int count = 0;
 	WCHAR temp[20];
+
 	list.DeleteAllItems();
 
-	getAllSectionsFromFile();
+	if (sectionList.empty())
+	{
+		getAllSectionsFromFile();
+	}
+	
 
 	std::vector<PeSection>::const_iterator iter;
 
@@ -315,6 +345,7 @@ void DumpSectionGui::getAllSectionsFromFile()
 					peSection.rawAddress = pSec->PointerToRawData;
 					peSection.rawSize = pSec->SizeOfRawData;
 					peSection.characteristics = pSec->Characteristics;
+					peSection.isDumped = true;
 
 					sectionList.push_back(peSection);
 
@@ -326,4 +357,35 @@ void DumpSectionGui::getAllSectionsFromFile()
 	}
 
 	delete [] buffer;
+}
+
+void DumpSectionGui::updateEditedItem()
+{
+	if (selectedSection)
+	{
+		selectedSection->virtualSize = EditListControl.GetValue();
+
+		displaySectionList(ListSectionSelect);
+	}
+}
+
+void DumpSectionGui::updateCheckState()
+{
+	PeSection * pesection;
+
+	for (size_t i = 0; i < sectionList.size(); i++)
+	{
+		pesection = (PeSection *)ListSectionSelect.GetItemData((int)i);
+		pesection->isDumped = ListSectionSelect.GetCheckState((int)i) == TRUE;
+	}
+}
+
+void DumpSectionGui::selectOrDeselectAll()
+{
+	BOOL checkState = ListSectionSelect.GetCheckState((int)0) ? FALSE : TRUE;
+
+	for (size_t i = 0; i < sectionList.size(); i++)
+	{
+		ListSectionSelect.SetCheckState((int)i, checkState);
+	}
 }
