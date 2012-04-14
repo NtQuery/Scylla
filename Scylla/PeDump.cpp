@@ -37,7 +37,7 @@ bool PeDump::fillPeHeaderStructs(bool fromDisk)
 	else
 	{
 		//from memory
-		if (!ProcessAccessHelp::readMemoryFromProcess(imageBase, dwSize, headerData))
+		if (!ProcessAccessHelp::readMemoryPartlyFromProcess(imageBase, dwSize, headerData))
 		{
 #ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"fillPeHeaderStructs -> ProcessAccessHelp::readMemoryFromProcess failed - " PRINTF_DWORD_PTR_FULL L" %X " PRINTF_DWORD_PTR_FULL, imageBase, dwSize, headerData);

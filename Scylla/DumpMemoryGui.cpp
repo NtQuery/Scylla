@@ -3,6 +3,7 @@
 #include "Architecture.h"
 #include "ProcessAccessHelp.h"
 #include <Psapi.h>
+#include "PeParser.h"
 
 WCHAR DumpMemoryGui::protectionString[100];
 const WCHAR DumpMemoryGui::MemoryUndefined[] = L"UNDEF";
@@ -507,61 +508,26 @@ void DumpMemoryGui::setModuleName(DWORD_PTR moduleBase, const WCHAR * moduleName
 
 void DumpMemoryGui::setAllSectionNames( DWORD_PTR moduleBase, WCHAR * moduleName )
 {
-	WORD numSections = 0;
-	PIMAGE_DOS_HEADER pDos = 0;
-	PIMAGE_NT_HEADERS pNT = 0;
-	PIMAGE_SECTION_HEADER pSec = 0;
-	DWORD size = sizeof(IMAGE_DOS_HEADER) + sizeof(IMAGE_NT_HEADERS) + 200;
-	DWORD correctSize = 0;
 	WCHAR sectionNameW[IMAGE_SIZEOF_SHORT_NAME + 1] = {0};
-	CHAR sectionNameA[IMAGE_SIZEOF_SHORT_NAME + 1] = {0};
 
-	BYTE * buffer = new BYTE[size];
+	PeParser peFile(moduleName);
 
-	if (ProcessAccessHelp::readMemoryFromProcess(moduleBase,size,buffer))
+	if (peFile.isValidPeFile())
 	{
-		pDos = (PIMAGE_DOS_HEADER)buffer;
+		std::vector<IMAGE_SECTION_HEADER> & listSectionHeader = peFile.getSectionHeaderList();
 
-		if (pDos->e_magic == IMAGE_DOS_SIGNATURE)
+		for (WORD i = 0; i < peFile.getNumberOfSections(); i++)
 		{
-			pNT = (PIMAGE_NT_HEADERS)((DWORD_PTR)pDos + pDos->e_lfanew);
-			if (pNT->Signature == IMAGE_NT_SIGNATURE)
-			{
-				numSections = pNT->FileHeader.NumberOfSections;
-				correctSize = (numSections*sizeof(IMAGE_SECTION_HEADER)) + sizeof(IMAGE_NT_HEADERS) + pDos->e_lfanew;
+			peFile.getSectionNameUnicode(i, sectionNameW, _countof(sectionNameW));
 
-				if (size < correctSize)
-				{
-					size = correctSize;
-					delete [] buffer;
-					buffer = new BYTE[size];
-					if (!ProcessAccessHelp::readMemoryFromProcess(moduleBase,size,buffer))
-					{
-						delete [] buffer;
-						return;
-					}
-
-					pDos = (PIMAGE_DOS_HEADER)buffer;
-					pNT = (PIMAGE_NT_HEADERS)((DWORD_PTR)pDos + pDos->e_lfanew);
-				}
-
-				pSec = IMAGE_FIRST_SECTION(pNT);
-
-				for (WORD i = 0; i < numSections; i++)
-				{
-					ZeroMemory(sectionNameA, sizeof(sectionNameA));
-					memcpy(sectionNameA,pSec->Name,8);
-					swprintf_s(sectionNameW,L"%S",sectionNameA);
-
-					setSectionName(moduleBase + pSec->VirtualAddress, pSec->Misc.VirtualSize,sectionNameW);
-					pSec++;
-				}
-
-			}
+			setSectionName(moduleBase + listSectionHeader[i].VirtualAddress, listSectionHeader[i].Misc.VirtualSize, sectionNameW);
 		}
 	}
+	else
+	{
+		MessageBox(moduleName,L"Not a valid PE -> This should never happen",MB_ICONERROR);
+	}
 
-	delete [] buffer;
 }
 
 bool DumpMemoryGui::dumpMemory()

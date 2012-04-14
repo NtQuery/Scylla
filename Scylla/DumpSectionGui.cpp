@@ -2,19 +2,13 @@
 
 #include "Architecture.h"
 #include "ProcessAccessHelp.h"
+#include "PeParser.h"
 
 
 bool PeSection::highlightVirtualSize()
 {
 	//highlight big virtual sizes -> anti-dump protection
-	if (virtualSize > 0x2000000)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return (virtualSize > 0x2000000);
 }
 
 std::vector<PeSection> & DumpSectionGui::getSectionList()
@@ -286,12 +280,6 @@ LRESULT DumpSectionGui::OnNMCustomdraw(NMHDR* pnmh)
 
 void DumpSectionGui::getAllSectionsFromFile()
 {
-	PIMAGE_DOS_HEADER pDos = 0;
-	PIMAGE_SECTION_HEADER pSec = 0;
-	PIMAGE_NT_HEADERS pNT = 0;
-	DWORD size = sizeof(IMAGE_DOS_HEADER) + sizeof(IMAGE_NT_HEADERS) + 200;
-	DWORD correctSize = 0;
-	CHAR sectionNameA[IMAGE_SIZEOF_SHORT_NAME + 1] = {0};
 	PeSection peSection;
 
 	if (sectionList.empty())
@@ -303,69 +291,45 @@ void DumpSectionGui::getAllSectionsFromFile()
 		sectionList.clear();
 	}
 
-	BYTE * buffer = new BYTE[size];
+	PeParser peFile(fullpath);
 
-	if (ProcessAccessHelp::readHeaderFromFile(buffer,size,fullpath))
+	if (peFile.isValidPeFile())
 	{
-		pDos = (PIMAGE_DOS_HEADER)buffer;
+		std::vector<IMAGE_SECTION_HEADER> & listSectionHeader = peFile.getSectionHeaderList();
 
-		if (pDos->e_magic == IMAGE_DOS_SIGNATURE)
+		for (WORD i = 0; i < peFile.getNumberOfSections(); i++)
 		{
-			pNT = (PIMAGE_NT_HEADERS)((DWORD_PTR)pDos + pDos->e_lfanew);
-			if (pNT->Signature == IMAGE_NT_SIGNATURE)
-			{
-				correctSize = (pNT->FileHeader.NumberOfSections*sizeof(IMAGE_SECTION_HEADER)) + sizeof(IMAGE_NT_HEADERS) + pDos->e_lfanew + 50;
+			peFile.getSectionNameUnicode(i, peSection.name, _countof(peSection.name));
 
-				if (size < correctSize)
-				{
-					size = correctSize;
-					delete [] buffer;
-					buffer = new BYTE[size];
-					if (!ProcessAccessHelp::readHeaderFromFile(buffer,size,fullpath))
-					{
-						delete [] buffer;
-						return;
-					}
+			peSection.virtualAddress = imageBase + listSectionHeader[i].VirtualAddress;
+			peSection.virtualSize = listSectionHeader[i].Misc.VirtualSize;
+			peSection.rawAddress = listSectionHeader[i].PointerToRawData;
+			peSection.rawSize = listSectionHeader[i].SizeOfRawData;
+			peSection.characteristics = listSectionHeader[i].Characteristics;
+			peSection.isDumped = true;
 
-					pDos = (PIMAGE_DOS_HEADER)buffer;
-					pNT = (PIMAGE_NT_HEADERS)((DWORD_PTR)pDos + pDos->e_lfanew);
-				}
-
-				pSec = IMAGE_FIRST_SECTION(pNT);
-
-				for (WORD i = 0; i < pNT->FileHeader.NumberOfSections; i++)
-				{
-					ZeroMemory(sectionNameA, sizeof(sectionNameA));
-					memcpy(sectionNameA,pSec->Name,8);
-					swprintf_s(peSection.name,L"%S",sectionNameA);
-
-
-					peSection.virtualAddress = imageBase + pSec->VirtualAddress;
-					peSection.virtualSize = pSec->Misc.VirtualSize;
-					peSection.rawAddress = pSec->PointerToRawData;
-					peSection.rawSize = pSec->SizeOfRawData;
-					peSection.characteristics = pSec->Characteristics;
-					peSection.isDumped = true;
-
-					sectionList.push_back(peSection);
-
-					pSec++;
-				}
-
-			}
+			sectionList.push_back(peSection);
 		}
 	}
+	else
+	{
+		MessageBox(fullpath, L"Not a valid PE -> This should never happen", MB_ICONERROR);
+	}
 
-	delete [] buffer;
 }
 
 void DumpSectionGui::updateEditedItem()
 {
 	if (selectedSection)
 	{
-		selectedSection->virtualSize = EditListControl.GetValue();
+		DWORD newValue = EditListControl.GetValue();
 
-		displaySectionList(ListSectionSelect);
+		if (selectedSection->virtualSize != newValue)
+		{
+			selectedSection->virtualSize = newValue;
+			displaySectionList(ListSectionSelect);
+			selectOrDeselectAll();
+		}
 	}
 }
 

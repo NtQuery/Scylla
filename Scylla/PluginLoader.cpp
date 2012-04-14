@@ -5,6 +5,8 @@
 #include "StringConversion.h"
 #include <shlwapi.h>
 
+#include "PeParser.h"
+
 const WCHAR PluginLoader::PLUGIN_DIR[] = L"Plugins\\";
 const WCHAR PluginLoader::PLUGIN_SEARCH_STRING[] = L"*.dll";
 const WCHAR PluginLoader::PLUGIN_IMPREC_DIR[] = L"ImpRec_Plugins\\";
@@ -253,45 +255,16 @@ bool PluginLoader::buildSearchString()
 
 bool PluginLoader::isValidDllFile( const WCHAR * fullpath )
 {
-	BYTE * data = 0;
-	DWORD lpNumberOfBytesRead = 0;
-	PIMAGE_DOS_HEADER pDos = 0;
-	PIMAGE_NT_HEADERS pNT = 0;
-	bool retValue = false;
+	PeParser peFile(fullpath,false);
 
-	HANDLE hFile = CreateFile(fullpath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
-
-	if (hFile != INVALID_HANDLE_VALUE)
+	if (peFile.isTargetFileSamePeFormat() && peFile.hasExportDirectory())
 	{
-		data = new BYTE[sizeof(IMAGE_DOS_HEADER) + sizeof(IMAGE_NT_HEADERS) + 0x100];
-
-		if (ReadFile(hFile, data, sizeof(IMAGE_DOS_HEADER) + sizeof(IMAGE_NT_HEADERS) + 0x100, &lpNumberOfBytesRead, 0))
-		{
-			pDos = (PIMAGE_DOS_HEADER)data;
-
-			if (pDos->e_magic == IMAGE_DOS_SIGNATURE)
-			{
-				pNT = (PIMAGE_NT_HEADERS)((DWORD_PTR)pDos + pDos->e_lfanew);
-
-				if (pNT->Signature == IMAGE_NT_SIGNATURE)
-				{
-#ifdef _WIN64
-					if (pNT->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC)
-#else
-					if (pNT->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC)
-#endif
-					{
-						retValue = true;
-					}
-				}			
-			}
-		}
-
-		delete [] data;
-		CloseHandle(hFile);
+		return true;
 	}
-
-	return retValue;
+	else
+	{
+		return false;
+	}
 }
 
 bool PluginLoader::isValidImprecPlugin(const WCHAR * fullpath)

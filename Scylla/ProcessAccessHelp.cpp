@@ -3,6 +3,7 @@
 
 #include "Scylla.h"
 #include "NativeWinApi.h"
+#include "PeParser.h"
 
 HANDLE ProcessAccessHelp::hProcess = 0;
 
@@ -756,26 +757,9 @@ SIZE_T ProcessAccessHelp::getSizeOfImageProcess(HANDLE processHandle, DWORD_PTR 
 
 DWORD ProcessAccessHelp::getEntryPointFromFile(const WCHAR * filePath)
 {
-	PIMAGE_NT_HEADERS pNtHeader = 0;
-	PIMAGE_DOS_HEADER pDosHeader = 0;
+	PeParser peFile(filePath, false);
 
-	readHeaderFromCurrentFile(filePath);
-
-	pDosHeader = (PIMAGE_DOS_HEADER)fileHeaderFromDisk;
-
-	if (pDosHeader->e_magic != IMAGE_DOS_SIGNATURE)
-	{
-		return 0;
-	}
-
-	pNtHeader = (PIMAGE_NT_HEADERS)((DWORD_PTR)fileHeaderFromDisk + (DWORD_PTR)(pDosHeader->e_lfanew));
-
-	if (pNtHeader->Signature != IMAGE_NT_SIGNATURE)
-	{
-		return 0;
-	}
-
-	return pNtHeader->OptionalHeader.AddressOfEntryPoint;
+	return peFile.getEntryPoint();
 }
 
 bool ProcessAccessHelp::createBackupFile(const WCHAR * filePath)
