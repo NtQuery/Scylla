@@ -3,6 +3,7 @@
 
 #include "Scylla.h"
 #include "Architecture.h"
+#include "PeParser.h"
 
 bool PeDump::useHeaderFromDisk = true;
 bool PeDump::appendOverlayData = true;
@@ -348,89 +349,34 @@ bool PeDump::saveDumpToDisk(const WCHAR * dumpFilePath, BYTE *dumpBuffer, DWORD 
 bool PeDump::getOverlayData(const WCHAR * filepath, DWORD_PTR * overlayFileOffset, DWORD * overlaySize)
 {
 	LONGLONG fileSize = 0;
-	DWORD dwSize = 0;
-	DWORD bufferSize = 1000;
-	BYTE *buffer = 0;
-	bool returnValue = 0;
-	PIMAGE_DOS_HEADER pDOSh = 0;
-	PIMAGE_NT_HEADERS pNTh = 0;
-	PIMAGE_SECTION_HEADER pSech = 0;
-	int counter = 0;
+	bool returnValue = false;
 	DWORD calcSize = 0;
 
-	HANDLE hFile = CreateFile(filepath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+	PeParser peFile(filepath);
 
-	if( hFile == INVALID_HANDLE_VALUE )
+	if (peFile.isValidPeFile())
 	{
-#ifdef DEBUG_COMMENTS
-		Scylla::debugLog.log(L"getOverlayData :: INVALID_HANDLE_VALUE %u", GetLastError());
-#endif
-		returnValue = false;
-	}
-	else
-	{
-		fileSize = ProcessAccessHelp::getFileSize(hFile);
+		fileSize = ProcessAccessHelp::getFileSize(fullpath);
 
 		if (fileSize > 0)
 		{
-			if (fileSize > bufferSize)
+			calcSize = peFile.getSectionHeaderBasedFileSize();
+
+			if (calcSize < fileSize)
 			{
-				dwSize = bufferSize;
+				//overlay found
+				*overlayFileOffset = calcSize;
+				*overlaySize = (DWORD)(fileSize - calcSize);
 			}
 			else
 			{
-				dwSize = (DWORD)(fileSize - 1);
+				*overlayFileOffset = 0;
+				*overlaySize = 0;
 			}
 
-			buffer = new BYTE[dwSize];
-
-			if (ProcessAccessHelp::readMemoryFromFile(hFile, 0, dwSize, buffer))
-			{
-				pDOSh = (PIMAGE_DOS_HEADER)buffer;
-				pNTh = (PIMAGE_NT_HEADERS)((DWORD_PTR)buffer + pDOSh->e_lfanew);
-
-				//first section
-				pSech = IMAGE_FIRST_SECTION(pNTh);
-				counter = 1;
-
-				//get last section
-				while(counter < pNTh->FileHeader.NumberOfSections)
-				{
-					counter++;
-					pSech++;
-				}
-
-				//printf("PointerToRawData %X\nSizeOfRawData %X\nfile size %X\n",pSech->PointerToRawData,pSech->SizeOfRawData,pSech->PointerToRawData+pSech->SizeOfRawData);
-
-				calcSize = pSech->PointerToRawData + pSech->SizeOfRawData;
-
-				if (calcSize < fileSize)
-				{
-					//overlay found
-					*overlayFileOffset = calcSize;
-					*overlaySize = (DWORD)(fileSize - calcSize);
-				}
-				else
-				{
-					*overlayFileOffset = 0;
-					*overlaySize = 0;
-				}
-
-				returnValue = true;
-			}
-			else
-			{
-				returnValue = false;
-			}
-
-			delete [] buffer;
-		}
-		else
-		{
-			returnValue = false;
+			returnValue = true;
 		}
 
-		CloseHandle(hFile);
 	}
 
 	return returnValue;

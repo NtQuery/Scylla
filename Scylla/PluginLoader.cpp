@@ -146,15 +146,7 @@ bool PluginLoader::searchForPlugin(std::vector<Plugin> & newPluginList, const WC
 
 	FindClose(hFind);
 
-	if (dwError == ERROR_NO_MORE_FILES)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-
+	return (dwError == ERROR_NO_MORE_FILES);
 }
 
 bool PluginLoader::getScyllaPluginName(Plugin * pluginData)
@@ -198,14 +190,6 @@ bool PluginLoader::getScyllaPluginName(Plugin * pluginData)
 				{
 					retValue = true;
 				}
-				else
-				{
-					retValue = false;
-				}
-			}
-			else
-			{
-				retValue = false;
 			}
 		}
 
@@ -255,16 +239,9 @@ bool PluginLoader::buildSearchString()
 
 bool PluginLoader::isValidDllFile( const WCHAR * fullpath )
 {
-	PeParser peFile(fullpath,false);
+	PeParser peFile(fullpath, false);
 
-	if (peFile.isTargetFileSamePeFormat() && peFile.hasExportDirectory())
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return (peFile.isTargetFileSamePeFormat() && peFile.hasExportDirectory());
 }
 
 bool PluginLoader::isValidImprecPlugin(const WCHAR * fullpath)

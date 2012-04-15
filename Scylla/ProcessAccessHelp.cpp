@@ -341,7 +341,6 @@ LONGLONG ProcessAccessHelp::getFileSize(const WCHAR * filePath)
 	{
 		fileSize = getFileSize(hFile);
 		CloseHandle(hFile);
-		hFile = 0;
 	}
 	
 	return fileSize;

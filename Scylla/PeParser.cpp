@@ -1,6 +1,17 @@
 
 #include "PeParser.h"
+#include "ProcessAccessHelp.h"
 
+PeParser::PeParser()
+{
+	fileMemory = 0;
+	headerMemory = 0;
+	pDosHeader = 0;
+	pNTHeader32 = 0;
+	pNTHeader64 = 0;
+	filename = 0;
+	moduleBaseAddress = 0;
+}
 
 PeParser::PeParser(const WCHAR * file, bool readSectionHeaders)
 {
@@ -9,12 +20,13 @@ PeParser::PeParser(const WCHAR * file, bool readSectionHeaders)
 	pDosHeader = 0;
 	pNTHeader32 = 0;
 	pNTHeader64 = 0;
+	moduleBaseAddress = 0;
 
 	filename = file;
 
-	if (wcslen(filename) > 3)
+	if (filename && wcslen(filename) > 3)
 	{
-		readPeHeader(readSectionHeaders);
+		readPeHeaderFromFile(readSectionHeaders);
 
 		if (readSectionHeaders)
 		{
@@ -24,6 +36,32 @@ PeParser::PeParser(const WCHAR * file, bool readSectionHeaders)
 			}
 		}
 	}
+}
+
+PeParser::PeParser(const DWORD_PTR moduleBase, bool readSectionHeaders)
+{
+	fileMemory = 0;
+	headerMemory = 0;
+	pDosHeader = 0;
+	pNTHeader32 = 0;
+	pNTHeader64 = 0;
+	filename = 0;
+
+	moduleBaseAddress = moduleBase;
+
+	if (moduleBaseAddress)
+	{
+		readPeHeaderFromProcess(readSectionHeaders);
+
+		if (readSectionHeaders)
+		{
+			if (isValidPeFile())
+			{
+				getSectionHeaders();
+			}
+		}
+	}
+
 }
 
 PeParser::~PeParser()
@@ -141,17 +179,49 @@ DWORD PeParser::getEntryPoint()
 	}
 }
 
-bool PeParser::readPeHeader(bool readSectionHeaders)
+bool PeParser::readPeHeaderFromProcess(bool readSectionHeaders)
 {
 	bool retValue = false;
-	DWORD readSize = sizeof(IMAGE_DOS_HEADER) + 200 + sizeof(IMAGE_NT_HEADERS64);
+	DWORD correctSize = 0;
+
+	DWORD readSize = getInitialHeaderReadSize(readSectionHeaders);
+
+	headerMemory = new BYTE[readSize];
+
+	if (ProcessAccessHelp::readMemoryPartlyFromProcess(moduleBaseAddress, readSize, headerMemory))
+	{
+		retValue = true;
+
+		getDosAndNtHeader(headerMemory, (LONG)readSize);
+
+		if (isValidPeFile())
+		{
+			correctSize = calcCorrectPeHeaderSize(readSectionHeaders);
+
+			if (readSize < correctSize)
+			{
+				readSize = correctSize;
+				delete [] headerMemory;
+				headerMemory = new BYTE[readSize];
+
+				if (ProcessAccessHelp::readMemoryPartlyFromProcess(moduleBaseAddress, readSize, headerMemory))
+				{
+					getDosAndNtHeader(headerMemory, (LONG)readSize);
+				}
+			}
+		}
+	}
+
+	return retValue;
+}
+
+bool PeParser::readPeHeaderFromFile(bool readSectionHeaders)
+{
+	bool retValue = false;
 	DWORD correctSize = 0;
 	DWORD numberOfBytesRead = 0;
 
-	if (readSectionHeaders)
-	{
-		readSize += (10 * sizeof(IMAGE_SECTION_HEADER));
-	}
+	DWORD readSize = getInitialHeaderReadSize(readSectionHeaders);
 
 	headerMemory = new BYTE[readSize];
 
@@ -162,35 +232,12 @@ bool PeParser::readPeHeader(bool readSectionHeaders)
 		if (ReadFile(hFile, headerMemory, readSize, &numberOfBytesRead, 0))
 		{
 			retValue = true;
-			pDosHeader = (PIMAGE_DOS_HEADER)headerMemory;
 
-			if (pDosHeader->e_lfanew > 0 && pDosHeader->e_lfanew < (LONG)readSize) //malformed PE
-			{
-				pNTHeader32 = (PIMAGE_NT_HEADERS32)((DWORD_PTR)pDosHeader + pDosHeader->e_lfanew);
-				pNTHeader64 = (PIMAGE_NT_HEADERS64)((DWORD_PTR)pDosHeader + pDosHeader->e_lfanew);
-			}
+			getDosAndNtHeader(headerMemory, (LONG)readSize);
 
 			if (isValidPeFile())
 			{
-				correctSize = pDosHeader->e_lfanew + 50; //extra buffer
-
-				if (readSectionHeaders)
-				{
-					correctSize += getNumberOfSections() * sizeof(IMAGE_SECTION_HEADER);
-				}
-
-				if (isPE32())
-				{
-					correctSize += sizeof(IMAGE_NT_HEADERS32);
-				}
-				else if(isPE64())
-				{
-					correctSize += sizeof(IMAGE_NT_HEADERS64);
-				}
-				else
-				{
-					correctSize = 0; //not valid pe
-				}
+				correctSize = calcCorrectPeHeaderSize(readSectionHeaders);
 
 				if (readSize < correctSize)
 				{
@@ -200,14 +247,9 @@ bool PeParser::readPeHeader(bool readSectionHeaders)
 
 					SetFilePointer(hFile, 0, 0, FILE_BEGIN);
 
-					if (ReadFile(hFile,headerMemory,readSize,&numberOfBytesRead,0))
+					if (ReadFile(hFile, headerMemory, readSize, &numberOfBytesRead, 0))
 					{
-						pDosHeader = (PIMAGE_DOS_HEADER)headerMemory;
-						if (pDosHeader->e_lfanew > 0 && pDosHeader->e_lfanew < (LONG)readSize) //malformed PE
-						{
-							pNTHeader32 = (PIMAGE_NT_HEADERS32)((DWORD_PTR)pDosHeader + pDosHeader->e_lfanew);
-							pNTHeader64 = (PIMAGE_NT_HEADERS64)((DWORD_PTR)pDosHeader + pDosHeader->e_lfanew);
-						}
+						getDosAndNtHeader(headerMemory, (LONG)readSize);
 					}
 				}
 			}
@@ -275,13 +317,13 @@ bool PeParser::getSectionHeaders()
 	return true;
 }
 
-bool PeParser::getSectionNameUnicode(const int sectionIndex, WCHAR * output, int outputLen)
+bool PeParser::getSectionNameUnicode(const int sectionIndex, WCHAR * output, const int outputLen)
 {
 	CHAR sectionNameA[IMAGE_SIZEOF_SHORT_NAME + 1] = {0};
 	
 	output[0] = 0;
 
-	memcpy(sectionNameA, listSectionHeaders[sectionIndex].Name, IMAGE_SIZEOF_SHORT_NAME);
+	memcpy(sectionNameA, listSectionHeaders[sectionIndex].Name, IMAGE_SIZEOF_SHORT_NAME); //not null terminated
 
 	return (swprintf_s(output, outputLen, L"%S", sectionNameA) != -1);
 }
@@ -294,5 +336,75 @@ WORD PeParser::getNumberOfSections()
 std::vector<IMAGE_SECTION_HEADER> & PeParser::getSectionHeaderList()
 {
 	return listSectionHeaders;
+}
+
+void PeParser::getDosAndNtHeader(BYTE * memory, LONG size)
+{
+	pDosHeader = (PIMAGE_DOS_HEADER)memory;
+
+	if (pDosHeader->e_lfanew > 0 && pDosHeader->e_lfanew < size) //malformed PE
+	{
+		pNTHeader32 = (PIMAGE_NT_HEADERS32)((DWORD_PTR)pDosHeader + pDosHeader->e_lfanew);
+		pNTHeader64 = (PIMAGE_NT_HEADERS64)((DWORD_PTR)pDosHeader + pDosHeader->e_lfanew);
+	}
+	else
+	{
+		pNTHeader32 = 0;
+		pNTHeader64 = 0;
+	}
+}
+
+DWORD PeParser::calcCorrectPeHeaderSize(bool readSectionHeaders)
+{
+	DWORD correctSize = pDosHeader->e_lfanew + 50; //extra buffer
+
+	if (readSectionHeaders)
+	{
+		correctSize += getNumberOfSections() * sizeof(IMAGE_SECTION_HEADER);
+	}
+
+	if (isPE32())
+	{
+		correctSize += sizeof(IMAGE_NT_HEADERS32);
+	}
+	else if(isPE64())
+	{
+		correctSize += sizeof(IMAGE_NT_HEADERS64);
+	}
+	else
+	{
+		correctSize = 0; //not a valid PE
+	}
+
+	return correctSize;
+}
+
+DWORD PeParser::getInitialHeaderReadSize(bool readSectionHeaders)
+{
+	DWORD readSize = sizeof(IMAGE_DOS_HEADER) + 200 + sizeof(IMAGE_NT_HEADERS64);
+
+	if (readSectionHeaders)
+	{
+		readSize += (10 * sizeof(IMAGE_SECTION_HEADER));
+	}
+
+	return readSize;
+}
+
+DWORD PeParser::getSectionHeaderBasedFileSize()
+{
+	DWORD lastRawOffset = 0, lastRawSize = 0;
+
+	//this is needed if the sections aren't sorted by their RawOffset (e.g. Petite)
+	for (WORD i = 0; i < getNumberOfSections(); i++)
+	{
+		if (listSectionHeaders[i].PointerToRawData > lastRawOffset)
+		{
+			lastRawOffset = listSectionHeaders[i].PointerToRawData;
+			lastRawSize = listSectionHeaders[i].SizeOfRawData;
+		}
+	}
+
+	return (lastRawSize + lastRawOffset);
 }
 

@@ -7,7 +7,7 @@ class PeParser
 {
 public:
 	PeParser(const WCHAR * file, bool readSectionHeaders = true);
-	//PeParser(HANDLE hProcess, DWORD_PTR moduleBase, bool readSectionHeaders = true);
+	PeParser(const DWORD_PTR moduleBase, bool readSectionHeaders = true);
 
 	~PeParser();
 
@@ -26,10 +26,15 @@ public:
 
 	DWORD getEntryPoint();
 
-	bool getSectionNameUnicode(const int sectionIndex, WCHAR * output, int outputLen);
+	bool getSectionNameUnicode(const int sectionIndex, WCHAR * output, const int outputLen);
+
+	DWORD getSectionHeaderBasedFileSize();
 
 private:
+	PeParser();
+
 	const WCHAR * filename;
+	DWORD_PTR moduleBaseAddress;
 
 	PIMAGE_DOS_HEADER pDosHeader;
 	PIMAGE_NT_HEADERS32 pNTHeader32;
@@ -40,11 +45,14 @@ private:
 	BYTE * fileMemory;
 	BYTE * headerMemory;
 
-	bool readPeHeader(bool readSectionHeaders);
+	bool readPeHeaderFromFile(bool readSectionHeaders);
+	bool readPeHeaderFromProcess(bool readSectionHeaders);
 	bool readFileToMemory();
 
 	bool hasDirectory(const int directoryIndex);
 	bool getSectionHeaders();
-	bool readPeHeaderFromProcess( HANDLE hProcess, DWORD_PTR moduleBase );
+	void getDosAndNtHeader(BYTE * memory, LONG size);
+	DWORD calcCorrectPeHeaderSize( bool readSectionHeaders );
+	DWORD getInitialHeaderReadSize( bool readSectionHeaders );
 };
 
