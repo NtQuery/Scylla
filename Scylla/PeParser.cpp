@@ -4,23 +4,12 @@
 
 PeParser::PeParser()
 {
-	fileMemory = 0;
-	headerMemory = 0;
-	pDosHeader = 0;
-	pNTHeader32 = 0;
-	pNTHeader64 = 0;
-	filename = 0;
-	moduleBaseAddress = 0;
+	initClass();
 }
 
 PeParser::PeParser(const WCHAR * file, bool readSectionHeaders)
 {
-	fileMemory = 0;
-	headerMemory = 0;
-	pDosHeader = 0;
-	pNTHeader32 = 0;
-	pNTHeader64 = 0;
-	moduleBaseAddress = 0;
+	initClass();
 
 	filename = file;
 
@@ -40,12 +29,7 @@ PeParser::PeParser(const WCHAR * file, bool readSectionHeaders)
 
 PeParser::PeParser(const DWORD_PTR moduleBase, bool readSectionHeaders)
 {
-	fileMemory = 0;
-	headerMemory = 0;
-	pDosHeader = 0;
-	pNTHeader32 = 0;
-	pNTHeader64 = 0;
-	filename = 0;
+	initClass();
 
 	moduleBaseAddress = moduleBase;
 
@@ -76,6 +60,26 @@ PeParser::~PeParser()
 	}
 
 	listSectionHeaders.clear();
+	listPeSection.clear();
+}
+
+void PeParser::initClass()
+{
+	fileMemory = 0;
+	headerMemory = 0;
+
+	pDosHeader = 0;
+	pDosStub = 0;
+	dosStubSize = 0;
+	pNTHeader32 = 0;
+	pNTHeader64 = 0;
+	overlayData = 0;
+	overlaySize = 0;
+
+	filename = 0;
+	fileSize = 0;
+	moduleBaseAddress = 0;
+	hFile = INVALID_HANDLE_VALUE;
 }
 
 bool PeParser::isPE64()
@@ -225,10 +229,10 @@ bool PeParser::readPeHeaderFromFile(bool readSectionHeaders)
 
 	headerMemory = new BYTE[readSize];
 
-	HANDLE hFile = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
-
-	if (hFile != INVALID_HANDLE_VALUE)
+	if (openFileHandle())
 	{
+		fileSize = (DWORD)ProcessAccessHelp::getFileSize(hFile);
+
 		if (ReadFile(hFile, headerMemory, readSize, &numberOfBytesRead, 0))
 		{
 			retValue = true;
@@ -242,6 +246,16 @@ bool PeParser::readPeHeaderFromFile(bool readSectionHeaders)
 				if (readSize < correctSize)
 				{
 					readSize = correctSize;
+
+					if (fileSize > 0)
+					{
+						if (fileSize < correctSize)
+						{
+							readSize = fileSize;
+						}
+					}
+
+					
 					delete [] headerMemory;
 					headerMemory = new BYTE[readSize];
 
@@ -255,47 +269,48 @@ bool PeParser::readPeHeaderFromFile(bool readSectionHeaders)
 			}
 		}
 
-		CloseHandle(hFile);
+		closeFileHandle();
 	}
 
 	return retValue;
 }
 
-bool PeParser::readFileToMemory()
+bool PeParser::readPeSectionsFromFile()
 {
-	bool retValue = false;
+	bool retValue = true;
 	DWORD numberOfBytesRead = 0;
-	LARGE_INTEGER largeInt = {0};
-	const DWORD MaxFileSize = 500 * 1024 * 1024; // GB * MB * KB * B -> 500 MB
+	DWORD readSize = 0;
+	DWORD readOffset = 0;
 
-	HANDLE hFile = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+	PeFileSection peFileSection;
 
-	if (hFile != INVALID_HANDLE_VALUE)
+	if (openFileHandle())
 	{
-		if (GetFileSizeEx(hFile, &largeInt))
+		listPeSection.reserve(getNumberOfSections());
+
+		for (WORD i = 0; i < getNumberOfSections(); i++)
 		{
-			if (largeInt.QuadPart > MaxFileSize)
+			readOffset = listSectionHeaders[i].PointerToRawData;
+			readSize = listSectionHeaders[i].SizeOfRawData;
+
+			peFileSection.normalSize = readSize;
+
+			if (readSectionFromFile(readOffset, readSize, peFileSection))
 			{
-				//TODO handle big files
-				retValue = false;
+				listPeSection.push_back(peFileSection);
 			}
 			else
 			{
-				fileMemory = new BYTE[largeInt.LowPart];
-
-				if (ReadFile(hFile,fileMemory,largeInt.LowPart,&numberOfBytesRead,0))
-				{
-					retValue = true;
-				}
-				else
-				{
-					delete [] fileMemory;
-					fileMemory = 0;
-				}
+				retValue = false;
 			}
+			
 		}
 
-		CloseHandle(hFile);
+		closeFileHandle();
+	}
+	else
+	{
+		retValue = false;
 	}
 
 	return retValue;
@@ -342,15 +357,21 @@ void PeParser::getDosAndNtHeader(BYTE * memory, LONG size)
 {
 	pDosHeader = (PIMAGE_DOS_HEADER)memory;
 
+	pNTHeader32 = 0;
+	pNTHeader64 = 0;
+	dosStubSize = 0;
+	pDosStub = 0;
+
 	if (pDosHeader->e_lfanew > 0 && pDosHeader->e_lfanew < size) //malformed PE
 	{
 		pNTHeader32 = (PIMAGE_NT_HEADERS32)((DWORD_PTR)pDosHeader + pDosHeader->e_lfanew);
 		pNTHeader64 = (PIMAGE_NT_HEADERS64)((DWORD_PTR)pDosHeader + pDosHeader->e_lfanew);
-	}
-	else
-	{
-		pNTHeader32 = 0;
-		pNTHeader64 = 0;
+
+		if (pDosHeader->e_lfanew > sizeof(IMAGE_DOS_HEADER))
+		{
+			dosStubSize = pDosHeader->e_lfanew - sizeof(IMAGE_DOS_HEADER);
+			pDosStub = (BYTE *)((DWORD_PTR)pDosHeader + sizeof(IMAGE_DOS_HEADER));
+		}
 	}
 }
 
@@ -407,4 +428,276 @@ DWORD PeParser::getSectionHeaderBasedFileSize()
 
 	return (lastRawSize + lastRawOffset);
 }
+
+bool PeParser::openFileHandle()
+{
+	if (hFile == INVALID_HANDLE_VALUE)
+	{
+		if (filename)
+		{
+			hFile = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+		}
+		else
+		{
+			hFile = INVALID_HANDLE_VALUE;
+		}
+	}
+
+	return (hFile != INVALID_HANDLE_VALUE);
+}
+
+bool PeParser::openWriteFileHandle( const WCHAR * newFile )
+{
+	if (newFile)
+	{
+		hFile = CreateFile(newFile, GENERIC_WRITE, FILE_SHARE_WRITE, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	}
+	else
+	{
+		hFile = INVALID_HANDLE_VALUE;
+	}
+
+	return (hFile != INVALID_HANDLE_VALUE);
+}
+
+
+void PeParser::closeFileHandle()
+{
+	if (hFile != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(hFile);
+		hFile = INVALID_HANDLE_VALUE;
+	}
+}
+
+bool PeParser::readSectionFromFile(DWORD readOffset, DWORD readSize, PeFileSection & peFileSection)
+{
+	const DWORD maxReadSize = 100;
+	BYTE data[maxReadSize];
+	DWORD bytesRead = 0;
+	bool retValue = true;
+	DWORD valuesFound = 0;
+	DWORD currentOffset = 0;
+
+	peFileSection.data = 0;
+	peFileSection.dataSize = 0;
+
+	if (!readOffset || !readSize)
+	{
+		return true; //section without data is valid
+	}
+
+	if (readSize <= maxReadSize)
+	{
+		peFileSection.dataSize = readSize;
+		peFileSection.normalSize = readSize;
+
+		return readPeSectionFromFile(readOffset, peFileSection);
+	}
+
+	currentOffset = readOffset + readSize - maxReadSize;
+
+	while(currentOffset >= readOffset) //start from the end
+	{
+		SetFilePointer(hFile, currentOffset, 0, FILE_BEGIN);
+
+		if (!ReadFile(hFile, data, sizeof(data), &bytesRead, 0))
+		{
+			retValue = false;
+			break;
+		}
+
+		valuesFound = isMemoryNotNull(data, sizeof(data));
+		if (valuesFound)
+		{
+			//found some real code
+
+			currentOffset += valuesFound;
+
+			if (readOffset < currentOffset)
+			{
+				//real size
+				peFileSection.dataSize = currentOffset - readOffset;
+			}
+
+			break;
+		}
+
+		currentOffset -= maxReadSize;
+	}
+
+	if (peFileSection.dataSize)
+	{
+		readPeSectionFromFile(readOffset, peFileSection);
+	}
+
+	return retValue;
+}
+
+DWORD PeParser::isMemoryNotNull( BYTE * data, int dataSize )
+{
+	for (int i = (dataSize - 1); i >= 0; i--)
+	{
+		if (data[i] != 0)
+		{
+			return i + 1;
+		}
+	}
+
+	return 0;
+}
+
+bool PeParser::savePeFileToDisk( const WCHAR * newFile )
+{
+	bool retValue = true;
+	DWORD dwFileOffset = 0, dwWriteSize = 0;
+
+	if (getNumberOfSections() != listSectionHeaders.size() || getNumberOfSections() != listPeSection.size())
+	{
+		return false;
+	}
+
+	if (openWriteFileHandle(newFile))
+	{
+		//Dos header
+		dwWriteSize = sizeof(IMAGE_DOS_HEADER);
+		if (!ProcessAccessHelp::writeMemoryToFile(hFile, dwFileOffset, dwWriteSize, pDosHeader))
+		{
+			retValue = false;
+		}
+		dwFileOffset += dwWriteSize;
+
+
+		if (dosStubSize && pDosStub)
+		{
+			//Dos Stub
+			dwWriteSize = dosStubSize;
+			if (!ProcessAccessHelp::writeMemoryToFile(hFile, dwFileOffset, dwWriteSize, pDosStub))
+			{
+				retValue = false;
+			}
+			dwFileOffset += dwWriteSize;
+		}
+
+
+		//Pe Header
+		if (isPE32())
+		{
+			dwWriteSize = sizeof(IMAGE_NT_HEADERS32);
+		}
+		else
+		{
+			dwWriteSize = sizeof(IMAGE_NT_HEADERS64);
+		}
+
+		if (!ProcessAccessHelp::writeMemoryToFile(hFile, dwFileOffset, dwWriteSize, pNTHeader32))
+		{
+			retValue = false;
+		}
+		dwFileOffset += dwWriteSize;
+
+		//section headers
+		dwWriteSize = sizeof(IMAGE_SECTION_HEADER);
+
+		for (WORD i = 0; i < getNumberOfSections(); i++)
+		{
+			if (!ProcessAccessHelp::writeMemoryToFile(hFile, dwFileOffset, dwWriteSize, &listSectionHeaders[i]))
+			{
+				retValue = false;
+				break;
+			}
+			dwFileOffset += dwWriteSize;
+		}
+
+		for (WORD i = 0; i < getNumberOfSections(); i++)
+		{
+			if (!listSectionHeaders[i].PointerToRawData)
+				continue;
+
+			dwWriteSize = listSectionHeaders[i].PointerToRawData - dwFileOffset; //padding
+
+			if (dwWriteSize)
+			{
+				if (!writeZeroMemoryToFile(hFile, dwFileOffset, dwWriteSize))
+				{
+					retValue = false;
+					break;
+				}
+				dwFileOffset += dwWriteSize;
+			}
+
+			dwWriteSize = listPeSection[i].dataSize;
+
+			if (dwWriteSize)
+			{
+				if (!ProcessAccessHelp::writeMemoryToFile(hFile, dwFileOffset, dwWriteSize, listPeSection[i].data))
+				{
+					retValue = false;
+					break;
+				}
+				dwFileOffset += dwWriteSize;
+
+				if (listPeSection[i].dataSize < listSectionHeaders[i].SizeOfRawData) //padding
+				{
+					dwWriteSize = listSectionHeaders[i].SizeOfRawData - listPeSection[i].dataSize;
+
+					if (!writeZeroMemoryToFile(hFile, dwFileOffset, dwWriteSize))
+					{
+						retValue = false;
+						break;
+					}
+					dwFileOffset += dwWriteSize;
+				}
+			}
+
+		}
+
+		closeFileHandle();
+	}
+
+	return retValue;
+}
+
+bool PeParser::writeZeroMemoryToFile(HANDLE hFile, DWORD fileOffset, DWORD size)
+{
+	bool retValue = false;
+	PVOID zeromemory = calloc(size, 1);
+
+	if (zeromemory)
+	{
+		retValue = ProcessAccessHelp::writeMemoryToFile(hFile, fileOffset, size, zeromemory);
+		free(zeromemory);
+	}
+
+	return retValue;
+}
+
+void PeParser::removeDosStub()
+{
+	if (pDosHeader)
+	{
+		dosStubSize = 0;
+		pDosStub = 0; //must not delete []
+		pDosHeader->e_lfanew = sizeof(IMAGE_DOS_HEADER);
+	}
+}
+
+bool PeParser::readPeSectionFromFile(DWORD readOffset, PeFileSection & peFileSection)
+{
+	DWORD bytesRead = 0;
+
+	peFileSection.data = new BYTE[peFileSection.dataSize];
+
+	SetFilePointer(hFile, readOffset, 0, FILE_BEGIN);
+	if (!ReadFile(hFile, peFileSection.data, peFileSection.dataSize, &bytesRead, 0))
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+}
+
+
 
