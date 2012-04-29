@@ -3,12 +3,20 @@
 #include <windows.h>
 #include <vector>
 
-class PeFileSection
-{
+class PeFileSection {
 public:
+	IMAGE_SECTION_HEADER sectionHeader;
 	BYTE * data;
 	DWORD dataSize;
 	DWORD normalSize;
+
+	PeFileSection()
+	{
+		ZeroMemory(&sectionHeader, sizeof(IMAGE_SECTION_HEADER));
+		data = 0;
+		dataSize = 0;
+		normalSize = 0;
+	}
 };
 
 class PeParser
@@ -26,7 +34,7 @@ public:
 	bool isTargetFileSamePeFormat();
 
 	WORD getNumberOfSections();
-	std::vector<IMAGE_SECTION_HEADER> & getSectionHeaderList();
+	std::vector<PeFileSection> & getSectionHeaderList();
 
 	bool hasExportDirectory();
 	bool hasTLSDirectory();
@@ -37,13 +45,21 @@ public:
 	bool getSectionNameUnicode(const int sectionIndex, WCHAR * output, const int outputLen);
 
 	DWORD getSectionHeaderBasedFileSize();
+	DWORD getSectionHeaderBasedSizeOfImage();
 
+	bool readPeSectionsFromProcess();
 	bool readPeSectionsFromFile();
 	bool savePeFileToDisk(const WCHAR * newFile);
 	void removeDosStub();
+	void alignAllSectionHeaders();
+	void fixPeHeader();
+	void setDefaultFileAlignment();
 
 protected:
 	PeParser();
+
+
+	static const DWORD FileAlignmentConstant = 0x200;
 
 	const WCHAR * filename;
 	DWORD_PTR moduleBaseAddress;
@@ -62,7 +78,6 @@ protected:
 	DWORD dosStubSize;
 	PIMAGE_NT_HEADERS32 pNTHeader32;
 	PIMAGE_NT_HEADERS64 pNTHeader64;
-	std::vector<IMAGE_SECTION_HEADER> listSectionHeaders;
 	std::vector<PeFileSection> listPeSection;
 	BYTE * overlayData;
 	DWORD overlaySize;
@@ -85,10 +100,23 @@ protected:
 	bool openFileHandle();
 	void closeFileHandle();
 	void initClass();
-	bool readSectionFromFile( DWORD readOffset, DWORD readSize, PeFileSection & peFileSection );
+	
 	DWORD isMemoryNotNull( BYTE * data, int dataSize );
 	bool openWriteFileHandle( const WCHAR * newFile );
 	bool writeZeroMemoryToFile(HANDLE hFile, DWORD fileOffset, DWORD size);
+
 	bool readPeSectionFromFile( DWORD readOffset, PeFileSection & peFileSection );
+	bool readPeSectionFromProcess( DWORD_PTR readOffset, PeFileSection & peFileSection );
+
+	bool readSectionFromFile( DWORD readOffset, PeFileSection & peFileSection );
+	bool readSectionFromProcess( DWORD_PTR readOffset, PeFileSection & peFileSection );
+
+	bool addNewLastSection(const CHAR * sectionName, DWORD sectionSize, BYTE * sectionData);
+	DWORD alignValue(DWORD badValue, DWORD alignTo);
+	DWORD_PTR convertOffsetToRVAVector(DWORD_PTR dwOffset);
+	DWORD_PTR convertRVAToOffsetVector(DWORD_PTR dwRVA);
+	void setNumberOfSections(WORD numberOfSections);
+	
+	void removeIatDirectory();
 };
 

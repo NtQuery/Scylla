@@ -514,13 +514,13 @@ void DumpMemoryGui::setAllSectionNames( DWORD_PTR moduleBase, WCHAR * moduleName
 
 	if (peFile.isValidPeFile())
 	{
-		std::vector<IMAGE_SECTION_HEADER> & listSectionHeader = peFile.getSectionHeaderList();
+		std::vector<PeFileSection> & listSectionHeader = peFile.getSectionHeaderList();
 
 		for (WORD i = 0; i < peFile.getNumberOfSections(); i++)
 		{
 			peFile.getSectionNameUnicode(i, sectionNameW, _countof(sectionNameW));
 
-			setSectionName(moduleBase + listSectionHeader[i].VirtualAddress, listSectionHeader[i].Misc.VirtualSize, sectionNameW);
+			setSectionName(moduleBase + listSectionHeader[i].sectionHeader.VirtualAddress, listSectionHeader[i].sectionHeader.Misc.VirtualSize, sectionNameW);
 		}
 	}
 	else

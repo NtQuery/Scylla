@@ -15,6 +15,7 @@ ConfigurationHolder::ConfigurationHolder(const WCHAR* fileName)
 	config[DLL_INJECTION_AUTO_UNLOAD] = Configuration(L"DLL_INJECTION_AUTO_UNLOAD", Configuration::Boolean);
 	config[UPDATE_HEADER_CHECKSUM]    = Configuration(L"UPDATE_HEADER_CHECKSUM",    Configuration::Boolean);
 	config[IAT_SECTION_NAME]          = Configuration(L"IAT_SECTION_NAME",          Configuration::String);
+	config[REMOVE_DOS_HEADER_STUB]    = Configuration(L"REMOVE_DOS_HEADER_STUB",    Configuration::Boolean);
 
 	buildConfigFilePath(fileName);
 }

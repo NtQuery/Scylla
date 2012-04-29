@@ -295,17 +295,17 @@ void DumpSectionGui::getAllSectionsFromFile()
 
 	if (peFile.isValidPeFile())
 	{
-		std::vector<IMAGE_SECTION_HEADER> & listSectionHeader = peFile.getSectionHeaderList();
+		std::vector<PeFileSection> & listSectionHeader = peFile.getSectionHeaderList();
 
 		for (WORD i = 0; i < peFile.getNumberOfSections(); i++)
 		{
 			peFile.getSectionNameUnicode(i, peSection.name, _countof(peSection.name));
 
-			peSection.virtualAddress = imageBase + listSectionHeader[i].VirtualAddress;
-			peSection.virtualSize = listSectionHeader[i].Misc.VirtualSize;
-			peSection.rawAddress = listSectionHeader[i].PointerToRawData;
-			peSection.rawSize = listSectionHeader[i].SizeOfRawData;
-			peSection.characteristics = listSectionHeader[i].Characteristics;
+			peSection.virtualAddress = imageBase + listSectionHeader[i].sectionHeader.VirtualAddress;
+			peSection.virtualSize = listSectionHeader[i].sectionHeader.Misc.VirtualSize;
+			peSection.rawAddress = listSectionHeader[i].sectionHeader.PointerToRawData;
+			peSection.rawSize = listSectionHeader[i].sectionHeader.SizeOfRawData;
+			peSection.characteristics = listSectionHeader[i].sectionHeader.Characteristics;
 			peSection.isDumped = true;
 
 			sectionList.push_back(peSection);

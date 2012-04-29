@@ -4,7 +4,8 @@
 //#include "PluginLoader.h"
 //#include "ConfigurationHolder.h"
 #include "PeDump.h"
-#include "PeRebuild.h"
+//#include "PeRebuild.h"
+#include "PeParser.h"
 #include "DllInjectionPlugin.h"
 #include "DisassemblerGui.h"
 #include "PickApiGui.h"
@@ -1062,7 +1063,6 @@ void MainGui::peRebuildActionHandler()
 {
 	DWORD newSize = 0;
 	WCHAR selectedFilePath[MAX_PATH];
-	PeRebuild peRebuild;
 
 	getCurrentModulePath(stringBuffer, _countof(stringBuffer));
 	if(showFileDialog(selectedFilePath, false, NULL, filterExeDll, NULL, stringBuffer))
@@ -1075,24 +1075,40 @@ void MainGui::peRebuildActionHandler()
 			}
 		}
 
-		LONGLONG fileSize = ProcessAccessHelp::getFileSize(selectedFilePath);
-		LPVOID mapped = peRebuild.createFileMappingViewFull(selectedFilePath);
+		DWORD fileSize = (DWORD)ProcessAccessHelp::getFileSize(selectedFilePath);
 
-		newSize = peRebuild.realignPE(mapped, (DWORD)fileSize);
-		peRebuild.closeAllMappingHandles();
-
-		if (newSize < 10)
+		PeParser peFile(selectedFilePath, true);
+		if (peFile.readPeSectionsFromFile())
 		{
-			Scylla::windowLog.log(L"Rebuild failed %s", selectedFilePath);
-			MessageBox(L"Rebuild failed.", L"Failure", MB_ICONERROR);
+			peFile.setDefaultFileAlignment();
+
+			if (Scylla::config[REMOVE_DOS_HEADER_STUB].isTrue())
+			{
+				peFile.removeDosStub();
+			}
+			
+			peFile.alignAllSectionHeaders();
+			peFile.fixPeHeader();
+
+			if (peFile.savePeFileToDisk(selectedFilePath))
+			{
+				newSize = (DWORD)ProcessAccessHelp::getFileSize(selectedFilePath);
+
+				Scylla::windowLog.log(L"Rebuild success %s", selectedFilePath);
+				Scylla::windowLog.log(L"-> Old file size 0x%08X new file size 0x%08X (%d %%)", fileSize, newSize, ((newSize * 100) / fileSize) );
+			}
+			else
+			{
+				Scylla::windowLog.log(L"Rebuild failed, cannot save file %s", selectedFilePath);
+				MessageBox(L"Rebuild failed. Cannot save file.", L"Failure", MB_ICONERROR);
+			}
 		}
 		else
 		{
-			peRebuild.truncateFile(selectedFilePath, newSize);
-
-			Scylla::windowLog.log(L"Rebuild success %s", selectedFilePath);
-			Scylla::windowLog.log(L"-> Old file size 0x%08X new file size 0x%08X (%d %%)", (DWORD)fileSize, newSize, (DWORD)((newSize * 100) / (DWORD)fileSize) );
+			Scylla::windowLog.log(L"Rebuild failed, cannot read file %s", selectedFilePath);
+			MessageBox(L"Rebuild failed. Cannot read file.", L"Failure", MB_ICONERROR);
 		}
+
 	}
 }
 

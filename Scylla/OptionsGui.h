@@ -24,6 +24,7 @@ public:
 		DDX_CHECK(IDC_CHECK_UNLOAD_DLL, dllInjectionAutoUnload)
 		DDX_CHECK(IDC_CHECK_PE_HEADER_FROM_DISK, usePEHeaderFromDisk)
 		DDX_CHECK(IDC_CHECK_DEBUG_PRIVILEGES, debugPrivilege)
+		DDX_CHECK(IDC_CHECK_REMOVE_DOS_STUB, removeDosHeaderStub)
 	END_DDX_MAP()
 
 	BEGIN_MSG_MAP(OptionsGui)
@@ -44,6 +45,7 @@ protected:
 	bool dllInjectionAutoUnload;
 	bool usePEHeaderFromDisk;
 	bool debugPrivilege;
+	bool removeDosHeaderStub;
 
 	// Controls
 
