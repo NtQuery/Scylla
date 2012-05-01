@@ -109,4 +109,5 @@ private:
 	bool isNewModule(const WCHAR * moduleName);
 
 	void changeExpandStateOfTreeNodes(UINT flag);
+
 };

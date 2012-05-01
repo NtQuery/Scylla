@@ -65,16 +65,19 @@ LRESULT DumpSectionGui::OnListSectionClick(NMHDR* pnmh)
 
 LRESULT DumpSectionGui::OnListDoubleClick(NMHDR* pnmh)
 {
-	RECT rect;
-	RECT rect1,rect2;
+	LVHITTESTINFO hti;
+	RECT rect, rect1, rect2;
 	NMITEMACTIVATE* ia = (NMITEMACTIVATE*)pnmh;
 
-	if (ia->iSubItem != COL_VSize)
+	editingSubItem = ia->iSubItem;
+
+	if (editingSubItem == COL_NAME || editingSubItem == COL_VA || editingSubItem == COL_RVA)
 	{
 		return 0;
 	}
 
-	LVHITTESTINFO hti;
+
+	
 	hti.pt = ia->ptAction;
 	int clicked = ListSectionSelect.HitTest(&hti);
 	if(clicked != -1)
@@ -95,14 +98,26 @@ LRESULT DumpSectionGui::OnListDoubleClick(NMHDR* pnmh)
 
 	isEditing = true;
 
+	switch (editingSubItem)
+	{
+	case COL_VSize:
+		valueBeforeEditing = selectedSection->virtualSize;
+		break;
+	case COL_RSize:
+		valueBeforeEditing = selectedSection->rawSize;
+		break;
+	case COL_Characteristics:
+		valueBeforeEditing = selectedSection->characteristics;
+		break;
+	default:
+		valueBeforeEditing = 0;
+	}
+
+	EditListControl.SetValue(valueBeforeEditing);
+
 	EditListControl.SetWindowPos(HWND_TOP,rect.left + 7, rect.top + 7, rect.right - rect.left, rect.bottom - rect.top, NULL);
 	EditListControl.ShowWindow(SW_SHOW);
 	EditListControl.SetFocus();
-
-	 //Draw a Rectangle around the SubItem
-	//Rectangle(ListSectionSelect.GetDC(),rect.left,rect.top-1,rect.right,rect.bottom);
-	 //Set the listItem text in the EditBox
-	EditListControl.SetValue(selectedSection->virtualSize);
 
 	return 0;
 }
@@ -324,9 +339,21 @@ void DumpSectionGui::updateEditedItem()
 	{
 		DWORD newValue = EditListControl.GetValue();
 
-		if (selectedSection->virtualSize != newValue)
+		if (valueBeforeEditing != newValue)
 		{
-			selectedSection->virtualSize = newValue;
+			switch (editingSubItem)
+			{
+			case COL_VSize:
+				selectedSection->virtualSize = newValue;
+				break;
+			case COL_RSize:
+				selectedSection->rawSize = newValue;
+				break;
+			case COL_Characteristics:
+				selectedSection->characteristics = newValue;
+				break;
+			}
+
 			displaySectionList(ListSectionSelect);
 			selectOrDeselectAll();
 		}

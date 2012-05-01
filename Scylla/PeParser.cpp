@@ -931,6 +931,11 @@ void PeParser::fixPeHeader()
 
 		pNTHeader32->OptionalHeader.SizeOfImage = getSectionHeaderBasedSizeOfImage();
 
+		if (moduleBaseAddress)
+		{
+			pNTHeader32->OptionalHeader.ImageBase = (DWORD)moduleBaseAddress;
+		}
+		
 		pNTHeader32->OptionalHeader.SizeOfHeaders = alignValue(dwSize + pNTHeader32->FileHeader.SizeOfOptionalHeader + (getNumberOfSections() * sizeof(IMAGE_SECTION_HEADER)), pNTHeader32->OptionalHeader.FileAlignment);
 	}
 	else
@@ -946,6 +951,11 @@ void PeParser::fixPeHeader()
 		}
 		
 		pNTHeader64->OptionalHeader.SizeOfImage = getSectionHeaderBasedSizeOfImage();
+
+		if (moduleBaseAddress)
+		{
+			pNTHeader64->OptionalHeader.ImageBase = moduleBaseAddress;
+		}
 
 		pNTHeader64->OptionalHeader.SizeOfHeaders = alignValue(dwSize + pNTHeader64->FileHeader.SizeOfOptionalHeader + (getNumberOfSections() * sizeof(IMAGE_SECTION_HEADER)), pNTHeader64->OptionalHeader.FileAlignment);
 	}
@@ -1043,4 +1053,110 @@ void PeParser::alignAllSectionHeaders()
 	std::sort(listPeSection.begin(), listPeSection.end(), PeFileSectionSortByVirtualAddress); //sort by VirtualAddress ascending
 }
 
+bool PeParser::dumpProcess(DWORD_PTR modBase, DWORD_PTR entryPoint, const WCHAR * dumpFilePath)
+{
+	moduleBaseAddress = modBase;
+
+	if (readPeSectionsFromProcess())
+	{
+		setDefaultFileAlignment();
+
+		setEntryPointVa(entryPoint);
+
+		alignAllSectionHeaders();
+		fixPeHeader();
+
+		getFileOverlay();
+
+		return savePeFileToDisk(dumpFilePath);
+	}
+	
+	return false;
+}
+
+bool PeParser::dumpProcess(DWORD_PTR modBase, DWORD_PTR entryPoint, const WCHAR * dumpFilePath, std::vector<PeSection> & sectionList)
+{
+	if (listPeSection.size() == sectionList.size())
+	{
+		for (int i = (getNumberOfSections() - 1); i >= 0; i--)
+		{
+			if (!sectionList[i].isDumped)
+			{
+				listPeSection.erase(listPeSection.begin() + i);
+				setNumberOfSections(getNumberOfSections() - 1);
+			}
+			else
+			{
+				listPeSection[i].sectionHeader.Misc.VirtualSize = sectionList[i].virtualSize;
+				listPeSection[i].sectionHeader.SizeOfRawData = sectionList[i].rawSize;
+				listPeSection[i].sectionHeader.Characteristics = sectionList[i].characteristics;
+			}
+		}
+	}
+
+	return dumpProcess(modBase, entryPoint, dumpFilePath);
+}
+
+void PeParser::setEntryPointVa(DWORD_PTR entryPoint)
+{
+	DWORD entryPointRva = (DWORD)(entryPoint - moduleBaseAddress);
+
+	if (isPE32())
+	{
+		pNTHeader32->OptionalHeader.AddressOfEntryPoint = entryPointRva;
+	}
+	else
+	{
+		pNTHeader64->OptionalHeader.AddressOfEntryPoint = entryPointRva;
+	}
+	
+}
+
+bool PeParser::getFileOverlay()
+{
+	DWORD numberOfBytesRead;
+	bool retValue = false;
+
+	if (!hasOverlayData())
+	{
+		return false;
+	}
+
+	if (openFileHandle())
+	{
+		DWORD overlayOffset = getSectionHeaderBasedFileSize();
+		DWORD fileSize = (DWORD)ProcessAccessHelp::getFileSize(hFile);
+		overlaySize = fileSize - overlayOffset;
+
+		overlayData = new BYTE[overlaySize];
+
+		SetFilePointer(hFile, overlayOffset, 0, FILE_BEGIN);
+
+		if (ReadFile(hFile, overlayData, overlaySize, &numberOfBytesRead, 0))
+		{
+			retValue = true;
+		}
+
+		closeFileHandle();
+	}
+
+	return retValue;
+}
+
+bool PeParser::hasOverlayData()
+{
+	if (!filename)
+		return false;
+
+	if (isValidPeFile())
+	{
+		DWORD fileSize = (DWORD)ProcessAccessHelp::getFileSize(filename);
+
+		return (fileSize > getSectionHeaderBasedFileSize());
+	}
+	else
+	{
+		return false;
+	}
+}
 

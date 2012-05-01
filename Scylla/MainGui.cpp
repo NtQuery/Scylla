@@ -3,7 +3,7 @@
 #include "Architecture.h"
 //#include "PluginLoader.h"
 //#include "ConfigurationHolder.h"
-#include "PeDump.h"
+//#include "PeDump.h"
 //#include "PeRebuild.h"
 #include "PeParser.h"
 #include "DllInjectionPlugin.h"
@@ -968,38 +968,60 @@ void MainGui::dumpSectionActionHandler()
 {
 	WCHAR selectedFilePath[MAX_PATH];
 	DumpSectionGui dlgDumpSection;
+	const WCHAR * fileFilter;
+	const WCHAR * defExtension;
+	PeParser * peFile = 0;
+
+	dlgDumpSection.entryPoint = EditOEPAddress.GetValue();
 
 	if (ProcessAccessHelp::selectedModule)
 	{
 		//dump DLL
+		fileFilter = filterDll;
+		defExtension = L"dll";
 
 		dlgDumpSection.imageBase = ProcessAccessHelp::selectedModule->modBaseAddr;
-		dlgDumpSection.sizeOfImage = ProcessAccessHelp::selectedModule->modBaseSize;
 		//get it from gui
 		wcscpy_s(dlgDumpSection.fullpath, ProcessAccessHelp::selectedModule->fullPath);
 	}
 	else
 	{
+		fileFilter = filterExe;
+		defExtension = L"exe";
+
 		dlgDumpSection.imageBase = ProcessAccessHelp::targetImageBase;
-		dlgDumpSection.sizeOfImage = (DWORD)ProcessAccessHelp::targetSizeOfImage;
 		//get it from gui
 		wcscpy_s(dlgDumpSection.fullpath, selectedProcess->fullPath);
 	}
 
 	if(dlgDumpSection.DoModal())
 	{
-		//getCurrentModulePath(stringBuffer, _countof(stringBuffer));
-		//if(showFileDialog(selectedFilePath, true, dlgDumpMemory.dumpFilename, filterMem, L"mem", stringBuffer))
-		//{
-		//	if (ProcessAccessHelp::writeMemoryToNewFile(selectedFilePath,dlgDumpMemory.dumpedMemorySize,dlgDumpMemory.dumpedMemory))
-		//	{
-		//		Scylla::windowLog.log(L"Memory dump saved %s", selectedFilePath);
-		//	}
-		//	else
-		//	{
-		//		Scylla::windowLog.log(L"Error! Cannot write memory dump to disk");
-		//	}
-		//}
+		getCurrentModulePath(stringBuffer, _countof(stringBuffer));
+		if(showFileDialog(selectedFilePath, true, NULL, fileFilter, defExtension, stringBuffer))
+		{
+			if (Scylla::config[USE_PE_HEADER_FROM_DISK].isTrue())
+			{
+				peFile = new PeParser(dlgDumpSection.fullpath, true);
+			}
+			else
+			{
+				peFile = new PeParser(dlgDumpSection.imageBase, true);
+			}
+
+			std::vector<PeSection> & sectionList = dlgDumpSection.getSectionList();
+
+			if (peFile->dumpProcess(dlgDumpSection.imageBase, dlgDumpSection.entryPoint, selectedFilePath, sectionList))
+			{
+				Scylla::windowLog.log(L"Dump success %s", selectedFilePath);
+			}
+			else
+			{
+				Scylla::windowLog.log(L"Error: Cannot dump image.");
+				MessageBox(L"Cannot dump image.", L"Failure", MB_ICONERROR);
+			}
+
+			delete peFile;
+		}
 	}
 }
 
@@ -1011,7 +1033,10 @@ void MainGui::dumpActionHandler()
 	WCHAR selectedFilePath[MAX_PATH];
 	const WCHAR * fileFilter;
 	const WCHAR * defExtension;
-	PeDump peDump;
+	DWORD_PTR modBase = 0;
+	DWORD_PTR entrypoint = 0;
+	WCHAR * filename = 0;
+	PeParser * peFile = 0;
 
 	if (ProcessAccessHelp::selectedModule)
 	{
@@ -1027,27 +1052,31 @@ void MainGui::dumpActionHandler()
 	getCurrentModulePath(stringBuffer, _countof(stringBuffer));
 	if(showFileDialog(selectedFilePath, true, NULL, fileFilter, defExtension, stringBuffer))
 	{
+		entrypoint = EditOEPAddress.GetValue();
+
 		if (ProcessAccessHelp::selectedModule)
 		{
 			//dump DLL
-			
-			peDump.imageBase = ProcessAccessHelp::selectedModule->modBaseAddr;
-			peDump.sizeOfImage = ProcessAccessHelp::selectedModule->modBaseSize;
-			//get it from gui
-			peDump.entryPoint = EditOEPAddress.GetValue();
-			wcscpy_s(peDump.fullpath, ProcessAccessHelp::selectedModule->fullPath);
+			modBase = ProcessAccessHelp::selectedModule->modBaseAddr;
+			filename = ProcessAccessHelp::selectedModule->fullPath;
 		}
 		else
 		{
-			peDump.imageBase = ProcessAccessHelp::targetImageBase;
-			peDump.sizeOfImage = (DWORD)ProcessAccessHelp::targetSizeOfImage;
-			//get it from gui
-			peDump.entryPoint = EditOEPAddress.GetValue();
-			wcscpy_s(peDump.fullpath, selectedProcess->fullPath);
+			//dump exe
+			modBase = ProcessAccessHelp::targetImageBase;
+			filename = selectedProcess->fullPath;
 		}
 
-		peDump.useHeaderFromDisk = Scylla::config[USE_PE_HEADER_FROM_DISK].isTrue();
-		if (peDump.dumpCompleteProcessToDisk(selectedFilePath))
+		if (Scylla::config[USE_PE_HEADER_FROM_DISK].isTrue())
+		{
+			peFile = new PeParser(filename, true);
+		}
+		else
+		{
+			peFile = new PeParser(modBase, true);
+		}
+
+		if (peFile->dumpProcess(modBase, entrypoint, selectedFilePath))
 		{
 			Scylla::windowLog.log(L"Dump success %s", selectedFilePath);
 		}
@@ -1056,6 +1085,8 @@ void MainGui::dumpActionHandler()
 			Scylla::windowLog.log(L"Error: Cannot dump image.");
 			MessageBox(L"Cannot dump image.", L"Failure", MB_ICONERROR);
 		}
+
+		delete peFile;
 	}
 }
 

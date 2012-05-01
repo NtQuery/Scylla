@@ -69,13 +69,13 @@ class DumpSectionGui : public CDialogImpl<DumpSectionGui>, public CWinDataExchan
 		DumpSectionGui()
 		{
 			imageBase = 0;
-			sizeOfImage = 0;
+			entryPoint = 0;
 			fullpath[0] = 0;
 		}
 		//~DumpSectionGui();
 
 		DWORD_PTR imageBase;  //VA
-		DWORD sizeOfImage;
+		DWORD_PTR entryPoint;
 		WCHAR fullpath[MAX_PATH];
 
 		std::vector<PeSection> & getSectionList();
@@ -89,6 +89,8 @@ private:
 	PeSection *selectedSection;
 
 	bool isEditing;
+	int editingSubItem;
+	DWORD valueBeforeEditing;
 
 	enum ListColumns {
 		COL_NAME = 0,

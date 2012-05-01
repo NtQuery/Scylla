@@ -2,6 +2,7 @@
 
 #include <windows.h>
 #include <vector>
+#include "DumpSectionGui.h"
 
 class PeFileSection {
 public:
@@ -39,6 +40,7 @@ public:
 	bool hasExportDirectory();
 	bool hasTLSDirectory();
 	bool hasRelocationDirectory();
+	bool hasOverlayData();
 
 	DWORD getEntryPoint();
 
@@ -54,7 +56,8 @@ public:
 	void alignAllSectionHeaders();
 	void fixPeHeader();
 	void setDefaultFileAlignment();
-
+	bool dumpProcess(DWORD_PTR modBase, DWORD_PTR entryPoint, const WCHAR * dumpFilePath);
+	bool dumpProcess(DWORD_PTR modBase, DWORD_PTR entryPoint, const WCHAR * dumpFilePath, std::vector<PeSection> & sectionList);
 protected:
 	PeParser();
 
@@ -118,5 +121,7 @@ protected:
 	void setNumberOfSections(WORD numberOfSections);
 	
 	void removeIatDirectory();
+	void setEntryPointVa( DWORD_PTR entryPoint );
+	bool getFileOverlay();
 };
 

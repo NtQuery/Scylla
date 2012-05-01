@@ -51,6 +51,14 @@ Keyboard Shortcuts
 Changelog
 ---------
 
+Version 0.6
+
+- added dump memory regions
+- added dump pe sections -> you can edit some values in the dialog
+- improved dump engine with intelligent dumping
+- improved pe rebuild engine -> removed yoda's code
+- fixed various bugs
+
 Version 0.5a:
 
 - fixed memory leak

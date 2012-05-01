@@ -386,9 +386,10 @@ bool ImportsHandling::setImport(CTreeItem item, const WCHAR * moduleName, const 
 		CTreeItem parent = item.GetParent();
 		if(!parent.IsNull())
 		{
-			const ImportModuleThunk * module = getModuleThunk(parent);
+			ImportModuleThunk * module = getModuleThunk(parent);
 			if(module)
 			{
+
 				wcscpy_s(import->moduleName, moduleName);
 				strcpy_s(import->name, apiName);
 				import->ordinal = ordinal;
@@ -398,6 +399,13 @@ bool ImportsHandling::setImport(CTreeItem item, const WCHAR * moduleName, const 
 				import->suspect = suspect;
 
 				updateImportInTreeView(import, item);
+
+				if (module->isValid() && module->moduleName[0] == L'?')
+				{
+					//update module name
+					wcscpy_s(module->moduleName, module->thunkList.begin()->second.moduleName);
+				}
+
 				updateModuleInTreeView(module, module->hTreeItem);
 
 				updateCounts();
@@ -805,3 +813,4 @@ void ImportsHandling::changeExpandStateOfTreeNodes(UINT flag)
 		it_module++;
 	}
 }
+
