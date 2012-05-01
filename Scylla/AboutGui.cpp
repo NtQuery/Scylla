@@ -3,17 +3,17 @@
 #include "Scylla.h"
 #include "Architecture.h"
 
-const WCHAR AboutGui::TEXT_VISIT[]          = L"Visit <a>http://kickme.to/grn</a> and <a>http://forum.tuts4you.com</a>";
+const WCHAR AboutGui::TEXT_VISIT[]          = L"Visit <a>German Reversing Newbies</a> and <a>Seek n Destroy</a>";
 const WCHAR AboutGui::TEXT_DEVELOPED[]      = L"Developed with Microsoft Visual Studio, written in pure C/C++";
 const WCHAR AboutGui::TEXT_CREDIT_DISTORM[] = L"This tool uses the <a>diStorm disassembler library</a> v3";
-const WCHAR AboutGui::TEXT_CREDIT_YODA[]    = L"The PE Rebuilder engine is based on Realign DLL v1.5 by yoda";
+const WCHAR AboutGui::TEXT_CREDIT_YODA[]    = L"Thanks yoda for your PE Rebuilder engine";
 const WCHAR AboutGui::TEXT_CREDIT_SILK[]    = L"The small icons are taken from the <a>Silk icon package</a>";
 const WCHAR AboutGui::TEXT_CREDIT_WTL[]     = L"<a>Windows Template Library</a> v8 is used for the GUI";
 const WCHAR AboutGui::TEXT_GREETINGS[]      = L"Greetz: metr0, G36KV and all from the gRn Team";
 const WCHAR AboutGui::TEXT_LICENSE[]        = L"Scylla is licensed under the <a>GNU General Public License v3</a>";
 const WCHAR AboutGui::TEXT_TINYXML[]        = L"XML support is provided by <a>TinyXML</a>";
 
-const WCHAR AboutGui::URL_VISIT1[]  = L"http://kickme.to/grn";
+const WCHAR AboutGui::URL_VISIT1[]  = L"http://www.c0rk.org/portal/a/";
 const WCHAR AboutGui::URL_VISIT2[]  = L"http://forum.tuts4you.com";
 const WCHAR AboutGui::URL_DISTORM[] = L"http://code.google.com/p/distorm/";
 const WCHAR AboutGui::URL_WTL[]     = L"http://wtl.sourceforge.net";
