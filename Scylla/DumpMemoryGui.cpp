@@ -30,6 +30,8 @@ DumpMemoryGui::~DumpMemoryGui()
 	{
 		delete deviceNameResolver;
 	}
+
+	memoryList.clear();
 }
 BOOL DumpMemoryGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
@@ -441,12 +443,12 @@ void DumpMemoryGui::setSectionName(DWORD_PTR sectionAddress, DWORD sectionSize, 
 			{
 				if (wcslen(iter->peSection) == 0)
 				{
-					wcscpy_s((WCHAR *)iter->peSection, IMAGE_SIZEOF_SHORT_NAME * 4, sectionName);
+					wcscpy_s((WCHAR *)iter->peSection, _countof(iter->peSection), sectionName);
 				}
 				else
 				{
-					wcscat_s((WCHAR *)iter->peSection, IMAGE_SIZEOF_SHORT_NAME * 4, L"|");
-					wcscat_s((WCHAR *)iter->peSection, IMAGE_SIZEOF_SHORT_NAME * 4, sectionName);
+					wcscat_s((WCHAR *)iter->peSection, _countof(iter->peSection), L"|");
+					wcscat_s((WCHAR *)iter->peSection, _countof(iter->peSection), sectionName);
 				}
 				
 				found = true;
@@ -460,12 +462,12 @@ void DumpMemoryGui::setSectionName(DWORD_PTR sectionAddress, DWORD sectionSize, 
 			}
 			if (wcslen(iter->peSection) == 0)
 			{
-				wcscpy_s((WCHAR *)iter->peSection, IMAGE_SIZEOF_SHORT_NAME * 4, sectionName);
+				wcscpy_s((WCHAR *)iter->peSection, _countof(iter->peSection), sectionName);
 			}
 			else
 			{
-				wcscat_s((WCHAR *)iter->peSection, IMAGE_SIZEOF_SHORT_NAME * 4, L"|");
-				wcscat_s((WCHAR *)iter->peSection, IMAGE_SIZEOF_SHORT_NAME * 4, sectionName);
+				wcscat_s((WCHAR *)iter->peSection, _countof(iter->peSection), L"|");
+				wcscat_s((WCHAR *)iter->peSection, _countof(iter->peSection), sectionName);
 			}
 		}
 

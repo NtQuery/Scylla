@@ -16,6 +16,18 @@ std::vector<PeSection> & DumpSectionGui::getSectionList()
 	return sectionList;
 }
 
+DumpSectionGui::DumpSectionGui()
+{
+	imageBase = 0;
+	entryPoint = 0;
+	fullpath[0] = 0;
+}
+
+DumpSectionGui::~DumpSectionGui()
+{
+	sectionList.clear();
+}
+
 BOOL DumpSectionGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
 	DoDataExchange(); // attach controls

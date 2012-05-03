@@ -66,13 +66,8 @@ class DumpSectionGui : public CDialogImpl<DumpSectionGui>, public CWinDataExchan
 			DLGRESIZE_CONTROL(IDC_BUTTON_SELECT_DESELECT,   DLSZ_MOVE_Y)
 		END_DLGRESIZE_MAP()
 
-		DumpSectionGui()
-		{
-			imageBase = 0;
-			entryPoint = 0;
-			fullpath[0] = 0;
-		}
-		//~DumpSectionGui();
+		DumpSectionGui();
+		~DumpSectionGui();
 
 		DWORD_PTR imageBase;  //VA
 		DWORD_PTR entryPoint;

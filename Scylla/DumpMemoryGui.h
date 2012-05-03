@@ -24,10 +24,10 @@ public:
 	DWORD size;
 	WCHAR filename[MAX_PATH];
 	WCHAR mappedFilename[MAX_PATH];
-	WCHAR peSection[IMAGE_SIZEOF_SHORT_NAME *4];
-	DWORD  state;
-	DWORD  protect;
-	DWORD  type;
+	WCHAR peSection[IMAGE_SIZEOF_SHORT_NAME * 20];
+	DWORD state;
+	DWORD protect;
+	DWORD type;
 };
 
 class DumpMemoryGui : public CDialogImpl<DumpMemoryGui>, public CWinDataExchange<DumpMemoryGui>, public CDialogResize<DumpMemoryGui>
