@@ -23,7 +23,7 @@ public:
 	WCHAR name[IMAGE_SIZEOF_SHORT_NAME + 1];
 	DWORD_PTR virtualAddress;
 	DWORD  virtualSize;
-	DWORD_PTR  rawAddress;
+	DWORD  rawAddress;
 	DWORD  rawSize;
 	DWORD characteristics;
 

@@ -16,6 +16,7 @@ ConfigurationHolder::ConfigurationHolder(const WCHAR* fileName)
 	config[UPDATE_HEADER_CHECKSUM]    = Configuration(L"UPDATE_HEADER_CHECKSUM",    Configuration::Boolean);
 	config[IAT_SECTION_NAME]          = Configuration(L"IAT_SECTION_NAME",          Configuration::String);
 	config[REMOVE_DOS_HEADER_STUB]    = Configuration(L"REMOVE_DOS_HEADER_STUB",    Configuration::Boolean);
+	config[IAT_FIX_AND_OEP_FIX]       = Configuration(L"IAT_FIX_AND_OEP_FIX",       Configuration::Boolean);
 
 	buildConfigFilePath(fileName);
 }

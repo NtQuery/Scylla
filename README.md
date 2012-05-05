@@ -51,6 +51,15 @@ Keyboard Shortcuts
 Changelog
 ---------
 
+Version 0.6b
+
+- internal code changes
+- added option: fix iat and oep
+
+Version 0.6a
+
+- fixed buffer to small bug in dump memory
+
 Version 0.6
 
 - added dump memory regions

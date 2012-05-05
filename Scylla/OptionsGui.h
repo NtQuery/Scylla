@@ -25,6 +25,7 @@ public:
 		DDX_CHECK(IDC_CHECK_PE_HEADER_FROM_DISK, usePEHeaderFromDisk)
 		DDX_CHECK(IDC_CHECK_DEBUG_PRIVILEGES, debugPrivilege)
 		DDX_CHECK(IDC_CHECK_REMOVE_DOS_STUB, removeDosHeaderStub)
+		DDX_CHECK(IDC_CHECK_FIX_IAT_AND_OEP, fixIatAndOep)
 	END_DDX_MAP()
 
 	BEGIN_MSG_MAP(OptionsGui)
@@ -46,6 +47,7 @@ protected:
 	bool usePEHeaderFromDisk;
 	bool debugPrivilege;
 	bool removeDosHeaderStub;
+	bool fixIatAndOep;
 
 	// Controls
 

@@ -10,7 +10,8 @@
 #include "DisassemblerGui.h"
 #include "PickApiGui.h"
 //#include "NativeWinApi.h"
-#include "ImportRebuild.h"
+//#include "ImportRebuild.h"
+#include "ImportRebuilder.h"
 #include "SystemInformation.h"
 #include "Scylla.h"
 #include "AboutGui.h"
@@ -1125,6 +1126,15 @@ void MainGui::peRebuildActionHandler()
 			{
 				newSize = (DWORD)ProcessAccessHelp::getFileSize(selectedFilePath);
 
+				if (Scylla::config[UPDATE_HEADER_CHECKSUM].isTrue())
+				{
+					Scylla::windowLog.log(L"Generating PE header checksum");
+					if (!PeParser::updatePeHeaderChecksum(selectedFilePath, newSize))
+					{
+						Scylla::windowLog.log(L"Generating PE header checksum FAILED!");
+					}
+				}
+
 				Scylla::windowLog.log(L"Rebuild success %s", selectedFilePath);
 				Scylla::windowLog.log(L"-> Old file size 0x%08X new file size 0x%08X (%d %%)", fileSize, newSize, ((newSize * 100) / fileSize) );
 			}
@@ -1157,13 +1167,17 @@ void MainGui::dumpFixActionHandler()
 	WCHAR newFilePath[MAX_PATH];
 	WCHAR selectedFilePath[MAX_PATH];
 	const WCHAR * fileFilter;
+	DWORD_PTR modBase = 0;
+	DWORD_PTR entrypoint = EditOEPAddress.GetValue();
 
 	if (ProcessAccessHelp::selectedModule)
 	{
+		modBase = ProcessAccessHelp::selectedModule->modBaseAddr;
 		fileFilter = filterDll;
 	}
 	else
 	{
+		modBase = ProcessAccessHelp::targetImageBase;
 		fileFilter = filterExe;
 	}
 
@@ -1188,8 +1202,15 @@ void MainGui::dumpFixActionHandler()
 			wcscat_s(newFilePath, extension);
 		}
 
-		ImportRebuild importRebuild;
-		if (importRebuild.rebuildImportTable(selectedFilePath,newFilePath,importsHandling.moduleList))
+		ImportRebuilder importRebuild(selectedFilePath);
+
+		if (Scylla::config[IAT_FIX_AND_OEP_FIX].isTrue())
+		{
+			importRebuild.setEntryPointRva((DWORD)(entrypoint - modBase));
+		}
+
+
+		if (importRebuild.rebuildImportTable(newFilePath, importsHandling.moduleList))
 		{
 			Scylla::windowLog.log(L"Import Rebuild success %s", newFilePath);
 		}

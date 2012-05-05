@@ -58,6 +58,11 @@ public:
 	void setDefaultFileAlignment();
 	bool dumpProcess(DWORD_PTR modBase, DWORD_PTR entryPoint, const WCHAR * dumpFilePath);
 	bool dumpProcess(DWORD_PTR modBase, DWORD_PTR entryPoint, const WCHAR * dumpFilePath, std::vector<PeSection> & sectionList);
+
+	void setEntryPointVa(DWORD_PTR entryPoint);
+	void setEntryPointRva(DWORD entryPoint);
+
+	static bool updatePeHeaderChecksum(const WCHAR * targetFile, DWORD fileSize);
 protected:
 	PeParser();
 
@@ -121,7 +126,6 @@ protected:
 	void setNumberOfSections(WORD numberOfSections);
 	
 	void removeIatDirectory();
-	void setEntryPointVa( DWORD_PTR entryPoint );
 	bool getFileOverlay();
 };
 

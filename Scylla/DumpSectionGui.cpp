@@ -83,7 +83,7 @@ LRESULT DumpSectionGui::OnListDoubleClick(NMHDR* pnmh)
 
 	editingSubItem = ia->iSubItem;
 
-	if (editingSubItem == COL_NAME || editingSubItem == COL_VA || editingSubItem == COL_RVA)
+	if (editingSubItem == COL_NAME || editingSubItem == COL_VA)
 	{
 		return 0;
 	}
@@ -114,6 +114,9 @@ LRESULT DumpSectionGui::OnListDoubleClick(NMHDR* pnmh)
 	{
 	case COL_VSize:
 		valueBeforeEditing = selectedSection->virtualSize;
+		break;
+	case COL_RVA:
+		valueBeforeEditing = selectedSection->rawAddress;
 		break;
 	case COL_RSize:
 		valueBeforeEditing = selectedSection->rawSize;
@@ -357,6 +360,9 @@ void DumpSectionGui::updateEditedItem()
 			{
 			case COL_VSize:
 				selectedSection->virtualSize = newValue;
+				break;
+			case COL_RVA:
+				selectedSection->rawAddress = newValue;
 				break;
 			case COL_RSize:
 				selectedSection->rawSize = newValue;

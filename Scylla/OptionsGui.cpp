@@ -36,6 +36,7 @@ void OptionsGui::saveOptions() const
 	Scylla::config[UPDATE_HEADER_CHECKSUM].setBool(updateHeaderChecksum);
 	Scylla::config[IAT_SECTION_NAME].setString(iatSectionName);
 	Scylla::config[REMOVE_DOS_HEADER_STUB].setBool(removeDosHeaderStub);
+	Scylla::config[IAT_FIX_AND_OEP_FIX].setBool(fixIatAndOep);
 }
 
 void OptionsGui::loadOptions()
@@ -49,4 +50,5 @@ void OptionsGui::loadOptions()
 	iatSectionName[_countof(iatSectionName) - 1] = L'\0';
 
 	removeDosHeaderStub = Scylla::config[REMOVE_DOS_HEADER_STUB].getBool();
+	fixIatAndOep = Scylla::config[IAT_FIX_AND_OEP_FIX].getBool();
 }
