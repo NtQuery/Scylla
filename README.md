@@ -7,7 +7,7 @@ but they all have some major disadvantages, so I decided to create my own tool f
 Scylla's key benefits are:
 
  - x64 and x86 support
- - full unicode support (probably some russian or chinese will like this :-) )
+ - full unicode support
  - written in C/C++
  - plugin support
  - works great with Windows 7
@@ -101,15 +101,3 @@ Version 0.3:
 
  - ImpREC plugin support
  - minor bug fix
-
-Version 0.2a:
-
- - improved disassembler dialog
- - improved iat search
-
-Version 0.2:
-
- - improved process detection
- - added some options
- - new options dialog
- - improved source code

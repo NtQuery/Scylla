@@ -3,7 +3,7 @@
 #include "Scylla.h"
 #include "StringConversion.h"
 
-#define DEBUG_COMMENTS
+//#define DEBUG_COMMENTS
 
 
 bool ImportRebuilder::rebuildImportTable(const WCHAR * newFilePath, std::map<DWORD_PTR, ImportModuleThunk> & moduleList)
