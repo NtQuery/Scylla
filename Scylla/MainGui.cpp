@@ -3,14 +3,11 @@
 #include "Architecture.h"
 //#include "PluginLoader.h"
 //#include "ConfigurationHolder.h"
-//#include "PeDump.h"
-//#include "PeRebuild.h"
 #include "PeParser.h"
 #include "DllInjectionPlugin.h"
 #include "DisassemblerGui.h"
 #include "PickApiGui.h"
 //#include "NativeWinApi.h"
-//#include "ImportRebuild.h"
 #include "ImportRebuilder.h"
 #include "SystemInformation.h"
 #include "Scylla.h"
@@ -254,6 +251,10 @@ void MainGui::OnPERebuild(UINT uNotifyCode, int nID, CWindow wndCtl)
 void MainGui::OnDLLInject(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	dllInjectActionHandler();
+}
+void MainGui::OnDisassembler(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	disassemblerActionHandler();
 }
 
 void MainGui::OnIATAutoSearch(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -1248,6 +1249,7 @@ void MainGui::enableDialogControls(BOOL value)
 	menu.EnableMenuItem(ID_IMPORTS_SAVETREE, valMenu);
 	menu.EnableMenuItem(ID_IMPORTS_LOADTREE, valMenu);
 	menu.EnableMenuItem(ID_MISC_DLLINJECTION, valMenu);
+	menu.EnableMenuItem(ID_MISC_DISASSEMBLER, valMenu);
 	menu.GetSubMenu(MenuImportsOffsetTrace).EnableMenuItem(MenuImportsTraceOffsetScylla, MF_BYPOSITION | valMenu);
 	menu.GetSubMenu(MenuImportsOffsetTrace).EnableMenuItem(MenuImportsTraceOffsetImpRec, MF_BYPOSITION | valMenu);
 
@@ -1312,6 +1314,13 @@ void MainGui::dllInjectActionHandler()
 			Scylla::windowLog.log(L"DLL Injection failed, target %s", selectedFilePath);
 		}
 	}
+}
+
+void MainGui::disassemblerActionHandler()
+{
+	DWORD_PTR oep = EditOEPAddress.GetValue();
+	DisassemblerGui disGuiDlg(oep);
+	disGuiDlg.DoModal();
 }
 
 void MainGui::optionsActionHandler()

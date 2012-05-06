@@ -84,6 +84,7 @@ public:
 		COMMAND_ID_HANDLER_EX(ID_IMPORTS_LOADTREE, OnLoadTree)
 		COMMAND_ID_HANDLER_EX(ID_TRACE_AUTOTRACE, OnAutotrace)
 		COMMAND_ID_HANDLER_EX(ID_MISC_DLLINJECTION, OnDLLInject)
+		COMMAND_ID_HANDLER_EX(ID_MISC_DISASSEMBLER, OnDisassembler)
 		COMMAND_ID_HANDLER_EX(ID_MISC_OPTIONS, OnOptions)
 		COMMAND_ID_HANDLER_EX(ID_HELP_ABOUT, OnAbout)
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnExit)
@@ -233,6 +234,7 @@ protected:
 	void OnFixDump(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnPERebuild(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnDLLInject(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void OnDisassembler(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	void OnIATAutoSearch(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnGetImports(UINT uNotifyCode, int nID, CWindow wndCtl);
@@ -282,6 +284,7 @@ protected:
 	void dumpFixActionHandler();
 	void showAboutDialog();
 	void dllInjectActionHandler();
+	void disassemblerActionHandler();
 	void optionsActionHandler();
 	void clearImportsActionHandler();
 	void pluginActionHandler(int menuItem);
