@@ -3,9 +3,10 @@
 #include "ProcessAccessHelp.h"
 #include "Architecture.h"
 
-DisassemblerGui::DisassemblerGui(DWORD_PTR startAddress) : startAddress(startAddress)
+DisassemblerGui::DisassemblerGui(DWORD_PTR startAddress)
 {
-	prevAddress = startAddress;
+	addressHistoryIndex = 0;
+	addressHistory.push_back(startAddress);
 	hMenuDisassembler.LoadMenu(IDR_MENU_DISASSEMBLER);
 }
 
@@ -17,7 +18,7 @@ BOOL DisassemblerGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	addColumnsToDisassembler(ListDisassembler);
 	displayDisassembly();
 
-	EditAddress.SetValue(startAddress);
+	EditAddress.SetValue(addressHistory[addressHistoryIndex]);
 
 	CenterWindow();
 
@@ -61,6 +62,11 @@ void DisassemblerGui::OnContextMenu(CWindow wnd, CPoint point)
 			case ID__DIS_FOLLOW:
 				followInstruction(selection);
 				break;
+			case ID__DIS_DISASSEMBLEHERE:
+				{
+					disassembleNewAddress((DWORD_PTR)ProcessAccessHelp::decomposerResult[selection].addr);
+				}
+				
 			}
 			if(column != -1)
 			{
@@ -116,8 +122,32 @@ void DisassemblerGui::OnDisassemble(UINT uNotifyCode, int nID, CWindow wndCtl)
 	DWORD_PTR address = EditAddress.GetValue();
 	if (address)
 	{
-		prevAddress = startAddress;
-		startAddress = address;
+		disassembleNewAddress(address);
+	}
+}
+
+void DisassemblerGui::disassembleNewAddress(DWORD_PTR address)
+{
+	if (addressHistory[addressHistory.size() - 1] != address)
+	{
+		addressHistory.push_back(address);
+		addressHistoryIndex = (int)addressHistory.size() - 1;
+		EditAddress.SetValue(addressHistory[addressHistoryIndex]);
+
+		if (!displayDisassembly())
+		{
+			MessageBox(L"Cannot disassemble memory at this address",L"Error",MB_ICONERROR);
+		}
+	}
+
+}
+
+void DisassemblerGui::OnDisassembleForward(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	if (addressHistoryIndex != (addressHistory.size() - 1))
+	{
+		addressHistoryIndex++;
+		EditAddress.SetValue(addressHistory[addressHistoryIndex]);
 		if (!displayDisassembly())
 		{
 			MessageBox(L"Cannot disassemble memory at this address",L"Error",MB_ICONERROR);
@@ -127,11 +157,14 @@ void DisassemblerGui::OnDisassemble(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void DisassemblerGui::OnDisassembleBack(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	startAddress = prevAddress;
-	EditAddress.SetValue(startAddress);
-	if (!displayDisassembly())
+	if (addressHistoryIndex != 0)
 	{
-		MessageBox(L"Cannot disassemble memory at this address",L"Error",MB_ICONERROR);
+		addressHistoryIndex--;
+		EditAddress.SetValue(addressHistory[addressHistoryIndex]);
+		if (!displayDisassembly())
+		{
+			MessageBox(L"Cannot disassemble memory at this address",L"Error",MB_ICONERROR);
+		}
 	}
 }
 
@@ -150,13 +183,13 @@ bool DisassemblerGui::displayDisassembly()
 {
 	ListDisassembler.DeleteAllItems();
 
-	if(!ProcessAccessHelp::readMemoryFromProcess(startAddress, sizeof(data), data))
+	if(!ProcessAccessHelp::readMemoryFromProcess(addressHistory[addressHistoryIndex], sizeof(data), data))
 		return false;
 
-	if (!ProcessAccessHelp::decomposeMemory(data, sizeof(data), startAddress))
+	if (!ProcessAccessHelp::decomposeMemory(data, sizeof(data), addressHistory[addressHistoryIndex]))
 		return false;
 
-	if (!ProcessAccessHelp::disassembleMemory(data, sizeof(data), startAddress))
+	if (!ProcessAccessHelp::disassembleMemory(data, sizeof(data), addressHistory[addressHistoryIndex]))
 		return false;
 
 	for (unsigned int i = 0; i < ProcessAccessHelp::decodedInstructionsCount; i++)
@@ -188,7 +221,7 @@ bool DisassemblerGui::displayDisassembly()
 
 	ListDisassembler.SetColumnWidth(COL_ADDRESS, LVSCW_AUTOSIZE_USEHEADER);
 	ListDisassembler.SetColumnWidth(COL_INSTRUCTION_SIZE, LVSCW_AUTOSIZE_USEHEADER);
-	ListDisassembler.SetColumnWidth(COL_OPCODES, LVSCW_AUTOSIZE_USEHEADER);
+	ListDisassembler.SetColumnWidth(COL_OPCODES, 140);
 	ListDisassembler.SetColumnWidth(COL_INSTRUCTION, LVSCW_AUTOSIZE_USEHEADER);
 	ListDisassembler.SetColumnWidth(COL_COMMENT, LVSCW_AUTOSIZE_USEHEADER);
 
@@ -291,17 +324,7 @@ void DisassemblerGui::followInstruction(int index)
 
 			if (address != 0)
 			{
-				prevAddress = startAddress;
-				startAddress = address;
-				
-				if (displayDisassembly())
-				{
-					EditAddress.SetValue(startAddress);
-				}
-				else
-				{
-					MessageBox(L"Cannot disassemble memory at this address",L"Error",MB_ICONERROR);
-				}
+				disassembleNewAddress(address);
 			}
 		}
 

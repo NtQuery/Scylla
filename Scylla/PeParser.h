@@ -121,6 +121,7 @@ protected:
 
 	bool addNewLastSection(const CHAR * sectionName, DWORD sectionSize, BYTE * sectionData);
 	DWORD alignValue(DWORD badValue, DWORD alignTo);
+	int convertRVAToOffsetVectorIndex(DWORD_PTR dwRVA);
 	DWORD_PTR convertOffsetToRVAVector(DWORD_PTR dwOffset);
 	DWORD_PTR convertRVAToOffsetVector(DWORD_PTR dwRVA);
 	void setNumberOfSections(WORD numberOfSections);

@@ -12,7 +12,7 @@
 #include <atlcrack.h>      // WTL enhanced msg map macros
 #include <atlctrls.h>      // WTL controls
 #include <atlddx.h>        // WTL dialog data exchange
-
+#include <vector>
 #include "hexedit.h"
 
 class DisassemblerGui : public CDialogImpl<DisassemblerGui>, public CWinDataExchange<DisassemblerGui>, public CDialogResize<DisassemblerGui>
@@ -33,6 +33,7 @@ public:
 
 		COMMAND_ID_HANDLER_EX(IDC_BUTTON_DISASSEMBLE, OnDisassemble)
 		COMMAND_ID_HANDLER_EX(IDC_BUTTON_DISASSEMBLER_BACK, OnDisassembleBack)
+		COMMAND_ID_HANDLER_EX(IDC_BUTTON_DISASSEMBLER_FORWARD, OnDisassembleForward)
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnExit)
 		COMMAND_ID_HANDLER_EX(IDOK, OnExit)
 
@@ -43,6 +44,7 @@ public:
 		DLGRESIZE_CONTROL(IDC_LIST_DISASSEMBLER,     DLSZ_SIZE_X | DLSZ_SIZE_Y)
 		DLGRESIZE_CONTROL(IDC_BUTTON_DISASSEMBLE,     DLSZ_MOVE_X | DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDC_BUTTON_DISASSEMBLER_BACK,     DLSZ_MOVE_X | DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_BUTTON_DISASSEMBLER_FORWARD,     DLSZ_MOVE_X | DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDC_EDIT_ADDRESS_DISASSEMBLE,   DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDC_STATIC_ADDRESS_DISASSEMBLE,   DLSZ_MOVE_Y)
 	END_DLGRESIZE_MAP()
@@ -56,8 +58,9 @@ protected:
 	static const size_t DISASSEMBLER_GUI_MEMORY_SIZE = 0x120;
 
 	WCHAR tempBuffer[100];
-	DWORD_PTR startAddress;
-	DWORD_PTR prevAddress;
+	int addressHistoryIndex;
+
+	std::vector<DWORD_PTR> addressHistory;
 
 	// Controls
 
@@ -86,7 +89,7 @@ protected:
 	LRESULT OnNMCustomdraw(NMHDR* pnmh);
 	void OnDisassemble(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnDisassembleBack(UINT uNotifyCode, int nID, CWindow wndCtl);
-
+	void OnDisassembleForward(UINT uNotifyCode, int nID, CWindow wndCtl);
 	// GUI functions
 
 	void addColumnsToDisassembler(CListViewCtrl& list);
@@ -103,4 +106,6 @@ private:
 	void doColorInstruction( LPNMLVCUSTOMDRAW lpLVCustomDraw, DWORD_PTR itemIndex );
 	void followInstruction(int index);
 	bool getDisassemblyComment(unsigned int index);
+
+	void disassembleNewAddress(DWORD_PTR address);
 };

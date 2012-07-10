@@ -890,6 +890,19 @@ bool PeParser::addNewLastSection(const CHAR * sectionName, DWORD sectionSize, BY
 	return true;
 }
 
+int PeParser::convertRVAToOffsetVectorIndex(DWORD_PTR dwRVA)
+{
+	for (WORD i = 0; i < getNumberOfSections(); i++)
+	{
+		if ((listPeSection[i].sectionHeader.VirtualAddress <= dwRVA) && ((listPeSection[i].sectionHeader.VirtualAddress + listPeSection[i].sectionHeader.Misc.VirtualSize) > dwRVA))
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+
 DWORD_PTR PeParser::convertRVAToOffsetVector(DWORD_PTR dwRVA)
 {
 	for (WORD i = 0; i < getNumberOfSections(); i++)

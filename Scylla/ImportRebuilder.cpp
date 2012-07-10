@@ -273,16 +273,37 @@ size_t ImportRebuilder::addImportToImportTable( ImportThunk * pImport, PIMAGE_TH
 
 BYTE * ImportRebuilder::getMemoryPointerFromRVA(DWORD_PTR dwRVA)
 {
-	DWORD_PTR offset = convertRVAToOffsetVector(dwRVA);
+	int peSectionIndex = convertRVAToOffsetVectorIndex(dwRVA);
 
-	for (size_t i = 0; i < listPeSection.size(); i++)
+	if (peSectionIndex == -1)
 	{
-		if ((listPeSection[i].sectionHeader.PointerToRawData <= offset) && ((listPeSection[i].sectionHeader.PointerToRawData + listPeSection[i].sectionHeader.SizeOfRawData) > offset))
-		{
-			return (BYTE *)((DWORD_PTR)listPeSection[i].data + (offset - listPeSection[i].sectionHeader.PointerToRawData));
-		}
+		return 0;
 	}
 
-	return 0;
+	DWORD rvaPointer = ((DWORD)dwRVA - listPeSection[peSectionIndex].sectionHeader.VirtualAddress);
+	DWORD minSectionSize = rvaPointer + (sizeof(DWORD_PTR) * 2); //add space for 1 IAT address
+
+	if (listPeSection[peSectionIndex].data == 0 || listPeSection[peSectionIndex].dataSize == 0)
+	{
+		listPeSection[peSectionIndex].dataSize = minSectionSize; 
+		listPeSection[peSectionIndex].normalSize = minSectionSize;
+		listPeSection[peSectionIndex].data = new BYTE[listPeSection[peSectionIndex].dataSize];
+
+		listPeSection[peSectionIndex].sectionHeader.SizeOfRawData = listPeSection[peSectionIndex].dataSize;
+	}
+	else if(listPeSection[peSectionIndex].dataSize < minSectionSize)
+	{
+		BYTE * temp = new BYTE[minSectionSize];
+		memcpy(temp, listPeSection[peSectionIndex].data, listPeSection[peSectionIndex].dataSize);
+		delete [] listPeSection[peSectionIndex].data;
+
+		listPeSection[peSectionIndex].data = temp;
+		listPeSection[peSectionIndex].dataSize = minSectionSize;
+		listPeSection[peSectionIndex].normalSize = minSectionSize;
+
+		listPeSection[peSectionIndex].sectionHeader.SizeOfRawData = listPeSection[peSectionIndex].dataSize;
+	}
+
+    return (BYTE *)((DWORD_PTR)listPeSection[peSectionIndex].data + rvaPointer);
 }
 
