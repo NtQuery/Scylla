@@ -116,8 +116,12 @@ protected:
 	bool readPeSectionFromFile( DWORD readOffset, PeFileSection & peFileSection );
 	bool readPeSectionFromProcess( DWORD_PTR readOffset, PeFileSection & peFileSection );
 
-	bool readSectionFromFile( DWORD readOffset, PeFileSection & peFileSection );
-	bool readSectionFromProcess( DWORD_PTR readOffset, PeFileSection & peFileSection );
+	bool readSectionFromProcess(const DWORD_PTR readOffset, PeFileSection & peFileSection );
+	bool readSectionFromFile(const DWORD readOffset, PeFileSection & peFileSection );
+	bool readSectionFrom(const DWORD_PTR readOffset, PeFileSection & peFileSection, const bool isProcess);
+
+	
+	
 
 	bool addNewLastSection(const CHAR * sectionName, DWORD sectionSize, BYTE * sectionData);
 	DWORD alignValue(DWORD badValue, DWORD alignTo);

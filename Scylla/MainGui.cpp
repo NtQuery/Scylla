@@ -499,7 +499,7 @@ void MainGui::startDisassemblerGui(CTreeItem selectedTreeNode)
 		}
 		else
 		{
-			DisassemblerGui dlgDisassembler(address);
+			DisassemblerGui dlgDisassembler(address, &apiReader);
 			dlgDisassembler.DoModal();
 		}
 	}
@@ -1319,7 +1319,7 @@ void MainGui::dllInjectActionHandler()
 void MainGui::disassemblerActionHandler()
 {
 	DWORD_PTR oep = EditOEPAddress.GetValue();
-	DisassemblerGui disGuiDlg(oep);
+	DisassemblerGui disGuiDlg(oep, &apiReader);
 	disGuiDlg.DoModal();
 }
 

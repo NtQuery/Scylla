@@ -3,6 +3,9 @@
 #include "Scylla.h"
 
 #include "NativeWinApi.h"
+#include "ProcessAccessHelp.h"
+
+#pragma comment(lib, "Psapi.lib")
 
 //#define DEBUG_COMMENTS
 
@@ -115,43 +118,19 @@
 	{
 		HMODULE * hMods = 0;
 		HMODULE hModResult = 0;
-		DWORD count = 0;
 		WCHAR target[MAX_PATH];
-		DWORD cbNeeded = 0;
-		bool notEnough = true;
 
-		count = 100;
-		hMods = new HMODULE[count];
-
-		do 
+		DWORD numHandles = ProcessAccessHelp::getModuleHandlesFromProcess(hProcess, &hMods);
+		if (numHandles == 0)
 		{
-			if (!EnumProcessModules(hProcess, hMods, count * sizeof(HMODULE), &cbNeeded))
-			{
-#ifdef DEBUG_COMMENTS
-				Scylla::debugLog.log(L"DllInjection::getModuleHandle :: EnumProcessModules failed count %d", count);
-#endif
-				delete [] hMods;
-				return 0;
-			}
+			return 0;
+		}
 
-			if ( (count * sizeof(HMODULE)) < cbNeeded )
-			{
-				delete [] hMods;
-				count += 100;
-				hMods = new HMODULE[count];
-			}
-			else
-			{
-				notEnough = false;
-			}
-		} while (notEnough);
-
-
-		for (DWORD i = 0; i < (cbNeeded / sizeof(HMODULE)); i++ )
+		for (DWORD i = 0; i < numHandles; i++)
 		{
 			if (GetModuleFileNameExW(hProcess, hMods[i], target, _countof(target)))
 			{
-				if (!_wcsicmp(target,filename))
+				if (!_wcsicmp(target, filename))
 				{
 					hModResult = hMods[i];
 					break;

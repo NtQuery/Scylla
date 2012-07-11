@@ -1,13 +1,18 @@
 #include "DisassemblerGui.h"
-
+#include <algorithm>
 #include "ProcessAccessHelp.h"
 #include "Architecture.h"
+#include <Psapi.h>
+#pragma comment(lib, "Psapi.lib")
 
-DisassemblerGui::DisassemblerGui(DWORD_PTR startAddress)
+DisassemblerGui::DisassemblerGui(DWORD_PTR startAddress, ApiReader * apiReaderObject)
 {
+	apiReader = apiReaderObject;
 	addressHistoryIndex = 0;
 	addressHistory.push_back(startAddress);
 	hMenuDisassembler.LoadMenu(IDR_MENU_DISASSEMBLER);
+
+	initAddressCommentList();
 }
 
 BOOL DisassemblerGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
@@ -343,9 +348,9 @@ bool DisassemblerGui::getDisassemblyComment(unsigned int index)
 	{
 		if (type == FC_CALL || type == FC_UNC_BRANCH || type == FC_CND_BRANCH)
 		{
-#ifdef _WIN64
 			if (ProcessAccessHelp::decomposerResult[index].flags & FLAG_RIP_RELATIVE)
 			{
+				#ifdef _WIN64
 				addressTemp = (DWORD_PTR)INSTRUCTION_GET_RIP_TARGET(&ProcessAccessHelp::decomposerResult[index]);
 
 				swprintf_s(tempBuffer,L"-> "PRINTF_DWORD_PTR_FULL,addressTemp);
@@ -353,33 +358,124 @@ bool DisassemblerGui::getDisassemblyComment(unsigned int index)
 				if(ProcessAccessHelp::readMemoryFromProcess(addressTemp, sizeof(DWORD_PTR), &address))
 				{
 					swprintf_s(tempBuffer,L"%s -> "PRINTF_DWORD_PTR_FULL,tempBuffer,address);
-					return true;
 				}
+				#endif
 			}
-#endif
-
-			if (ProcessAccessHelp::decomposerResult[index].ops[0].type == O_PC)
+			else if (ProcessAccessHelp::decomposerResult[index].ops[0].type == O_PC)
 			{
 				address = (DWORD_PTR)INSTRUCTION_GET_TARGET(&ProcessAccessHelp::decomposerResult[index]);
 				swprintf_s(tempBuffer,L"-> "PRINTF_DWORD_PTR_FULL,address);
-				return true;
 			}
-
-			if (ProcessAccessHelp::decomposerResult[index].ops[0].type == O_DISP)
+			else if (ProcessAccessHelp::decomposerResult[index].ops[0].type == O_DISP)
 			{
 				addressTemp = (DWORD_PTR)ProcessAccessHelp::decomposerResult[index].disp;
 
 				swprintf_s(tempBuffer,L"-> "PRINTF_DWORD_PTR_FULL,addressTemp);
 
+				address = 0;
 				if(ProcessAccessHelp::readMemoryFromProcess(addressTemp, sizeof(DWORD_PTR), &address))
 				{
 					swprintf_s(tempBuffer,L"%s -> "PRINTF_DWORD_PTR_FULL,tempBuffer,address);
-					return true;
 				}
 			}
 		}
-
 	}
 
-	return false;
+	if (address != 0)
+	{
+		analyzeAddress(address, tempBuffer);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void DisassemblerGui::initAddressCommentList()
+{
+	HMODULE * hMods = 0;
+	HMODULE hModResult = 0;
+	WCHAR target[MAX_PATH];
+
+	DWORD numHandles = ProcessAccessHelp::getModuleHandlesFromProcess(ProcessAccessHelp::hProcess, &hMods);
+	if (numHandles == 0)
+	{
+		return;
+	}
+
+	for (DWORD i = 0; i < numHandles; i++)
+	{
+		if (ProcessAccessHelp::targetImageBase != (DWORD_PTR)hMods[i])
+		{
+			if (GetModuleFileNameExW(ProcessAccessHelp::hProcess, hMods[i], target, _countof(target)))
+			{
+				addModuleAddressCommentEntry((DWORD_PTR)hMods[i], (DWORD)ProcessAccessHelp::getSizeOfImageProcess(ProcessAccessHelp::hProcess, (DWORD_PTR)hMods[i]), target);
+			}
+			else
+			{
+#ifdef DEBUG_COMMENTS
+				Scylla::debugLog.log(L"DllInjection::getModuleHandle :: GetModuleFileNameExW failed 0x%X", GetLastError());
+#endif
+			}
+		}
+	}
+
+	std::sort(addressCommentList.begin(), addressCommentList.end());
+}
+
+void DisassemblerGui::addModuleAddressCommentEntry( DWORD_PTR address, DWORD moduleSize, const WCHAR * modulePath )
+{
+	DisassemblerAddressComment commentObj;
+	//get filename
+	const WCHAR* slash = wcsrchr(modulePath, L'\\');
+	if(slash)
+	{
+		modulePath = slash+1;
+	}
+
+	wcscpy_s(commentObj.comment, _countof(commentObj.comment), modulePath);
+	commentObj.address = address;
+	commentObj.type = ADDRESS_TYPE_MODULE;
+	commentObj.moduleSize = moduleSize;
+
+	addressCommentList.push_back(commentObj);
+}
+
+void DisassemblerGui::analyzeAddress( DWORD_PTR address, WCHAR * comment )
+{
+	if (addressCommentList[0].address > address) //list is sorted, TODO: binary search
+	{
+		return;
+	}
+	bool isSuspect;
+	ApiInfo * api = apiReader->getApiByVirtualAddress(address, &isSuspect);
+
+	if (api != 0 && api != (ApiInfo *)1)
+	{
+		if (api->name[0] == 0)
+		{
+			swprintf_s(tempBuffer,L"%s = %s.%04X", comment, api->module->getFilename(), api->ordinal);
+		}
+		else
+		{
+			swprintf_s(tempBuffer,L"%s = %s.%S", comment, api->module->getFilename(), api->name);
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < addressCommentList.size(); i++) 
+		{
+			if (addressCommentList[i].type == ADDRESS_TYPE_MODULE)
+			{
+				if (address >= addressCommentList[i].address && address < (addressCommentList[i].address + addressCommentList[i].moduleSize))
+				{
+					swprintf_s(tempBuffer,L"%s = %s", comment, addressCommentList[i].comment);
+					return;
+				}
+			}
+		}
+	}
+
+
 }

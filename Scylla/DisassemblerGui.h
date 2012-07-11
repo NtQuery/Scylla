@@ -15,6 +15,25 @@
 #include <vector>
 #include "hexedit.h"
 
+#include "ApiReader.h"
+
+enum DisassemblerAddressType {
+	ADDRESS_TYPE_MODULE,
+	ADDRESS_TYPE_API,
+	ADDRESS_TYPE_SPECIAL
+};
+
+class DisassemblerAddressComment
+{
+public:
+	DWORD_PTR address;
+	WCHAR comment[MAX_PATH];
+	DisassemblerAddressType type;
+	DWORD moduleSize;
+
+	bool operator<(DisassemblerAddressComment rhs) { return address < rhs.address; }
+};
+
 class DisassemblerGui : public CDialogImpl<DisassemblerGui>, public CWinDataExchange<DisassemblerGui>, public CDialogResize<DisassemblerGui>
 {
 public:
@@ -49,7 +68,7 @@ public:
 		DLGRESIZE_CONTROL(IDC_STATIC_ADDRESS_DISASSEMBLE,   DLSZ_MOVE_Y)
 	END_DLGRESIZE_MAP()
 
-	DisassemblerGui(DWORD_PTR startAddress);
+	DisassemblerGui(DWORD_PTR startAddress, ApiReader * apiReaderObject);
 
 protected:
 
@@ -61,6 +80,8 @@ protected:
 	int addressHistoryIndex;
 
 	std::vector<DWORD_PTR> addressHistory;
+
+	std::vector<DisassemblerAddressComment> addressCommentList;
 
 	// Controls
 
@@ -78,8 +99,6 @@ protected:
 	// Handles
 
 	CMenu hMenuDisassembler;
-
-protected:
 
 	// Message handlers
 
@@ -100,6 +119,7 @@ protected:
 	void copyToClipboard(const WCHAR * text);
 
 private:
+	ApiReader * apiReader;
 	BYTE data[DISASSEMBLER_GUI_MEMORY_SIZE];
 
 	void toUpperCase(WCHAR * lowercase);
@@ -108,4 +128,7 @@ private:
 	bool getDisassemblyComment(unsigned int index);
 
 	void disassembleNewAddress(DWORD_PTR address);
+	void initAddressCommentList();
+	void addModuleAddressCommentEntry( DWORD_PTR address, DWORD moduleSize, const WCHAR * modulePath );
+	void analyzeAddress( DWORD_PTR address, WCHAR * comment );
 };

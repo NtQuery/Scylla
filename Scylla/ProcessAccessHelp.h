@@ -214,4 +214,6 @@ public:
 	static DWORD getEntryPointFromFile(const WCHAR * filePath);
 
 	static bool createBackupFile(const WCHAR * filePath);
+
+	static DWORD getModuleHandlesFromProcess(const HANDLE hProcess, HMODULE ** hMods );
 };

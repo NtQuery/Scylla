@@ -337,17 +337,11 @@ int DumpMemoryGui::listviewCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lP
 
 void DumpMemoryGui::getMemoryList()
 {
-	DWORD count = 0;
 	DWORD_PTR address = 0;
 	MEMORY_BASIC_INFORMATION memBasic = {0};
 	Memory memory;
 	HMODULE * hMods = 0;
-	DWORD cbNeeded = 0;
-	bool notEnough = true;
 	WCHAR target[MAX_PATH];
-
-	count = 100;
-	hMods = new HMODULE[count];
 
 	if (memoryList.empty())
 	{
@@ -386,30 +380,13 @@ void DumpMemoryGui::getMemoryList()
 		address += memBasic.RegionSize;
 	}
 
-	do 
+	DWORD numHandles = ProcessAccessHelp::getModuleHandlesFromProcess(ProcessAccessHelp::hProcess, &hMods);
+	if (numHandles == 0)
 	{
-		if (!EnumProcessModules(ProcessAccessHelp::hProcess, hMods, count * sizeof(HMODULE), &cbNeeded))
-		{
-#ifdef DEBUG_COMMENTS
-			Scylla::debugLog.log(L"getMemoryList :: EnumProcessModules failed count %d", count);
-#endif
-			delete [] hMods;
-			return;
-		}
+		return;
+	}
 
-		if ( (count * sizeof(HMODULE)) < cbNeeded )
-		{
-			delete [] hMods;
-			count += 100;
-			hMods = new HMODULE[count];
-		}
-		else
-		{
-			notEnough = false;
-		}
-	} while (notEnough);
-
-	for (DWORD i = 0; i < (cbNeeded / sizeof(HMODULE)); i++ )
+	for (DWORD i = 0; i < numHandles; i++)
 	{
 		if (GetModuleFileNameExW(ProcessAccessHelp::hProcess, hMods[i], target, _countof(target)))
 		{
@@ -425,8 +402,6 @@ void DumpMemoryGui::getMemoryList()
 	}
 
 	delete [] hMods;
-
-
 }
 
 void DumpMemoryGui::setSectionName(DWORD_PTR sectionAddress, DWORD sectionSize, const WCHAR * sectionName)

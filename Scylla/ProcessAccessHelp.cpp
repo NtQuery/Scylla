@@ -380,7 +380,7 @@ bool ProcessAccessHelp::readMemoryFromFile(HANDLE hFile, LONG offset, DWORD size
 	DWORD retValue = 0;
 	DWORD dwError = 0;
 
-	if ((hFile != INVALID_HANDLE_VALUE) && (hFile != 0))
+	if (hFile != INVALID_HANDLE_VALUE)
 	{
 		retValue = SetFilePointer(hFile, offset, NULL, FILE_BEGIN);
 		dwError = GetLastError();
@@ -436,7 +436,7 @@ bool ProcessAccessHelp::writeMemoryToFile(HANDLE hFile, LONG offset, DWORD size,
 	DWORD retValue = 0;
 	DWORD dwError = 0;
 
-	if ((hFile != INVALID_HANDLE_VALUE) && (hFile != 0))
+	if ((hFile != INVALID_HANDLE_VALUE) && dataBuffer)
 	{
 		retValue = SetFilePointer(hFile, offset, NULL, FILE_BEGIN);
 		dwError = GetLastError();
@@ -782,4 +782,38 @@ bool ProcessAccessHelp::createBackupFile(const WCHAR * filePath)
 	delete [] backupFile;
 
 	return retValue != 0;
+}
+
+DWORD ProcessAccessHelp::getModuleHandlesFromProcess(const HANDLE hProcess, HMODULE ** hMods)
+{
+	DWORD count = 30;
+	DWORD cbNeeded = 0;
+	bool notEnough = true;
+
+	*hMods = new HMODULE[count];
+
+	do 
+	{
+		if (!EnumProcessModules(hProcess, *hMods, count * sizeof(HMODULE), &cbNeeded))
+		{
+#ifdef DEBUG_COMMENTS
+			Scylla::debugLog.log(L"getModuleHandlesFromProcess :: EnumProcessModules failed count %d", count);
+#endif
+			delete [] *hMods;
+			return 0;
+		}
+
+		if ((count * sizeof(HMODULE)) < cbNeeded)
+		{
+			delete [] *hMods;
+			count = cbNeeded / sizeof(HMODULE);
+			*hMods = new HMODULE[count];
+		}
+		else
+		{
+			notEnough = false;
+		}
+	} while (notEnough);
+
+	return cbNeeded / sizeof(HMODULE);
 }

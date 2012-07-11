@@ -6,6 +6,7 @@
 
 #pragma comment(lib, "Imagehlp.lib")
 
+
 PeParser::PeParser()
 {
 	initClass();
@@ -521,15 +522,25 @@ void PeParser::closeFileHandle()
 	}
 }
 
-bool PeParser::readSectionFromFile(DWORD readOffset, PeFileSection & peFileSection)
+bool PeParser::readSectionFromProcess(const DWORD_PTR readOffset, PeFileSection & peFileSection)
+{
+	return readSectionFrom(readOffset, peFileSection, true); //process
+}
+
+bool PeParser::readSectionFromFile(const DWORD readOffset, PeFileSection & peFileSection)
+{
+	return readSectionFrom(readOffset, peFileSection, false); //file
+}
+
+bool PeParser::readSectionFrom(const DWORD_PTR readOffset, PeFileSection & peFileSection, const bool isProcess)
 {
 	const DWORD maxReadSize = 100;
+	DWORD currentReadSize;
 	BYTE data[maxReadSize];
-	DWORD bytesRead = 0;
 	bool retValue = true;
 	DWORD valuesFound = 0;
-	DWORD currentOffset = 0;
 	DWORD readSize = 0;
+	DWORD_PTR currentOffset = 0;
 
 	peFileSection.data = 0;
 	peFileSection.dataSize = 0;
@@ -545,23 +556,44 @@ bool PeParser::readSectionFromFile(DWORD readOffset, PeFileSection & peFileSecti
 		peFileSection.dataSize = readSize;
 		peFileSection.normalSize = readSize;
 
-		return readPeSectionFromFile(readOffset, peFileSection);
+		if (isProcess)
+		{
+			return readPeSectionFromProcess(readOffset, peFileSection);
+		}
+		else
+		{
+			return readPeSectionFromFile((DWORD)readOffset, peFileSection);
+		}
 	}
 
-	currentOffset = readOffset + readSize - maxReadSize;
+	currentReadSize = readSize % maxReadSize; //alignment %
+
+	if (!currentReadSize)
+	{
+		currentReadSize = maxReadSize;
+	}
+	currentOffset = readOffset + readSize - currentReadSize;
+
 
 	while(currentOffset >= readOffset) //start from the end
 	{
-		SetFilePointer(hFile, currentOffset, 0, FILE_BEGIN);
+		ZeroMemory(data, currentReadSize);
 
-		ZeroMemory(data, sizeof(data));
-		if (!ReadFile(hFile, data, sizeof(data), &bytesRead, 0))
+		if (isProcess)
 		{
-			retValue = false;
+			retValue = ProcessAccessHelp::readMemoryPartlyFromProcess(currentOffset, currentReadSize, data);
+		}
+		else
+		{
+			retValue = ProcessAccessHelp::readMemoryFromFile(hFile, (LONG)currentOffset, currentReadSize, data);
+		}
+
+		if (!retValue)
+		{
 			break;
 		}
 
-		valuesFound = isMemoryNotNull(data, sizeof(data));
+		valuesFound = isMemoryNotNull(data, currentReadSize);
 		if (valuesFound)
 		{
 			//found some real code
@@ -571,22 +603,31 @@ bool PeParser::readSectionFromFile(DWORD readOffset, PeFileSection & peFileSecti
 			if (readOffset < currentOffset)
 			{
 				//real size
-				peFileSection.dataSize = currentOffset - readOffset;
+				peFileSection.dataSize = (DWORD)(currentOffset - readOffset);
 			}
 
 			break;
 		}
 
-		currentOffset -= maxReadSize;
+		currentReadSize = maxReadSize;
+		currentOffset -= currentReadSize;
 	}
 
 	if (peFileSection.dataSize)
 	{
-		retValue = readPeSectionFromFile(readOffset, peFileSection);
+		if (isProcess)
+		{
+			retValue = readPeSectionFromProcess(readOffset, peFileSection);
+		}
+		else
+		{
+			retValue = readPeSectionFromFile((DWORD)readOffset, peFileSection);
+		}
 	}
 
 	return retValue;
 }
+
 
 DWORD PeParser::isMemoryNotNull( BYTE * data, int dataSize )
 {
@@ -759,70 +800,6 @@ bool PeParser::readPeSectionFromFile(DWORD readOffset, PeFileSection & peFileSec
 	SetFilePointer(hFile, readOffset, 0, FILE_BEGIN);
 
 	return (ReadFile(hFile, peFileSection.data, peFileSection.dataSize, &bytesRead, 0) != FALSE);
-}
-
-bool PeParser::readSectionFromProcess( DWORD_PTR readOffset, PeFileSection & peFileSection )
-{
-	const DWORD maxReadSize = 100;
-	BYTE data[maxReadSize];
-	bool retValue = true;
-	DWORD valuesFound = 0;
-	DWORD readSize = 0;
-	DWORD_PTR currentOffset = 0;
-
-
-	peFileSection.data = 0;
-	peFileSection.dataSize = 0;
-	readSize = peFileSection.normalSize;
-
-	if (!readOffset || !readSize)
-	{
-		return true; //section without data is valid
-	}
-
-	if (readSize <= maxReadSize)
-	{
-		peFileSection.dataSize = readSize;
-		peFileSection.normalSize = readSize;
-
-		return readPeSectionFromProcess(readOffset, peFileSection);
-	}
-
-	currentOffset = readOffset + readSize - maxReadSize;
-
-	while(currentOffset >= readOffset) //start from the end
-	{
-		if (!ProcessAccessHelp::readMemoryPartlyFromProcess(currentOffset, sizeof(data), data))
-		{
-			retValue = false;
-			break;
-		}
-
-		valuesFound = isMemoryNotNull(data, sizeof(data));
-		if (valuesFound)
-		{
-			//found some real code
-
-			currentOffset += valuesFound;
-
-			if (readOffset < currentOffset)
-			{
-				//real size
-				peFileSection.dataSize = (DWORD)(currentOffset - readOffset);
-			}
-
-			break;
-		}
-
-		currentOffset -= maxReadSize;
-	}
-
-	if (peFileSection.dataSize)
-	{
-		retValue = readPeSectionFromProcess(readOffset, peFileSection);
-	}
-
-	return retValue;
 }
 
 bool PeParser::readPeSectionFromProcess(DWORD_PTR readOffset, PeFileSection & peFileSection)
