@@ -817,3 +817,8 @@ DWORD ProcessAccessHelp::getModuleHandlesFromProcess(const HANDLE hProcess, HMOD
 
 	return cbNeeded / sizeof(HMODULE);
 }
+
+void ProcessAccessHelp::setCurrentProcessAsTarget()
+{
+	ProcessAccessHelp::hProcess = GetCurrentProcess();
+}

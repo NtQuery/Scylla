@@ -1,0 +1,7 @@
+EXPORTS
+   ScyllaDumpCurrentProcessW   @1
+   ScyllaDumpCurrentProcessA   @2
+   ScyllaDumpProcessW   @3
+   ScyllaDumpProcessA   @4
+   RebuildFileW   @5
+   RebuildFileA   @6

@@ -216,4 +216,6 @@ public:
 	static bool createBackupFile(const WCHAR * filePath);
 
 	static DWORD getModuleHandlesFromProcess(const HANDLE hProcess, HMODULE ** hMods );
+
+	static void setCurrentProcessAsTarget();
 };
