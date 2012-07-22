@@ -3,5 +3,8 @@ EXPORTS
    ScyllaDumpCurrentProcessA   @2
    ScyllaDumpProcessW   @3
    ScyllaDumpProcessA   @4
-   RebuildFileW   @5
-   RebuildFileA   @6
+   ScyllaRebuildFileW   @5
+   ScyllaRebuildFileA   @6
+   ScyllaVersionInformationW   @7
+   ScyllaVersionInformationA   @8
+   ScyllaVersionInformationDword   @9

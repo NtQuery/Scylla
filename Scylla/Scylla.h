@@ -6,7 +6,8 @@
 #include "Logger.h"
 
 #define APPNAME_S "Scylla"
-#define APPVERSION_S "v0.7 Beta 5"
+#define APPVERSION_S "v0.7 Beta 6"
+#define APPVERSIONDWORD 0x00007600
 
 #define APPNAME TEXT(APPNAME_S)
 #define APPVERSION TEXT(APPVERSION_S)

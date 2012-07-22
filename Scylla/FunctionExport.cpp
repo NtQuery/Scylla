@@ -1,6 +1,8 @@
 #include <windows.h>
 #include "PeParser.h"
 #include "ProcessAccessHelp.h"
+#include "Scylla.h"
+#include "Architecture.h"
 
 BOOL DumpProcessW(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult);
 
@@ -10,8 +12,28 @@ BOOL WINAPI ScyllaDumpCurrentProcessA(const char * fileToDump, DWORD_PTR imageba
 BOOL WINAPI ScyllaDumpProcessW(DWORD_PTR pid, const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult);
 BOOL WINAPI ScyllaDumpProcessA(DWORD_PTR pid, const char * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const char * fileResult);
 
-BOOL WINAPI RebuildFileW(const WCHAR * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum);
-BOOL WINAPI RebuildFileA(const char * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum);
+BOOL WINAPI ScyllaRebuildFileW(const WCHAR * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup);
+BOOL WINAPI ScyllaRebuildFileA(const char * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup);
+
+WCHAR * WINAPI ScyllaVersionInformationW();
+char * WINAPI ScyllaVersionInformationA();
+DWORD WINAPI ScyllaVersionInformationDword();
+
+
+WCHAR * WINAPI ScyllaVersionInformationW()
+{
+	return APPNAME L" " ARCHITECTURE L" " APPVERSION;
+}
+
+char * WINAPI ScyllaVersionInformationA()
+{
+	return APPNAME_S " " ARCHITECTURE_S " " APPVERSION_S;
+}
+
+DWORD WINAPI ScyllaVersionInformationDword()
+{
+	return APPVERSIONDWORD;
+}
 
 BOOL DumpProcessW(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult)
 {
@@ -29,8 +51,17 @@ BOOL DumpProcessW(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entry
 	return peFile->dumpProcess(imagebase, entrypoint, fileResult);
 }
 
-BOOL WINAPI RebuildFileW(const WCHAR * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum)
+BOOL WINAPI ScyllaRebuildFileW(const WCHAR * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup)
 {
+
+	if (createBackup)
+	{
+		if (!ProcessAccessHelp::createBackupFile(fileToRebuild))
+		{
+			return FALSE;
+		}
+	}
+
 	PeParser peFile(fileToRebuild, true);
 	if (peFile.readPeSectionsFromFile())
 	{
@@ -55,7 +86,7 @@ BOOL WINAPI RebuildFileW(const WCHAR * fileToRebuild, BOOL removeDosStub, BOOL u
 	return FALSE;
 }
 
-BOOL WINAPI RebuildFileA(const char * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum)
+BOOL WINAPI ScyllaRebuildFileA(const char * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup)
 {
 	WCHAR fileToRebuildW[MAX_PATH];
 	if (MultiByteToWideChar(CP_ACP, 0, fileToRebuild, -1, fileToRebuildW, _countof(fileToRebuildW)) == 0)
@@ -63,7 +94,7 @@ BOOL WINAPI RebuildFileA(const char * fileToRebuild, BOOL removeDosStub, BOOL up
 		return FALSE;
 	}
 
-	return RebuildFileW(fileToRebuildW, removeDosStub, updatePeHeaderChecksum);
+	return ScyllaRebuildFileW(fileToRebuildW, removeDosStub, updatePeHeaderChecksum, createBackup);
 }
 
 BOOL WINAPI ScyllaDumpCurrentProcessW(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult)

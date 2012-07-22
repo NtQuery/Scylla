@@ -1,0 +1,118 @@
+
+Prototyps:
+----------------------------------------------------------------------------------------------------------------------------------------------------
+C/C++:
+------------
+BOOL __stdcall ScyllaDumpCurrentProcessW(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult);
+BOOL __stdcall ScyllaDumpCurrentProcessA(const char * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const char * fileResult);
+
+BOOL __stdcall ScyllaDumpProcessW(DWORD_PTR pid, const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult);
+BOOL __stdcall ScyllaDumpProcessA(DWORD_PTR pid, const char * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const char * fileResult);
+
+------------
+32-Bit assembly e.g. MASM:
+------------
+ScyllaDumpCurrentProcessW PROTO STDCALL :DWORD, :DWORD, :DWORD, :DWORD
+ScyllaDumpCurrentProcessA PROTO STDCALL :DWORD, :DWORD, :DWORD, :DWORD
+ScyllaDumpProcessW PROTO STDCALL :DWORD, :DWORD, :DWORD, :DWORD
+ScyllaDumpProcessA PROTO STDCALL :DWORD, :DWORD, :DWORD, :DWORD
+
+------------
+64-Bit assembly:
+------------
+ScyllaDumpCurrentProcessW PROTO :QWORD, :QWORD, :QWORD, :QWORD
+ScyllaDumpCurrentProcessA PROTO :QWORD, :QWORD, :QWORD, :QWORD
+ScyllaDumpProcessW PROTO :QWORD, :QWORD, :QWORD, :QWORD
+ScyllaDumpProcessA PROTO :QWORD, :QWORD, :QWORD, :QWORD
+
+
+fileToDump -> string pointer, this can be 0
+imagebase  -> imagebase base of target
+entrypoint -> entrypoint
+fileResult -> string pointer, resulting file
+pid        -> target process PID
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+C/C++:
+------------
+BOOL __stdcall ScyllaRebuildFileW(const WCHAR * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup);
+BOOL __stdcall ScyllaRebuildFileA(const char * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup);
+
+------------
+32-Bit assembly e.g. MASM:
+------------
+ScyllaRebuildFileW PROTO STDCALL :DWORD, :DWORD, :DWORD, :DWORD
+ScyllaRebuildFileA PROTO STDCALL :DWORD, :DWORD, :DWORD, :DWORD
+------------
+64-Bit assembly:
+------------
+ScyllaRebuildFileW PROTO :QWORD, :DWORD, :DWORD, :DWORD
+ScyllaRebuildFileA PROTO :QWORD, :DWORD, :DWORD, :DWORD
+
+
+fileToRebuild - string pointer
+removeDosStub - to remove the dos stub -> 1 (TRUE) or 0 (FALSE)
+updatePeHeaderChecksum - to update the pe header checksum field -> 1 (TRUE) or 0 (FALSE)
+createBackup - create a backup file -> 1 (TRUE) or 0 (FALSE)
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+C/C++:
+------------
+WCHAR * __stdcall ScyllaVersionInformationW();
+char * __stdcall ScyllaVersionInformationA();
+DWORD __stdcall ScyllaVersionInformationDword();
+
+------------
+64-Bit/32-Bit assembly e.g. MASM:
+------------
+ScyllaVersionInformationW PROTO
+ScyllaVersionInformationA PROTO
+ScyllaVersionInformationDword PROTO
+
+ScyllaVersionInformation - return value is a pointer to a string e.g. "Scylla x86 v0.7 Beta 6"
+
+ScyllaVersionInformationDword - return value is always a DWORD:
+
+e.g. 0x00007600
+0000 -> major version
+7600 -> minor version
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Example:
+
+
+typedef BOOL (__stdcall * def_ScyllaDumpCurrentProcessW)(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult);
+typedef BOOL (__stdcall * def_RebuildFileA)(const char * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup);
+
+HMODULE mod = LoadLibraryA("ScyllaDLL.dll");
+
+def_ScyllaDumpCurrentProcessW ScyllaDumpCurrentProcessW = (def_ScyllaDumpCurrentProcessW)GetProcAddress(mod, "ScyllaDumpCurrentProcessW");
+def_RebuildFileA RebuildFileA = (def_RebuildFileA)GetProcAddress(mod, "RebuildFileA");
+
+ScyllaDumpCurrentProcessW(0, (DWORD_PTR)GetModuleHandleA((LPCSTR)0), 0x13370000, L"C:\\dump.exe");
+RebuildFileA("some.exe", 1, 1, 1);
+
+
+MASM:
+
+szScyllaDll db "ScyllaDLL.dll",0h
+szRebuildFileA db "RebuildFileA",0h
+szTargetExe db "some.exe",0h
+
+push offset szScyllaDll
+call LoadLibraryA
+push offset szRebuildFileA
+push eax
+call GetProcAddress
+xor ecx, ecx
+inc ecx
+push ecx
+push ecx
+push ecx
+push offset szTargetExe
+call eax
+
+
+
