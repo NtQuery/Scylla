@@ -916,7 +916,13 @@ void PeParser::fixPeHeader()
 		pNTHeader32->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].VirtualAddress = 0;
 		pNTHeader32->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].Size = 0;
 
-		//max 16
+		//max 16, zeroing possible garbage values
+		for (DWORD i = pNTHeader32->OptionalHeader.NumberOfRvaAndSizes; i < IMAGE_NUMBEROF_DIRECTORY_ENTRIES; i++)
+		{
+			pNTHeader32->OptionalHeader.DataDirectory[i].Size = 0;
+			pNTHeader32->OptionalHeader.DataDirectory[i].VirtualAddress = 0;
+		}
+
 		pNTHeader32->OptionalHeader.NumberOfRvaAndSizes = IMAGE_NUMBEROF_DIRECTORY_ENTRIES;
 		pNTHeader32->FileHeader.SizeOfOptionalHeader = sizeof(IMAGE_OPTIONAL_HEADER32);
 
@@ -935,7 +941,13 @@ void PeParser::fixPeHeader()
 		pNTHeader64->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].VirtualAddress = 0;
 		pNTHeader64->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].Size = 0;
 
-		//max 16
+		//max 16, zeroing possible garbage values
+		for (DWORD i = pNTHeader64->OptionalHeader.NumberOfRvaAndSizes; i < IMAGE_NUMBEROF_DIRECTORY_ENTRIES; i++)
+		{
+			pNTHeader64->OptionalHeader.DataDirectory[i].Size = 0;
+			pNTHeader64->OptionalHeader.DataDirectory[i].VirtualAddress = 0;
+		}
+
 		pNTHeader64->OptionalHeader.NumberOfRvaAndSizes = IMAGE_NUMBEROF_DIRECTORY_ENTRIES;
 		pNTHeader64->FileHeader.SizeOfOptionalHeader = sizeof(IMAGE_OPTIONAL_HEADER64);
 		
