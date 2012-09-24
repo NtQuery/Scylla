@@ -304,4 +304,5 @@ protected:
 	// Misc
 
 	bool getCurrentModulePath(WCHAR * buffer, size_t bufferSize);
+	void checkSuspendProcess();
 };

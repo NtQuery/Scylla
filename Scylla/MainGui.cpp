@@ -1001,17 +1001,7 @@ void MainGui::dumpSectionActionHandler()
 		getCurrentModulePath(stringBuffer, _countof(stringBuffer));
 		if(showFileDialog(selectedFilePath, true, NULL, fileFilter, defExtension, stringBuffer))
 		{
-			if (Scylla::config[SUSPEND_PROCESS_FOR_DUMPING].isTrue())
-			{
-				if (!ProcessAccessHelp::suspendProcess())
-				{
-					Scylla::windowLog.log(L"Error: Cannot suspend process.");
-				}
-				else
-				{
-					Scylla::windowLog.log(L"Suspending process successful, please resume manually.");
-				}
-			}
+			checkSuspendProcess();
 
 			if (Scylla::config[USE_PE_HEADER_FROM_DISK].isTrue())
 			{
@@ -1068,17 +1058,7 @@ void MainGui::dumpActionHandler()
 	{
 		entrypoint = EditOEPAddress.GetValue();
 
-		if (Scylla::config[SUSPEND_PROCESS_FOR_DUMPING].isTrue())
-		{
-			if (!ProcessAccessHelp::suspendProcess())
-			{
-				Scylla::windowLog.log(L"Error: Cannot suspend process.");
-			}
-			else
-			{
-				Scylla::windowLog.log(L"Suspending process successful, please resume manually.");
-			}
-		}
+		checkSuspendProcess();
 
 		if (ProcessAccessHelp::selectedModule)
 		{
@@ -1416,4 +1396,19 @@ bool MainGui::getCurrentModulePath(WCHAR * buffer, size_t bufferSize)
 	}
 
 	return true;
+}
+
+void MainGui::checkSuspendProcess()
+{
+	if (Scylla::config[SUSPEND_PROCESS_FOR_DUMPING].isTrue())
+	{
+		if (!ProcessAccessHelp::suspendProcess())
+		{
+			Scylla::windowLog.log(L"Error: Cannot suspend process.");
+		}
+		else
+		{
+			Scylla::windowLog.log(L"Suspending process successful, please resume manually.");
+		}
+	}
 }
