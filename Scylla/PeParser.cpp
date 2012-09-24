@@ -917,10 +917,8 @@ void PeParser::fixPeHeader()
 		pNTHeader32->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].Size = 0;
 
 		//max 16
-		if (pNTHeader64->OptionalHeader.NumberOfRvaAndSizes > 0x10)
-		{
-			pNTHeader64->OptionalHeader.NumberOfRvaAndSizes = 0x10;
-		}
+		pNTHeader32->OptionalHeader.NumberOfRvaAndSizes = IMAGE_NUMBEROF_DIRECTORY_ENTRIES;
+		pNTHeader32->FileHeader.SizeOfOptionalHeader = sizeof(IMAGE_OPTIONAL_HEADER32);
 
 		pNTHeader32->OptionalHeader.SizeOfImage = getSectionHeaderBasedSizeOfImage();
 
@@ -938,10 +936,8 @@ void PeParser::fixPeHeader()
 		pNTHeader64->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].Size = 0;
 
 		//max 16
-		if (pNTHeader64->OptionalHeader.NumberOfRvaAndSizes > 0x10)
-		{
-			pNTHeader64->OptionalHeader.NumberOfRvaAndSizes = 0x10;
-		}
+		pNTHeader64->OptionalHeader.NumberOfRvaAndSizes = IMAGE_NUMBEROF_DIRECTORY_ENTRIES;
+		pNTHeader64->FileHeader.SizeOfOptionalHeader = sizeof(IMAGE_OPTIONAL_HEADER64);
 		
 		pNTHeader64->OptionalHeader.SizeOfImage = getSectionHeaderBasedSizeOfImage();
 
