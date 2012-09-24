@@ -37,6 +37,7 @@ void OptionsGui::saveOptions() const
 	Scylla::config[IAT_SECTION_NAME].setString(iatSectionName);
 	Scylla::config[REMOVE_DOS_HEADER_STUB].setBool(removeDosHeaderStub);
 	Scylla::config[IAT_FIX_AND_OEP_FIX].setBool(fixIatAndOep);
+	Scylla::config[SUSPEND_PROCESS_FOR_DUMPING].setBool(suspendProcessForDumping);
 }
 
 void OptionsGui::loadOptions()
@@ -51,4 +52,5 @@ void OptionsGui::loadOptions()
 
 	removeDosHeaderStub = Scylla::config[REMOVE_DOS_HEADER_STUB].getBool();
 	fixIatAndOep = Scylla::config[IAT_FIX_AND_OEP_FIX].getBool();
+	suspendProcessForDumping = Scylla::config[SUSPEND_PROCESS_FOR_DUMPING].getBool();
 }

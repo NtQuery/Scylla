@@ -43,7 +43,7 @@ bool ProcessAccessHelp::openProcessHandle(DWORD dwPID)
 			//hProcess = OpenProcess(PROCESS_CREATE_THREAD|PROCESS_VM_OPERATION|PROCESS_QUERY_INFORMATION|PROCESS_VM_READ|PROCESS_VM_WRITE, 0, dwPID);
 			//if (!NT_SUCCESS(NativeWinApi::NtOpenProcess(&hProcess,PROCESS_CREATE_THREAD|PROCESS_VM_OPERATION|PROCESS_QUERY_INFORMATION|PROCESS_VM_READ|PROCESS_VM_WRITE,&ObjectAttributes, &cid)))
 
-			hProcess = NativeOpenProcess(PROCESS_CREATE_THREAD|PROCESS_VM_OPERATION|PROCESS_QUERY_INFORMATION|PROCESS_VM_READ|PROCESS_VM_WRITE, dwPID);
+			hProcess = NativeOpenProcess(PROCESS_CREATE_THREAD|PROCESS_VM_OPERATION|PROCESS_QUERY_INFORMATION|PROCESS_VM_READ|PROCESS_VM_WRITE|PROCESS_SUSPEND_RESUME, dwPID);
 
 			if (hProcess)
 			{
@@ -821,4 +821,30 @@ DWORD ProcessAccessHelp::getModuleHandlesFromProcess(const HANDLE hProcess, HMOD
 void ProcessAccessHelp::setCurrentProcessAsTarget()
 {
 	ProcessAccessHelp::hProcess = GetCurrentProcess();
+}
+
+bool ProcessAccessHelp::suspendProcess()
+{
+	if (NativeWinApi::NtSuspendProcess)
+	{
+		if (NT_SUCCESS( NativeWinApi::NtSuspendProcess(ProcessAccessHelp::hProcess) ))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool ProcessAccessHelp::resumeProcess()
+{
+	if (NativeWinApi::NtResumeProcess)
+	{
+		if (NT_SUCCESS( NativeWinApi::NtResumeProcess(ProcessAccessHelp::hProcess) ))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }

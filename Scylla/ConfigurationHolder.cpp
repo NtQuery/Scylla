@@ -9,15 +9,15 @@ const WCHAR ConfigurationHolder::CONFIG_FILE_SECTION_NAME[] = L"SCYLLA_CONFIG";
 
 ConfigurationHolder::ConfigurationHolder(const WCHAR* fileName)
 {
-	config[USE_PE_HEADER_FROM_DISK]   = Configuration(L"USE_PE_HEADER_FROM_DISK",   Configuration::Boolean);
-	config[DEBUG_PRIVILEGE]           = Configuration(L"DEBUG_PRIVILEGE",           Configuration::Boolean);
-	config[CREATE_BACKUP]             = Configuration(L"CREATE_BACKUP",             Configuration::Boolean);
-	config[DLL_INJECTION_AUTO_UNLOAD] = Configuration(L"DLL_INJECTION_AUTO_UNLOAD", Configuration::Boolean);
-	config[UPDATE_HEADER_CHECKSUM]    = Configuration(L"UPDATE_HEADER_CHECKSUM",    Configuration::Boolean);
-	config[IAT_SECTION_NAME]          = Configuration(L"IAT_SECTION_NAME",          Configuration::String);
-	config[REMOVE_DOS_HEADER_STUB]    = Configuration(L"REMOVE_DOS_HEADER_STUB",    Configuration::Boolean);
-	config[IAT_FIX_AND_OEP_FIX]       = Configuration(L"IAT_FIX_AND_OEP_FIX",       Configuration::Boolean);
-
+	config[USE_PE_HEADER_FROM_DISK]     = Configuration(L"USE_PE_HEADER_FROM_DISK",      Configuration::Boolean);
+	config[DEBUG_PRIVILEGE]             = Configuration(L"DEBUG_PRIVILEGE",              Configuration::Boolean);
+	config[CREATE_BACKUP]               = Configuration(L"CREATE_BACKUP",                Configuration::Boolean);
+	config[DLL_INJECTION_AUTO_UNLOAD]   = Configuration(L"DLL_INJECTION_AUTO_UNLOAD",    Configuration::Boolean);
+	config[UPDATE_HEADER_CHECKSUM]      = Configuration(L"UPDATE_HEADER_CHECKSUM",       Configuration::Boolean);
+	config[IAT_SECTION_NAME]            = Configuration(L"IAT_SECTION_NAME",             Configuration::String);
+	config[REMOVE_DOS_HEADER_STUB]      = Configuration(L"REMOVE_DOS_HEADER_STUB",       Configuration::Boolean);
+	config[IAT_FIX_AND_OEP_FIX]         = Configuration(L"IAT_FIX_AND_OEP_FIX",          Configuration::Boolean);
+	config[SUSPEND_PROCESS_FOR_DUMPING] = Configuration(L"SUSPEND_PROCESS_FOR_DUMPING",  Configuration::Boolean);
 	buildConfigFilePath(fileName);
 }
 

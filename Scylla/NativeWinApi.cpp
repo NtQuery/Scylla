@@ -10,8 +10,10 @@ def_NtQueryInformationProcess NativeWinApi::NtQueryInformationProcess = 0;
 def_NtQueryInformationThread NativeWinApi::NtQueryInformationThread = 0;
 def_NtQuerySystemInformation NativeWinApi::NtQuerySystemInformation = 0;
 def_NtQueryVirtualMemory NativeWinApi::NtQueryVirtualMemory = 0;
+def_NtResumeProcess NativeWinApi::NtResumeProcess = 0;
 def_NtResumeThread NativeWinApi::NtResumeThread = 0;
 def_NtSetInformationThread NativeWinApi::NtSetInformationThread = 0;
+def_NtSuspendProcess NativeWinApi::NtSuspendProcess = 0;
 def_NtTerminateProcess NativeWinApi::NtTerminateProcess = 0;
 
 def_RtlNtStatusToDosError NativeWinApi::RtlNtStatusToDosError = 0;
@@ -35,8 +37,10 @@ void NativeWinApi::initialize()
 	NtQueryInformationThread = (def_NtQueryInformationThread)GetProcAddress(hModuleNtdll, "NtQueryInformationThread");
 	NtQuerySystemInformation = (def_NtQuerySystemInformation)GetProcAddress(hModuleNtdll, "NtQuerySystemInformation");
 	NtQueryVirtualMemory = (def_NtQueryVirtualMemory)GetProcAddress(hModuleNtdll, "NtQueryVirtualMemory");
+	NtResumeProcess = (def_NtResumeProcess)GetProcAddress(hModuleNtdll, "NtResumeProcess");
 	NtResumeThread = (def_NtResumeThread)GetProcAddress(hModuleNtdll, "NtResumeThread");
 	NtSetInformationThread = (def_NtSetInformationThread)GetProcAddress(hModuleNtdll, "NtSetInformationThread");
+	NtSuspendProcess = (def_NtSuspendProcess)GetProcAddress(hModuleNtdll, "NtSuspendProcess");
 	NtTerminateProcess = (def_NtTerminateProcess)GetProcAddress(hModuleNtdll, "NtTerminateProcess");
 
 	RtlNtStatusToDosError = (def_RtlNtStatusToDosError)GetProcAddress(hModuleNtdll, "RtlNtStatusToDosError");

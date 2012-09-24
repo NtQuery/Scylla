@@ -26,6 +26,7 @@ public:
 		DDX_CHECK(IDC_CHECK_DEBUG_PRIVILEGES, debugPrivilege)
 		DDX_CHECK(IDC_CHECK_REMOVE_DOS_STUB, removeDosHeaderStub)
 		DDX_CHECK(IDC_CHECK_FIX_IAT_AND_OEP, fixIatAndOep)
+		DDX_CHECK(IDC_CHECK_SUSPEND_PROCESS, suspendProcessForDumping)
 	END_DDX_MAP()
 
 	BEGIN_MSG_MAP(OptionsGui)
@@ -48,7 +49,7 @@ protected:
 	bool debugPrivilege;
 	bool removeDosHeaderStub;
 	bool fixIatAndOep;
-
+	bool suspendProcessForDumping;
 	// Controls
 
 	CEdit EditSectionName;

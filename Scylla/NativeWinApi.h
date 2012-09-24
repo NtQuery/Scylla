@@ -251,8 +251,8 @@ typedef NTSTATUS (WINAPI *def_NtOpenThread)(PHANDLE ThreadHandle,ACCESS_MASK Des
 typedef NTSTATUS (WINAPI *def_NtResumeThread)(HANDLE ThreadHandle, PULONG SuspendCount);
 typedef NTSTATUS (WINAPI *def_NtSetInformationThread)(HANDLE ThreadHandle,THREADINFOCLASS ThreadInformationClass,PVOID ThreadInformation,ULONG ThreadInformationLength);
 typedef NTSTATUS (WINAPI *def_NtCreateThreadEx)(PHANDLE hThread,ACCESS_MASK DesiredAccess,LPVOID ObjectAttributes,HANDLE ProcessHandle,LPTHREAD_START_ROUTINE lpStartAddress,LPVOID lpParameter,BOOL CreateSuspended,ULONG StackZeroBits,LPVOID SizeOfStackCommit,LPVOID SizeOfStackReserve,LPVOID lpBytesBuffer);
-
-
+typedef NTSTATUS (WINAPI *def_NtSuspendProcess)(HANDLE ProcessHandle);
+typedef NTSTATUS (WINAPI *def_NtResumeProcess)(HANDLE ProcessHandle);
 
 typedef ULONG (WINAPI *def_RtlNtStatusToDosError)(NTSTATUS Status);
 
@@ -271,9 +271,12 @@ public:
 	static def_NtQueryInformationThread NtQueryInformationThread;
 	static def_NtQuerySystemInformation NtQuerySystemInformation;
 	static def_NtQueryVirtualMemory NtQueryVirtualMemory;
+	static def_NtResumeProcess NtResumeProcess;
 	static def_NtResumeThread NtResumeThread;
 	static def_NtSetInformationThread NtSetInformationThread;
+	static def_NtSuspendProcess NtSuspendProcess;
 	static def_NtTerminateProcess NtTerminateProcess;
+
 
 	static def_RtlNtStatusToDosError RtlNtStatusToDosError;
 

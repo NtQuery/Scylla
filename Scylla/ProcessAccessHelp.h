@@ -218,4 +218,7 @@ public:
 	static DWORD getModuleHandlesFromProcess(const HANDLE hProcess, HMODULE ** hMods );
 
 	static void setCurrentProcessAsTarget();
+
+	static bool suspendProcess();
+	static bool resumeProcess();
 };
