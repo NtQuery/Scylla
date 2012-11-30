@@ -205,7 +205,7 @@
 			#define THREAD_ALL_ACCESS_VISTA_7 (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFFF)
 
 			//for windows vista/7
-			ntStatus = NativeWinApi::NtCreateThreadEx(&hThread, THREAD_ALL_ACCESS_VISTA_7, 0, hProcess, (LPTHREAD_START_ROUTINE)lpStartAddress, (LPVOID)lpParameter, TRUE, 0, 0, 0, 0);
+			ntStatus = NativeWinApi::NtCreateThreadEx(&hThread, THREAD_ALL_ACCESS_VISTA_7, 0, hProcess, (LPTHREAD_START_ROUTINE)lpStartAddress, (LPVOID)lpParameter, NtCreateThreadExFlagCreateSuspended|NtCreateThreadExFlagHideFromDebugger, 0, 0, 0, 0);
 			if (NT_SUCCESS(ntStatus))
 			{
 				return hThread;

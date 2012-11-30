@@ -250,13 +250,16 @@ typedef NTSTATUS (WINAPI *def_NtOpenProcess)(PHANDLE ProcessHandle, ACCESS_MASK 
 typedef NTSTATUS (WINAPI *def_NtOpenThread)(PHANDLE ThreadHandle,ACCESS_MASK DesiredAccess,POBJECT_ATTRIBUTES ObjectAttributes,PCLIENT_ID ClientId);
 typedef NTSTATUS (WINAPI *def_NtResumeThread)(HANDLE ThreadHandle, PULONG SuspendCount);
 typedef NTSTATUS (WINAPI *def_NtSetInformationThread)(HANDLE ThreadHandle,THREADINFOCLASS ThreadInformationClass,PVOID ThreadInformation,ULONG ThreadInformationLength);
-typedef NTSTATUS (WINAPI *def_NtCreateThreadEx)(PHANDLE hThread,ACCESS_MASK DesiredAccess,LPVOID ObjectAttributes,HANDLE ProcessHandle,LPTHREAD_START_ROUTINE lpStartAddress,LPVOID lpParameter,BOOL CreateSuspended,ULONG StackZeroBits,LPVOID SizeOfStackCommit,LPVOID SizeOfStackReserve,LPVOID lpBytesBuffer);
+typedef NTSTATUS (WINAPI *def_NtCreateThreadEx)(PHANDLE hThread,ACCESS_MASK DesiredAccess,LPVOID ObjectAttributes,HANDLE ProcessHandle,LPTHREAD_START_ROUTINE lpStartAddress,LPVOID lpParameter,int CreateFlags,ULONG StackZeroBits,LPVOID SizeOfStackCommit,LPVOID SizeOfStackReserve,LPVOID lpBytesBuffer);
 typedef NTSTATUS (WINAPI *def_NtSuspendProcess)(HANDLE ProcessHandle);
 typedef NTSTATUS (WINAPI *def_NtResumeProcess)(HANDLE ProcessHandle);
 
 typedef ULONG (WINAPI *def_RtlNtStatusToDosError)(NTSTATUS Status);
 
-
+//Flags from waliedassar
+#define NtCreateThreadExFlagCreateSuspended  0x1
+#define NtCreateThreadExFlagSuppressDllMains 0x2
+#define NtCreateThreadExFlagHideFromDebugger 0x4
 
 class NativeWinApi {
 public:
