@@ -51,6 +51,20 @@ Keyboard Shortcuts
 Changelog
 ---------
 
+Version 0.8
+
+- added OriginalFirstThunk support. Thanks to p0c
+- fixed malformed dos header bug
+- NtCreateThreadEx added infos from waliedassar, thanks! 
+
+Version 0.7 Beta
+
+- fixed bug Overlapped Headers
+- fixed bug SizeOfOptionalHeader
+- added feature: suspend process for dumping, more information
+- improved disassembler
+- fixed various bugs
+
 Version 0.6b
 
 - internal code changes
