@@ -45,14 +45,22 @@ bool ImportRebuilder::buildNewImportTable(std::map<DWORD_PTR, ImportModuleThunk>
 
 	setFlagToIATSection((*moduleList.begin()).second.firstThunk);
 
+	DWORD vaImportAddress = listPeSection[importSectionIndex].sectionHeader.VirtualAddress;
+
+	if (useOFT)
+	{
+		//OFT array is at the beginning of the import section
+		vaImportAddress += sizeOfOFTArray;
+	}
+
 	if (isPE32())
 	{
-		pNTHeader32->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress = listPeSection[importSectionIndex].sectionHeader.VirtualAddress;
+		pNTHeader32->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress = vaImportAddress;
 		pNTHeader32->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size = (DWORD)(numberOfImportDescriptors * sizeof(IMAGE_IMPORT_DESCRIPTOR));
 	}
 	else
 	{
-		pNTHeader64->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress = listPeSection[importSectionIndex].sectionHeader.VirtualAddress;
+		pNTHeader64->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress = vaImportAddress;
 		pNTHeader64->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size = (DWORD)(numberOfImportDescriptors * sizeof(IMAGE_IMPORT_DESCRIPTOR));
 	}
 
@@ -106,9 +114,20 @@ DWORD ImportRebuilder::fillImportSection(std::map<DWORD_PTR, ImportModuleThunk> 
 	DWORD_PTR lastRVA = 0;
 
 	BYTE * sectionData = listPeSection[importSectionIndex].data;
-	DWORD offset = 0;
+	DWORD offset;
+	DWORD offsetOFTArray = 0;
 
-	pImportDescriptor = (PIMAGE_IMPORT_DESCRIPTOR)(sectionData);
+	if (useOFT)
+	{
+		//OFT Array is always at the beginning of the import section
+		offset = sizeOfOFTArray; //size includes null termination
+	}
+	else
+	{
+		offset = 0;
+	}
+
+	pImportDescriptor = (PIMAGE_IMPORT_DESCRIPTOR)((DWORD_PTR)sectionData + offset);
 
 	//skip the IMAGE_IMPORT_DESCRIPTOR
 	offset += (DWORD)(numberOfImportDescriptors * sizeof(IMAGE_IMPORT_DESCRIPTOR));
@@ -117,7 +136,7 @@ DWORD ImportRebuilder::fillImportSection(std::map<DWORD_PTR, ImportModuleThunk> 
 	{
 		importModuleThunk = &((*mapIt).second);
 
-		stringLength = addImportDescriptor(importModuleThunk, offset);
+		stringLength = addImportDescriptor(importModuleThunk, offset, offsetOFTArray);
 
 #ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"fillImportSection :: importDesc.Name %X", pImportDescriptor->Name);
@@ -135,7 +154,16 @@ DWORD ImportRebuilder::fillImportSection(std::map<DWORD_PTR, ImportModuleThunk> 
 		{
 			importThunk = &((*mapIt2).second);
 
-			pThunk = (PIMAGE_THUNK_DATA)(getMemoryPointerFromRVA(importThunk->rva));
+			if (useOFT)
+			{
+				//OFT Array is always at the beginning of the import section
+				pThunk = (PIMAGE_THUNK_DATA)((DWORD_PTR)sectionData + offsetOFTArray);
+				offsetOFTArray += sizeof(DWORD_PTR); //increase OFT array index
+			}
+			else
+			{
+				pThunk = (PIMAGE_THUNK_DATA)(getMemoryPointerFromRVA(importThunk->rva));
+			}
 
 			//check wrong iat pointer
 			if (!pThunk)
@@ -149,7 +177,13 @@ DWORD ImportRebuilder::fillImportSection(std::map<DWORD_PTR, ImportModuleThunk> 
 			if ((lastRVA + sizeof(DWORD_PTR)) != importThunk->rva)
 			{
 				//add additional import desc
-				addSpecialImportDescriptor(importThunk->rva);
+				if (useOFT)
+				{
+					pThunk = (PIMAGE_THUNK_DATA)((DWORD_PTR)sectionData + offsetOFTArray);
+					offsetOFTArray += sizeof(DWORD_PTR); //increase OFT array index, next module
+				}
+
+				addSpecialImportDescriptor(importThunk->rva, offsetOFTArray);
 			}
 			lastRVA = importThunk->rva;
 
@@ -162,13 +196,14 @@ DWORD ImportRebuilder::fillImportSection(std::map<DWORD_PTR, ImportModuleThunk> 
 			pImportByName = (PIMAGE_IMPORT_BY_NAME)((DWORD_PTR)pImportByName + stringLength);
 		}
 
+		offsetOFTArray += sizeof(DWORD_PTR); //increase OFT array index, next module
 		pImportDescriptor++;
 	}
 
 	return offset;
 }
 
-size_t ImportRebuilder::addImportDescriptor(ImportModuleThunk * pImportModule, DWORD sectionOffset)
+size_t ImportRebuilder::addImportDescriptor(ImportModuleThunk * pImportModule, DWORD sectionOffset, DWORD sectionOffsetOFTArray)
 {
 	char dllName[MAX_PATH];
 
@@ -183,17 +218,27 @@ size_t ImportRebuilder::addImportDescriptor(ImportModuleThunk * pImportModule, D
 
 	pImportDescriptor->FirstThunk = (DWORD)pImportModule->firstThunk;
 	pImportDescriptor->Name = (DWORD)convertOffsetToRVAVector(listPeSection[importSectionIndex].sectionHeader.PointerToRawData + sectionOffset);
+	
+	if (useOFT)
+	{
+		pImportDescriptor->OriginalFirstThunk = (DWORD)convertOffsetToRVAVector(listPeSection[importSectionIndex].sectionHeader.PointerToRawData + sectionOffsetOFTArray);
+	}
 
 	return stringLength;
 }
 
-void ImportRebuilder::addSpecialImportDescriptor(DWORD_PTR rvaFirstThunk)
+void ImportRebuilder::addSpecialImportDescriptor(DWORD_PTR rvaFirstThunk, DWORD sectionOffsetOFTArray)
 {
 	PIMAGE_IMPORT_DESCRIPTOR oldID = pImportDescriptor;
 	pImportDescriptor++;
 
 	pImportDescriptor->FirstThunk = (DWORD)rvaFirstThunk;
 	pImportDescriptor->Name = oldID->Name;
+
+	if (useOFT)
+	{
+		pImportDescriptor->OriginalFirstThunk = (DWORD)convertOffsetToRVAVector(listPeSection[importSectionIndex].sectionHeader.PointerToRawData + sectionOffsetOFTArray);
+	}
 }
 
 void ImportRebuilder::calculateImportSizes(std::map<DWORD_PTR, ImportModuleThunk> & moduleList)
@@ -205,6 +250,7 @@ void ImportRebuilder::calculateImportSizes(std::map<DWORD_PTR, ImportModuleThunk
 	numberOfImportDescriptors = 0;
 	sizeOfImportSection = 0;
 	sizeOfApiAndModuleNames = 0;
+	sizeOfOFTArray = 0;
 
 	numberOfImportDescriptors = moduleList.size() + 1; //last is zero'd
 
@@ -219,6 +265,7 @@ void ImportRebuilder::calculateImportSizes(std::map<DWORD_PTR, ImportModuleThunk
 			if ((lastRVA + sizeof(DWORD_PTR)) != (*mapIt2).second.rva)
 			{
 				numberOfImportDescriptors++; //add additional import desc
+				sizeOfOFTArray += sizeof(DWORD_PTR) + sizeof(DWORD_PTR);
 			}
 
 			if((*mapIt2).second.name[0] != '\0')
@@ -227,11 +274,17 @@ void ImportRebuilder::calculateImportSizes(std::map<DWORD_PTR, ImportModuleThunk
 				sizeOfApiAndModuleNames += (DWORD)(strlen((*mapIt2).second.name) + 1);
 			}
 
+			//OriginalFirstThunk Array in Import Section: value
+			sizeOfOFTArray += sizeof(DWORD_PTR);
+
 			lastRVA = (*mapIt2).second.rva;
 		}
+
+		//OriginalFirstThunk Array in Import Section: NULL termination
+		sizeOfOFTArray += sizeof(DWORD_PTR);
 	}
 
-	sizeOfImportSection = sizeOfApiAndModuleNames + (numberOfImportDescriptors * sizeof(IMAGE_IMPORT_DESCRIPTOR));
+	sizeOfImportSection = sizeOfOFTArray + sizeOfApiAndModuleNames + (numberOfImportDescriptors * sizeof(IMAGE_IMPORT_DESCRIPTOR));
 }
 
 size_t ImportRebuilder::addImportToImportTable( ImportThunk * pImport, PIMAGE_THUNK_DATA pThunk, PIMAGE_IMPORT_BY_NAME pImportByName, DWORD sectionOffset)
@@ -305,5 +358,10 @@ BYTE * ImportRebuilder::getMemoryPointerFromRVA(DWORD_PTR dwRVA)
 	}
 
     return (BYTE *)((DWORD_PTR)listPeSection[peSectionIndex].data + rvaPointer);
+}
+
+void ImportRebuilder::enableOFTSupport()
+{
+	useOFT = true;
 }
 

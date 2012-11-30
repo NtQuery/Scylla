@@ -1214,6 +1214,10 @@ void MainGui::dumpFixActionHandler()
 			importRebuild.setEntryPointRva((DWORD)(entrypoint - modBase));
 		}
 
+		if (Scylla::config[OriginalFirstThunk_SUPPORT].isTrue())
+		{
+			importRebuild.enableOFTSupport();
+		}
 
 		if (importRebuild.rebuildImportTable(newFilePath, importsHandling.moduleList))
 		{

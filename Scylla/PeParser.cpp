@@ -407,6 +407,11 @@ void PeParser::getDosAndNtHeader(BYTE * memory, LONG size)
 			dosStubSize = pDosHeader->e_lfanew - sizeof(IMAGE_DOS_HEADER);
 			pDosStub = (BYTE *)((DWORD_PTR)pDosHeader + sizeof(IMAGE_DOS_HEADER));
 		}
+		else if (pDosHeader->e_lfanew < sizeof(IMAGE_DOS_HEADER))
+		{
+			//Overlapped Headers, e.g. Spack (by Bagie)
+			pDosHeader->e_lfanew = sizeof(IMAGE_DOS_HEADER);
+		}
 	}
 }
 

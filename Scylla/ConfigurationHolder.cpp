@@ -18,6 +18,7 @@ ConfigurationHolder::ConfigurationHolder(const WCHAR* fileName)
 	config[REMOVE_DOS_HEADER_STUB]      = Configuration(L"REMOVE_DOS_HEADER_STUB",       Configuration::Boolean);
 	config[IAT_FIX_AND_OEP_FIX]         = Configuration(L"IAT_FIX_AND_OEP_FIX",          Configuration::Boolean);
 	config[SUSPEND_PROCESS_FOR_DUMPING] = Configuration(L"SUSPEND_PROCESS_FOR_DUMPING",  Configuration::Boolean);
+	config[OriginalFirstThunk_SUPPORT]  = Configuration(L"OriginalFirstThunk_SUPPORT",	 Configuration::Boolean);
 	buildConfigFilePath(fileName);
 }
 

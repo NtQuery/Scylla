@@ -27,6 +27,7 @@ public:
 		DDX_CHECK(IDC_CHECK_REMOVE_DOS_STUB, removeDosHeaderStub)
 		DDX_CHECK(IDC_CHECK_FIX_IAT_AND_OEP, fixIatAndOep)
 		DDX_CHECK(IDC_CHECK_SUSPEND_PROCESS, suspendProcessForDumping)
+		DDX_CHECK(IDC_CHECKOFTSUPPORT, oftSupport)
 	END_DDX_MAP()
 
 	BEGIN_MSG_MAP(OptionsGui)
@@ -50,6 +51,7 @@ protected:
 	bool removeDosHeaderStub;
 	bool fixIatAndOep;
 	bool suspendProcessForDumping;
+	bool oftSupport;
 	// Controls
 
 	CEdit EditSectionName;
