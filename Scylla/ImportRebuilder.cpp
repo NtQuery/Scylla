@@ -50,7 +50,7 @@ bool ImportRebuilder::buildNewImportTable(std::map<DWORD_PTR, ImportModuleThunk>
 	if (useOFT)
 	{
 		//OFT array is at the beginning of the import section
-		vaImportAddress += sizeOfOFTArray;
+		vaImportAddress += (DWORD)sizeOfOFTArray;
 	}
 
 	if (isPE32())
@@ -120,7 +120,7 @@ DWORD ImportRebuilder::fillImportSection(std::map<DWORD_PTR, ImportModuleThunk> 
 	if (useOFT)
 	{
 		//OFT Array is always at the beginning of the import section
-		offset = sizeOfOFTArray; //size includes null termination
+		offset = (DWORD)sizeOfOFTArray; //size includes null termination
 	}
 	else
 	{
@@ -177,13 +177,12 @@ DWORD ImportRebuilder::fillImportSection(std::map<DWORD_PTR, ImportModuleThunk> 
 			if ((lastRVA + sizeof(DWORD_PTR)) != importThunk->rva)
 			{
 				//add additional import desc
+				addSpecialImportDescriptor(importThunk->rva, offsetOFTArray);
 				if (useOFT)
 				{
 					pThunk = (PIMAGE_THUNK_DATA)((DWORD_PTR)sectionData + offsetOFTArray);
 					offsetOFTArray += sizeof(DWORD_PTR); //increase OFT array index, next module
-				}
-
-				addSpecialImportDescriptor(importThunk->rva, offsetOFTArray);
+				}				
 			}
 			lastRVA = importThunk->rva;
 
