@@ -43,7 +43,7 @@ bool ProcessAccessHelp::openProcessHandle(DWORD dwPID)
 			//hProcess = OpenProcess(PROCESS_CREATE_THREAD|PROCESS_VM_OPERATION|PROCESS_QUERY_INFORMATION|PROCESS_VM_READ|PROCESS_VM_WRITE, 0, dwPID);
 			//if (!NT_SUCCESS(NativeWinApi::NtOpenProcess(&hProcess,PROCESS_CREATE_THREAD|PROCESS_VM_OPERATION|PROCESS_QUERY_INFORMATION|PROCESS_VM_READ|PROCESS_VM_WRITE,&ObjectAttributes, &cid)))
 
-			hProcess = NativeOpenProcess(PROCESS_CREATE_THREAD|PROCESS_VM_OPERATION|PROCESS_QUERY_INFORMATION|PROCESS_VM_READ|PROCESS_VM_WRITE|PROCESS_SUSPEND_RESUME, dwPID);
+			hProcess = NativeOpenProcess(PROCESS_CREATE_THREAD|PROCESS_VM_OPERATION|PROCESS_QUERY_INFORMATION|PROCESS_VM_READ|PROCESS_VM_WRITE|PROCESS_SUSPEND_RESUME|PROCESS_TERMINATE, dwPID);
 
 			if (hProcess)
 			{
@@ -422,7 +422,9 @@ bool ProcessAccessHelp::writeMemoryToNewFile(const WCHAR * file,DWORD size, LPCV
 
 	if (hFile != INVALID_HANDLE_VALUE)
 	{
-		return writeMemoryToFile(hFile,0,size,dataBuffer);
+		bool resultValue = writeMemoryToFile(hFile,0,size,dataBuffer);
+		CloseHandle(hFile);
+		return resultValue;
 	}
 	else
 	{
@@ -841,6 +843,19 @@ bool ProcessAccessHelp::resumeProcess()
 	if (NativeWinApi::NtResumeProcess)
 	{
 		if (NT_SUCCESS( NativeWinApi::NtResumeProcess(ProcessAccessHelp::hProcess) ))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool ProcessAccessHelp::terminateProcess()
+{
+	if (NativeWinApi::NtTerminateProcess)
+	{
+		if (NT_SUCCESS( NativeWinApi::NtTerminateProcess(ProcessAccessHelp::hProcess, 0) ))
 		{
 			return true;
 		}

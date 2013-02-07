@@ -221,4 +221,5 @@ public:
 
 	static bool suspendProcess();
 	static bool resumeProcess();
+	static bool terminateProcess();
 };

@@ -51,6 +51,13 @@ Keyboard Shortcuts
 Changelog
 ---------
 
+Version 0.9
+
+- updated to distorm v3.3
+- added application exception handler
+- fixed bug in dump engine
+- improved "suspend process" feature, messagebox on exit
+
 Version 0.8
 
 - added OriginalFirstThunk support. Thanks to p0c

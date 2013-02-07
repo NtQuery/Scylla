@@ -155,6 +155,7 @@ protected:
 	ApiReader apiReader;
 
 	Process * selectedProcess;
+	bool isProcessSuspended;
 
 	// File selection filters
 

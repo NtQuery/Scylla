@@ -24,7 +24,7 @@ const WCHAR MainGui::filterTxt[]    = L"Text file (*.txt)\0*.txt\0All files\0*.*
 const WCHAR MainGui::filterXml[]    = L"XML file (*.xml)\0*.xml\0All files\0*.*\0";
 const WCHAR MainGui::filterMem[]    = L"MEM file (*.mem)\0*.mem\0All files\0*.*\0";
 
-MainGui::MainGui() : selectedProcess(0), importsHandling(TreeImports), TreeImportsSubclass(this, IDC_TREE_IMPORTS)
+MainGui::MainGui() : selectedProcess(0), isProcessSuspended(false), importsHandling(TreeImports), TreeImportsSubclass(this, IDC_TREE_IMPORTS)
 {
 	/*
 	Logger::getDebugLogFilePath();
@@ -309,6 +309,23 @@ void MainGui::OnAutotrace(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void MainGui::OnExit(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
+	if (isProcessSuspended)
+	{
+		int msgboxID = MessageBox(L"Process is suspended. Do you want to terminate the process?\r\n\r\nYES = Terminate Process\r\nNO = Try to resume the process\r\nCancel = Do nothing", L"Information", MB_YESNOCANCEL|MB_ICONINFORMATION);
+		
+		switch (msgboxID)
+		{
+		case IDYES:
+			ProcessAccessHelp::terminateProcess();
+			break;
+		case IDNO:
+			ProcessAccessHelp::resumeProcess();
+			break;
+		default:
+			break;
+		}
+	}
+
 	DestroyWindow();
 }
 
@@ -1115,6 +1132,14 @@ void MainGui::peRebuildActionHandler()
 		DWORD fileSize = (DWORD)ProcessAccessHelp::getFileSize(selectedFilePath);
 
 		PeParser peFile(selectedFilePath, true);
+
+		if (!peFile.isValidPeFile())
+		{
+			Scylla::windowLog.log(L"This is not a valid PE file %s", selectedFilePath);
+			MessageBox(L"Not a valid PE file.", L"Failure", MB_ICONERROR);
+			return;
+		}
+
 		if (peFile.readPeSectionsFromFile())
 		{
 			peFile.setDefaultFileAlignment();
@@ -1412,6 +1437,7 @@ void MainGui::checkSuspendProcess()
 		}
 		else
 		{
+			isProcessSuspended = true;
 			Scylla::windowLog.log(L"Suspending process successful, please resume manually.");
 		}
 	}

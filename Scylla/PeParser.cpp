@@ -18,7 +18,7 @@ PeParser::PeParser(const WCHAR * file, bool readSectionHeaders)
 
 	filename = file;
 
-	if (filename && wcslen(filename) > 3)
+	if (filename)
 	{
 		readPeHeaderFromFile(readSectionHeaders);
 
