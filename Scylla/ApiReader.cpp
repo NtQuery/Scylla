@@ -436,18 +436,17 @@ void ApiReader::findApiByModule(ModuleInfo * module, char * searchFunctionName, 
 
 		if (hModule)
 		{
-			if (ordinal)
-			{
-				*vaApi = (DWORD_PTR)GetProcAddress(hModule, (LPCSTR)ordinal);
-			}
-			else
-			{
-				*vaApi = (DWORD_PTR)GetProcAddress(hModule, searchFunctionName);
-			}
-			
-
 			if (vaApi)
 			{
+				if (ordinal)
+				{
+					*vaApi = (DWORD_PTR)GetProcAddress(hModule, (LPCSTR)ordinal);
+				}
+				else
+				{
+					*vaApi = (DWORD_PTR)GetProcAddress(hModule, searchFunctionName);
+				}
+
 				*rvaApi = (*vaApi) - (DWORD_PTR)hModule;
 				*vaApi = (*rvaApi) + module->modBaseAddr;
 			}

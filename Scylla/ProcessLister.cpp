@@ -126,9 +126,12 @@ bool ProcessLister::getAbsoluteFilePath(Process * process)
 {
 	WCHAR processPath[MAX_PATH];
 	HANDLE hProcess;
+	bool retVal = false;
 
 	//hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, NULL, process->PID);
-	hProcess = ProcessAccessHelp::NativeOpenProcess(PROCESS_QUERY_INFORMATION, process->PID);
+	hProcess = ProcessAccessHelp::NativeOpenProcess(PROCESS_QUERY_INFORMATION|PROCESS_VM_READ, process->PID);
+
+	wcscpy_s(process->fullPath, L"Unknown path");
 
 	if(!hProcess)
 	{
@@ -136,27 +139,37 @@ bool ProcessLister::getAbsoluteFilePath(Process * process)
 		return false;
 	}
 
-	if (GetProcessImageFileName(hProcess, processPath, _countof(processPath)) > 0)
+	if (GetProcessImageFileNameW(hProcess, processPath, _countof(processPath)) > 0)
 	{
-		CloseHandle(hProcess);
-
 		if (!deviceNameResolver->resolveDeviceLongNameToShort(processPath, process->fullPath))
 		{
 #ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"getAbsoluteFilePath :: resolveDeviceLongNameToShort failed with path %s", processPath);
 #endif
+			//some virtual volumes
+			if (GetModuleFileNameExW(hProcess, 0, process->fullPath, _countof(process->fullPath)) != 0)
+			{
+				retVal = true;
+			}
 		}
-		return true;
+		else
+		{
+			retVal = true;
+		}
 	}
 	else
 	{
 #ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"getAbsoluteFilePath :: GetProcessImageFileName failed %u", GetLastError());
 #endif
-		CloseHandle(hProcess);
-		return false;
+		if (GetModuleFileNameExW(hProcess, 0, process->fullPath, _countof(process->fullPath)) != 0)
+		{
+			retVal = true;
+		}
 	}
 
+	CloseHandle(hProcess);
+	return retVal;
 }
 
 std::vector<Process>& ProcessLister::getProcessListSnapshot()

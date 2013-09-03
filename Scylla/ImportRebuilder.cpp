@@ -246,7 +246,7 @@ void ImportRebuilder::calculateImportSizes(std::map<DWORD_PTR, ImportModuleThunk
 	std::map<DWORD_PTR, ImportThunk>::iterator mapIt2;
 	DWORD_PTR lastRVA = 0;
 
-	numberOfImportDescriptors = 0;
+
 	sizeOfImportSection = 0;
 	sizeOfApiAndModuleNames = 0;
 	sizeOfOFTArray = 0;

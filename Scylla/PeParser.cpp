@@ -442,12 +442,12 @@ DWORD PeParser::calcCorrectPeHeaderSize(bool readSectionHeaders)
 
 DWORD PeParser::getInitialHeaderReadSize(bool readSectionHeaders)
 {
-	DWORD readSize = sizeof(IMAGE_DOS_HEADER) + 200 + sizeof(IMAGE_NT_HEADERS64);
+	DWORD readSize = sizeof(IMAGE_DOS_HEADER) + 0x300 + sizeof(IMAGE_NT_HEADERS64);
 
-	if (readSectionHeaders)
-	{
-		readSize += (10 * sizeof(IMAGE_SECTION_HEADER));
-	}
+	//if (readSectionHeaders)
+	//{
+	//	readSize += (10 * sizeof(IMAGE_SECTION_HEADER));
+	//}
 
 	return readSize;
 }
