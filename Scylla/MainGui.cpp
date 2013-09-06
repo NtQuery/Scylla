@@ -469,8 +469,12 @@ void MainGui::pickDllActionHandler()
 
 		ProcessAccessHelp::targetImageBase = ProcessAccessHelp::selectedModule->modBaseAddr;
 
+		DWORD modEntryPoint = ProcessAccessHelp::getEntryPointFromFile(ProcessAccessHelp::selectedModule->fullPath);
+
+		EditOEPAddress.SetValue(modEntryPoint + ProcessAccessHelp::targetImageBase);
+
 		Scylla::windowLog.log(L"->>> Module %s selected.", ProcessAccessHelp::selectedModule->getFilename());
-		Scylla::windowLog.log(L"Imagebase: " PRINTF_DWORD_PTR_FULL L" Size: %08X", ProcessAccessHelp::selectedModule->modBaseAddr, ProcessAccessHelp::selectedModule->modBaseSize);
+		Scylla::windowLog.log(L"Imagebase: " PRINTF_DWORD_PTR_FULL L" Size: %08X EntryPoint: %08X", ProcessAccessHelp::selectedModule->modBaseAddr, ProcessAccessHelp::selectedModule->modBaseSize, modEntryPoint);
 	}
 	else
 	{
