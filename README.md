@@ -51,6 +51,18 @@ Keyboard Shortcuts
 Changelog
 ---------
 
+Version 0.9.2
+
+- Pick DLL -> Set DLL Entrypoint
+- Advanced IAT Search Algorithm (Enable/Disable it in Options), thanks to ahmadmansoor
+- Fixed bug in Options
+- Added donate information, please feel free to donate some BTC to support this project
+
+Version 0.9.1
+
+- Fixed virtual device bug
+- Fixed 2 minor bugs
+
 Version 0.9
 
 - updated to distorm v3.3
