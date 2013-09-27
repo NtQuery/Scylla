@@ -185,6 +185,7 @@
     <ClCompile Include="DisassemblerGui.cpp" />
     <ClCompile Include="DllInjection.cpp" />
     <ClCompile Include="DllInjectionPlugin.cpp" />
+    <ClCompile Include="DonateGui.cpp" />
     <ClCompile Include="DumpMemoryGui.cpp" />
     <ClCompile Include="DumpSectionGui.cpp" />
     <ClCompile Include="FunctionExport.cpp" />
@@ -217,6 +218,7 @@
     <ClInclude Include="DisassemblerGui.h" />
     <ClInclude Include="DllInjection.h" />
     <ClInclude Include="DllInjectionPlugin.h" />
+    <ClInclude Include="DonateGui.h" />
     <ClInclude Include="DumpMemoryGui.h" />
     <ClInclude Include="DumpSectionGui.h" />
     <ClInclude Include="hexedit.h" />

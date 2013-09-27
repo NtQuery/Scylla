@@ -2,13 +2,23 @@
 #include "Scylla.h"
 #include "Architecture.h"
 
-//#define DEBUG_COMMENTS
 
-bool IATSearch::searchImportAddressTableInProcess(DWORD_PTR startAddress, DWORD_PTR* addressIAT, DWORD* sizeIAT)
+#define DEBUG_COMMENTS
+
+bool IATSearch::searchImportAddressTableInProcess( DWORD_PTR startAddress, DWORD_PTR* addressIAT, DWORD* sizeIAT, bool advanced )
 {
 	DWORD_PTR addressInIAT = 0;
 
+	*addressIAT = 0;
+	*sizeIAT = 0;
+
+	if (advanced)
+	{
+		return findIATAdvanced(startAddress, addressIAT, sizeIAT);
+	}
+	
 	addressInIAT = findAPIAddressInIAT(startAddress);
+	
 
 	if(!addressInIAT)
 	{
@@ -21,6 +31,63 @@ bool IATSearch::searchImportAddressTableInProcess(DWORD_PTR startAddress, DWORD_
 	{
 		return findIATStartAndSize(addressInIAT, addressIAT,sizeIAT);
 	}
+}
+
+bool IATSearch::findIATAdvanced( DWORD_PTR startAddress, DWORD_PTR* addressIAT, DWORD* sizeIAT )
+{
+	BYTE *dataBuffer;
+	DWORD_PTR baseAddress;
+	SIZE_T memorySize;
+
+	findExecutableMemoryPagesByStartAddress(startAddress, &baseAddress, &memorySize);
+
+	if (memorySize == 0)
+		return false;
+
+	dataBuffer = new BYTE[memorySize];
+
+	if (!readMemoryFromProcess((DWORD_PTR)baseAddress, memorySize,dataBuffer))
+	{
+#ifdef DEBUG_COMMENTS
+		Scylla::debugLog.log(L"findAPIAddressInIAT2 :: error reading memory");
+#endif
+		return false;
+	}
+
+	std::set<DWORD_PTR> iatPointers;
+	DWORD_PTR next;
+	BYTE * tempBuf = dataBuffer;
+	while(decomposeMemory(tempBuf, memorySize, (DWORD_PTR)baseAddress) && decomposerInstructionsCount != 0)
+	{
+		findIATPointers(iatPointers);
+
+		next = (DWORD_PTR)(decomposerResult[decomposerInstructionsCount - 1].addr - baseAddress);
+		next += decomposerResult[decomposerInstructionsCount - 1].size;
+		// Advance ptr and recalc offset.
+		tempBuf += next;
+
+		if (memorySize <= next)
+		{
+			break;
+		}
+		memorySize -= next;
+		baseAddress += next;
+	}
+
+	if (iatPointers.size() == 0)
+		return false;
+
+	filterIATPointersList(iatPointers);
+
+	*addressIAT = *(iatPointers.begin());
+	*sizeIAT = *(--iatPointers.end()) - *(iatPointers.begin()) + sizeof(DWORD_PTR);
+
+	Scylla::windowLog.log(L"IAT Search Advanced: Found %d (0x%X) possible IAT entries.", iatPointers.size(), iatPointers.size());
+	Scylla::windowLog.log(L"IAT Search Advanced: Possible IAT first " PRINTF_DWORD_PTR_FULL L" last " PRINTF_DWORD_PTR_FULL L" entry.", *(iatPointers.begin()), *(--iatPointers.end()));
+
+	delete [] dataBuffer;
+
+	return true;
 }
 
 DWORD_PTR IATSearch::findAPIAddressInIAT(DWORD_PTR startAddress)
@@ -105,7 +172,6 @@ DWORD_PTR IATSearch::findIATPointer()
 
 	for (unsigned int i = 0; i < decomposerInstructionsCount; i++)
 	{
-
 		if (decomposerResult[i].flags != FLAG_NOT_DECODABLE)
 		{
 			if (META_GET_FC(decomposerResult[i].meta) == FC_CALL || META_GET_FC(decomposerResult[i].meta) == FC_UNC_BRANCH)
@@ -139,78 +205,6 @@ DWORD_PTR IATSearch::findIATPointer()
 
 	return 0;
 }
-
-/*DWORD_PTR IATSearch::findAddressFromWORDString(char * stringBuffer)
-{
-	char * pAddress = 0;
-	char * pTemp = 0;
-	DWORD_PTR address = 0;
-
-	//string split it e.g. DWORD [0x40f0fc], QWORD [RIP+0x40f0]
-	pAddress = strchr(stringBuffer, 'x');
-
-	if (pAddress)
-	{
-		pAddress++;
-
-		pTemp = strchr(pAddress, ']');
-		*pTemp = 0x00;
-
-		address = strtoul(pAddress, 0, 16);
-
-		//printf("findAddressFromWORDString :: %08X\n",address);
-
-		if (address == ULONG_MAX)
-		{
-#ifdef DEBUG_COMMENTS
-			Scylla::debugLog.log(L"findAddressFromDWORDString :: strtoul ULONG_MAX");
-#endif
-			return 0;
-		}
-		else
-		{
-			return address;
-		}
-	}
-	else
-	{
-		return 0;
-	}
-}*/
-
-/*DWORD_PTR IATSearch::findAddressFromNormalCALLString(char * stringBuffer)
-{
-	char * pAddress = 0;
-	DWORD_PTR address = 0;
-
-	//e.g. CALL 0x7238
-	pAddress = strchr(stringBuffer, 'x');
-
-	if (pAddress)
-	{
-		pAddress++;
-
-		address = strtoul(pAddress, 0, 16);
-
-		//printf("findAddressFromNormalCALLString :: %08X\n",address);
-
-		if (address == ULONG_MAX)
-		{
-#ifdef DEBUG_COMMENTS
-			Scylla::debugLog.log(L"findAddressFromNormalCALLString :: strtoul ULONG_MAX");
-#endif
-			return 0;
-		}
-		else
-		{
-			return address;
-		}
-	}
-	else
-	{
-		return 0;
-	}
-}*/
 
 bool IATSearch::isIATPointerValid(DWORD_PTR iatPointer)
 {
@@ -247,6 +241,35 @@ bool IATSearch::isIATPointerValid(DWORD_PTR iatPointer)
 	}
 }
 
+bool IATSearch::isPageExecutable(DWORD value)
+{
+	if (value & PAGE_NOCACHE) value ^= PAGE_NOCACHE;
+
+	if (value & PAGE_WRITECOMBINE) value ^= PAGE_WRITECOMBINE;
+
+	switch(value)
+	{
+	case PAGE_EXECUTE:
+		{
+			return true;
+		}
+	case PAGE_EXECUTE_READ:
+		{
+			return true;
+		}
+	case PAGE_EXECUTE_READWRITE:
+		{
+			return true;
+		}
+	case PAGE_EXECUTE_WRITECOPY:
+		{
+			return true;
+		}
+	default:
+		return false;
+	}
+}
+
 bool IATSearch::findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, DWORD * sizeIAT)
 {
 	MEMORY_BASIC_INFORMATION memBasic = {0};
@@ -259,6 +282,7 @@ bool IATSearch::findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, D
 #endif
 		return false;
 	}
+
 
 	//(sizeof(DWORD_PTR) * 3) added to prevent buffer overflow
 	dataBuffer = new BYTE[memBasic.RegionSize + (sizeof(DWORD_PTR) * 3)];
@@ -368,4 +392,141 @@ bool IATSearch::isAddressAccessable(DWORD_PTR address)
 	}
 
 	return false;
+}
+
+void IATSearch::findIATPointers(std::set<DWORD_PTR> & iatPointers)
+{
+#ifdef DEBUG_COMMENTS
+	_DecodedInst inst;
+#endif
+
+	for (unsigned int i = 0; i < decomposerInstructionsCount; i++)
+	{
+		if (decomposerResult[i].flags != FLAG_NOT_DECODABLE)
+		{
+			if (META_GET_FC(decomposerResult[i].meta) == FC_CALL || META_GET_FC(decomposerResult[i].meta) == FC_UNC_BRANCH)
+			{
+				if (decomposerResult[i].size >= 5)
+				{
+#ifdef _WIN64
+					if (decomposerResult[i].flags & FLAG_RIP_RELATIVE)
+					{
+#ifdef DEBUG_COMMENTS
+						distorm_format(&decomposerCi, &decomposerResult[i], &inst);
+						Scylla::debugLog.log(L"%S %S %d %d - target address: " PRINTF_DWORD_PTR_FULL, inst.mnemonic.p, inst.operands.p, decomposerResult[i].ops[0].type, decomposerResult[i].size, INSTRUCTION_GET_RIP_TARGET(&decomposerResult[i]));
+#endif
+						iatPointers.insert(INSTRUCTION_GET_RIP_TARGET(&decomposerResult[i]));
+					}
+#else
+					if (decomposerResult[i].ops[0].type == O_DISP)
+					{
+						//jmp dword ptr || call dword ptr
+#ifdef DEBUG_COMMENTS
+						distorm_format(&decomposerCi, &decomposerResult[i], &inst);
+						Scylla::debugLog.log(L"%S %S %d %d - target address: " PRINTF_DWORD_PTR_FULL, inst.mnemonic.p, inst.operands.p, decomposerResult[i].ops[0].type, decomposerResult[i].size, decomposerResult[i].disp);
+#endif
+						iatPointers.insert((DWORD_PTR)decomposerResult[i].disp);
+					}
+#endif
+				}
+			}
+		}
+	}
+
+
+}
+
+void IATSearch::findExecutableMemoryPagesByStartAddress( DWORD_PTR startAddress, DWORD_PTR* baseAddress, SIZE_T* memorySize )
+{
+	MEMORY_BASIC_INFORMATION memBasic = {0};
+	DWORD_PTR tempAddress;
+
+	*memorySize = 0;
+	*baseAddress = 0;
+
+	if (VirtualQueryEx(hProcess,(LPCVOID)startAddress, &memBasic, sizeof(MEMORY_BASIC_INFORMATION)) != sizeof(MEMORY_BASIC_INFORMATION))
+	{
+#ifdef DEBUG_COMMENTS
+		Scylla::debugLog.log(L"findIATStartAddress :: VirtualQueryEx error %u", GetLastError());
+#endif
+		return;
+	}
+
+	//search down
+	do
+	{
+		*memorySize = memBasic.RegionSize;
+		*baseAddress = (DWORD_PTR)memBasic.BaseAddress;
+		tempAddress = (DWORD_PTR)memBasic.BaseAddress - 1;
+
+		if (VirtualQueryEx(hProcess, (LPCVOID)tempAddress, &memBasic, sizeof(MEMORY_BASIC_INFORMATION)) != sizeof(MEMORY_BASIC_INFORMATION))
+		{
+			break;
+		}
+	} while (isPageExecutable(memBasic.Protect));
+
+	tempAddress = *baseAddress;
+	memBasic.RegionSize = *memorySize;
+	*memorySize = 0;
+	//search up
+	do
+	{
+		tempAddress += memBasic.RegionSize;
+		*memorySize += memBasic.RegionSize;
+
+		if (VirtualQueryEx(hProcess, (LPCVOID)tempAddress, &memBasic, sizeof(MEMORY_BASIC_INFORMATION)) != sizeof(MEMORY_BASIC_INFORMATION))
+		{
+			break;
+		}
+	} while (isPageExecutable(memBasic.Protect));
+}
+
+void IATSearch::filterIATPointersList( std::set<DWORD_PTR> & iatPointers )
+{
+	std::set<DWORD_PTR>::iterator iter;
+	iter = iatPointers.begin();
+	std::advance(iter, iatPointers.size() / 2); //start in the middle, important!
+
+	DWORD_PTR lastPointer = *iter;
+	iter++;
+
+	for (; iter != iatPointers.end(); iter++)
+	{
+		if ((*iter - lastPointer) > 0x100) //check difference
+		{
+			iatPointers.erase(iter, iatPointers.end());
+			break;
+		}
+		else
+		{
+			lastPointer = *iter;
+		}
+	}
+
+
+	bool erased = true;
+
+	while(erased)
+	{
+		iter = iatPointers.begin();
+		lastPointer = *iter;
+		iter++;
+
+		for (; iter != iatPointers.end(); iter++)
+		{
+			if ((*iter - lastPointer) > 0x100) //check difference
+			{
+				iter--;
+				iatPointers.erase(iter);
+				erased = true;
+				break;
+			}
+			else
+			{
+				erased = false;
+				lastPointer = *iter;
+			}
+		}
+	}
+
 }

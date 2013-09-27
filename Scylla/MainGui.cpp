@@ -12,6 +12,7 @@
 #include "SystemInformation.h"
 #include "Scylla.h"
 #include "AboutGui.h"
+#include "DonateGui.h"
 #include "OptionsGui.h"
 #include "TreeImportExport.h"
 
@@ -332,6 +333,11 @@ void MainGui::OnExit(UINT uNotifyCode, int nID, CWindow wndCtl)
 void MainGui::OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	showAboutDialog();
+}
+
+void MainGui::OnDonate(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	showDonateDialog();
 }
 
 void MainGui::setupStatusBar()
@@ -761,8 +767,8 @@ void MainGui::saveTreeActionHandler()
 void MainGui::iatAutosearchActionHandler()
 {
 	DWORD_PTR searchAddress = 0;
-	DWORD_PTR addressIAT = 0;
-	DWORD sizeIAT = 0;
+	DWORD_PTR addressIAT = 0, addressIATAdv = 0;
+	DWORD sizeIAT = 0, sizeIATAdv = 0;
 	IATSearch iatSearch;
 
 	if(!selectedProcess)
@@ -773,20 +779,57 @@ void MainGui::iatAutosearchActionHandler()
 		searchAddress = EditOEPAddress.GetValue();
 		if (searchAddress)
 		{
-			if (iatSearch.searchImportAddressTableInProcess(searchAddress, &addressIAT, &sizeIAT))
+
+			if (Scylla::config[USE_ADVANCED_IAT_SEARCH].isTrue())
 			{
-				Scylla::windowLog.log(L"IAT found at VA " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" Size 0x%04X (%d)", addressIAT, addressIAT - ProcessAccessHelp::targetImageBase, sizeIAT, sizeIAT);
+				if (iatSearch.searchImportAddressTableInProcess(searchAddress, &addressIATAdv, &sizeIATAdv, true))
+				{
+					Scylla::windowLog.log(L"IAT Search Advanced: IAT VA " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" Size 0x%04X (%d)", addressIATAdv, addressIATAdv - ProcessAccessHelp::targetImageBase, sizeIATAdv, sizeIATAdv);
+				}
+				else
+				{
+					Scylla::windowLog.log(L"IAT Search Advanced: IAT not found at OEP " PRINTF_DWORD_PTR_FULL L"!", searchAddress);
+				}
+			}
 
-				EditIATAddress.SetValue(addressIAT);
-				EditIATSize.SetValue(sizeIAT);
 
-				swprintf_s(stringBuffer, L"IAT found:\r\n\r\nStart: " PRINTF_DWORD_PTR_FULL L"\r\nSize: 0x%04X (%d) ", addressIAT, sizeIAT, sizeIAT);
-				MessageBox(stringBuffer, L"IAT found", MB_ICONINFORMATION);
+			if (iatSearch.searchImportAddressTableInProcess(searchAddress, &addressIAT, &sizeIAT, false))
+			{
+				Scylla::windowLog.log(L"IAT Search Normal: IAT VA " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" Size 0x%04X (%d)", addressIAT, addressIAT - ProcessAccessHelp::targetImageBase, sizeIAT, sizeIAT);
 			}
 			else
 			{
-				Scylla::windowLog.log(L"IAT not found at OEP " PRINTF_DWORD_PTR_FULL L"!", searchAddress);
+				Scylla::windowLog.log(L"IAT Search Normal: IAT not found at OEP " PRINTF_DWORD_PTR_FULL L"!", searchAddress);
 			}
+
+			if (addressIAT != 0 && addressIATAdv == 0)
+			{
+				setDialogIATAddressAndSize(addressIAT, sizeIAT);
+			}
+			else if (addressIAT == 0 && addressIATAdv != 0)
+			{
+				setDialogIATAddressAndSize(addressIATAdv, sizeIATAdv);
+			}
+			else if (addressIAT != 0 && addressIATAdv != 0)
+			{
+				if (addressIATAdv != addressIAT || sizeIAT != sizeIATAdv)
+				{
+					int msgboxID = MessageBox(L"Result of advanced and normal search is different. Do you want to use the IAT Search Advanced result?", L"Information", MB_YESNO|MB_ICONINFORMATION);
+					if (msgboxID == IDYES)
+					{
+						setDialogIATAddressAndSize(addressIATAdv, sizeIATAdv);
+					}
+					else
+					{
+						setDialogIATAddressAndSize(addressIAT, sizeIAT);
+					}
+				}
+				else
+				{
+					setDialogIATAddressAndSize(addressIAT, sizeIAT);
+				}
+			}
+			
 		}
 	}
 }
@@ -1321,6 +1364,12 @@ void MainGui::showAboutDialog()
 	dlgAbout.DoModal();
 }
 
+void MainGui::showDonateDialog()
+{
+	DonateGui dlgDonate;
+	dlgDonate.DoModal();
+}
+
 void MainGui::dllInjectActionHandler()
 {
 	if(!selectedProcess)
@@ -1445,4 +1494,13 @@ void MainGui::checkSuspendProcess()
 			Scylla::windowLog.log(L"Suspending process successful, please resume manually.");
 		}
 	}
+}
+
+void MainGui::setDialogIATAddressAndSize( DWORD_PTR addressIAT, DWORD sizeIAT )
+{
+	EditIATAddress.SetValue(addressIAT);
+	EditIATSize.SetValue(sizeIAT);
+
+	swprintf_s(stringBuffer, L"IAT found:\r\n\r\nStart: " PRINTF_DWORD_PTR_FULL L"\r\nSize: 0x%04X (%d) ", addressIAT, sizeIAT, sizeIAT);
+	MessageBox(stringBuffer, L"IAT found", MB_ICONINFORMATION);
 }

@@ -87,6 +87,7 @@ public:
 		COMMAND_ID_HANDLER_EX(ID_MISC_DISASSEMBLER, OnDisassembler)
 		COMMAND_ID_HANDLER_EX(ID_MISC_OPTIONS, OnOptions)
 		COMMAND_ID_HANDLER_EX(ID_HELP_ABOUT, OnAbout)
+		COMMAND_ID_HANDLER_EX(ID_HELP_DONATE, OnDonate)
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnExit)
 
 		REFLECT_NOTIFY_ID(IDC_TREE_IMPORTS) // pass WM_NOTIFY to child control
@@ -200,7 +201,6 @@ protected:
 	static const int MenuImportsTraceOffsetImpRec = 4;
 
 	static const int PLUGIN_MENU_BASE_ID = 0x10;
-
 protected:
 
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
@@ -251,6 +251,7 @@ protected:
 
 	void OnExit(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnAbout(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void OnDonate(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	// GUI functions
 
@@ -284,6 +285,7 @@ protected:
 	void startDisassemblerGui(CTreeItem selectedTreeNode);
 	void dumpFixActionHandler();
 	void showAboutDialog();
+	void showDonateDialog();
 	void dllInjectActionHandler();
 	void disassemblerActionHandler();
 	void optionsActionHandler();
@@ -306,4 +308,5 @@ protected:
 
 	bool getCurrentModulePath(WCHAR * buffer, size_t bufferSize);
 	void checkSuspendProcess();
+	void setDialogIATAddressAndSize( DWORD_PTR addressIAT, DWORD sizeIAT );
 };

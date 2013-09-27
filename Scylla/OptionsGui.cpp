@@ -39,6 +39,7 @@ void OptionsGui::saveOptions() const
 	Scylla::config[IAT_FIX_AND_OEP_FIX].setBool(fixIatAndOep);
 	Scylla::config[SUSPEND_PROCESS_FOR_DUMPING].setBool(suspendProcessForDumping);
 	Scylla::config[OriginalFirstThunk_SUPPORT].setBool(oftSupport);
+	Scylla::config[USE_ADVANCED_IAT_SEARCH].setBool(useAdvancedIatSearch);
 }
 
 void OptionsGui::loadOptions()
@@ -55,4 +56,5 @@ void OptionsGui::loadOptions()
 	fixIatAndOep = Scylla::config[IAT_FIX_AND_OEP_FIX].getBool();
 	suspendProcessForDumping = Scylla::config[SUSPEND_PROCESS_FOR_DUMPING].getBool();
 	oftSupport = Scylla::config[OriginalFirstThunk_SUPPORT].getBool();
+	useAdvancedIatSearch = Scylla::config[USE_ADVANCED_IAT_SEARCH].getBool();
 }

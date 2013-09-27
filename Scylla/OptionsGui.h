@@ -28,6 +28,7 @@ public:
 		DDX_CHECK(IDC_CHECK_FIX_IAT_AND_OEP, fixIatAndOep)
 		DDX_CHECK(IDC_CHECK_SUSPEND_PROCESS, suspendProcessForDumping)
 		DDX_CHECK(IDC_CHECKOFTSUPPORT, oftSupport)
+		DDX_CHECK(IDC_CHECK_USEADVANCEDIATSEARCH, useAdvancedIatSearch)
 	END_DDX_MAP()
 
 	BEGIN_MSG_MAP(OptionsGui)
@@ -52,6 +53,7 @@ protected:
 	bool fixIatAndOep;
 	bool suspendProcessForDumping;
 	bool oftSupport;
+	bool useAdvancedIatSearch;
 	// Controls
 
 	CEdit EditSectionName;

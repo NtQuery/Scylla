@@ -15,7 +15,8 @@ enum ConfigOption
 	REMOVE_DOS_HEADER_STUB,
 	IAT_FIX_AND_OEP_FIX,
 	SUSPEND_PROCESS_FOR_DUMPING,
-	OriginalFirstThunk_SUPPORT
+	OriginalFirstThunk_SUPPORT,
+	USE_ADVANCED_IAT_SEARCH
 };
 
 class ConfigurationHolder
