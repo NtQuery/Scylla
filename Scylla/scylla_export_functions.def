@@ -8,3 +8,4 @@ EXPORTS
    ScyllaVersionInformationW   @7
    ScyllaVersionInformationA   @8
    ScyllaVersionInformationDword   @9
+   ScyllaStartGui   @10

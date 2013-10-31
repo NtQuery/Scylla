@@ -221,6 +221,7 @@
     <ClInclude Include="DonateGui.h" />
     <ClInclude Include="DumpMemoryGui.h" />
     <ClInclude Include="DumpSectionGui.h" />
+    <ClInclude Include="FunctionExport.h" />
     <ClInclude Include="hexedit.h" />
     <ClInclude Include="IATSearch.h" />
     <ClInclude Include="ImportRebuilder.h" />

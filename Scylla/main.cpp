@@ -9,13 +9,23 @@ CAppModule _Module;
 #include "MainGui.h"
 
 MainGui* pMainGui = NULL; // for Logger
+HINSTANCE hDllModule = 0;
 
 LONG WINAPI HandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionInfo);
+void AddExceptionHandler();
+void RemoveExceptionHandler();
+int InitializeGui(HINSTANCE hInstance, LPARAM param);
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
+	AddExceptionHandler();
+
+	return InitializeGui(hInstance, (LPARAM)0);
+}
+
+int InitializeGui(HINSTANCE hInstance, LPARAM param)
+{
 	CoInitialize(NULL);
-	SetUnhandledExceptionFilter(HandleUnknownException);
 
 	AtlInitCommonControls(ICC_LISTVIEW_CLASSES | ICC_TREEVIEW_CLASSES);
 
@@ -31,7 +41,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 		CMessageLoop loop;
 		_Module.AddMessageLoop(&loop);
 
-		dlgMain.Create(GetDesktopWindow());
+		dlgMain.Create(GetDesktopWindow(), param);
+
 		dlgMain.ShowWindow(SW_SHOW);
 
 		loop.Run();
@@ -51,6 +62,8 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 	case DLL_PROCESS_ATTACH:
 		// Initialize once for each new process.
 		// Return FALSE to fail DLL load.
+		AddExceptionHandler();
+		hDllModule = hinstDLL;
 		break;
 
 	case DLL_THREAD_ATTACH:
@@ -63,9 +76,21 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 
 	case DLL_PROCESS_DETACH:
 		// Perform any necessary cleanup.
+		RemoveExceptionHandler();
 		break;
 	}
 	return TRUE;  // Successful DLL_PROCESS_ATTACH.
+}
+
+LPTOP_LEVEL_EXCEPTION_FILTER oldFilter;
+
+void AddExceptionHandler()
+{
+	oldFilter = SetUnhandledExceptionFilter(HandleUnknownException);
+}
+void RemoveExceptionHandler()
+{
+	SetUnhandledExceptionFilter(oldFilter);
 }
 
 LONG WINAPI HandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionInfo)

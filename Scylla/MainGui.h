@@ -22,6 +22,7 @@
 #include "DumpMemoryGui.h"
 #include "DumpSectionGui.h"
 #include "ImportsHandling.h"
+#include "FunctionExport.h"
 
 class MainGui : public CDialogImpl<MainGui>, public CWinDataExchange<MainGui>, public CDialogResize<MainGui>, public CMessageFilter
 {
@@ -309,4 +310,5 @@ protected:
 	bool getCurrentModulePath(WCHAR * buffer, size_t bufferSize);
 	void checkSuspendProcess();
 	void setDialogIATAddressAndSize( DWORD_PTR addressIAT, DWORD sizeIAT );
+	void InitDllStartWithPreSelect( PGUI_DLL_PARAMETER guiParam );
 };

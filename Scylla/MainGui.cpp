@@ -69,6 +69,54 @@ BOOL MainGui::PreTranslateMessage(MSG* pMsg)
 	return FALSE;
 }
 
+void MainGui::InitDllStartWithPreSelect( PGUI_DLL_PARAMETER guiParam )
+{
+	ComboProcessList.ResetContent();
+	std::vector<Process>& processList = Scylla::processLister.getProcessListSnapshot();
+	int newSel = -1;
+	for (size_t i = 0; i < processList.size(); i++)
+	{
+		if (processList[i].PID == guiParam->dwProcessId)
+			newSel = (int)i;
+		swprintf_s(stringBuffer, L"0x%04X - %s - %s", processList[i].PID, processList[i].filename, processList[i].fullPath);
+		ComboProcessList.AddString(stringBuffer);
+	}
+	if (newSel != -1)
+	{
+		ComboProcessList.SetCurSel(newSel);
+		processSelectedActionHandler(newSel);
+
+		if (guiParam->mod) //init mod
+		{
+			//select DLL
+			size_t len = ProcessAccessHelp::moduleList.size();
+			newSel = -1;
+			for (size_t i = 0; i < len; i++)
+			{
+				if (ProcessAccessHelp::moduleList.at(i).modBaseAddr == (DWORD_PTR)guiParam->mod)
+				{
+					newSel = (int)i;
+					break;
+				}
+			}
+			if (newSel != -1)
+			{
+				//get selected module
+				ProcessAccessHelp::selectedModule = &ProcessAccessHelp::moduleList.at(newSel);
+
+				ProcessAccessHelp::targetImageBase = ProcessAccessHelp::selectedModule->modBaseAddr;
+
+				DWORD modEntryPoint = ProcessAccessHelp::getEntryPointFromFile(ProcessAccessHelp::selectedModule->fullPath);
+
+				EditOEPAddress.SetValue(modEntryPoint + ProcessAccessHelp::targetImageBase);
+
+				Scylla::windowLog.log(L"->>> Module %s selected.", ProcessAccessHelp::selectedModule->getFilename());
+				Scylla::windowLog.log(L"Imagebase: " PRINTF_DWORD_PTR_FULL L" Size: %08X EntryPoint: %08X", ProcessAccessHelp::selectedModule->modBaseAddr, ProcessAccessHelp::selectedModule->modBaseSize, modEntryPoint);
+			}
+		}
+	}
+}
+
 BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
 	if (SystemInformation::currenOS == UNKNOWN_OS)
@@ -96,8 +144,14 @@ BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	enableDialogControls(FALSE);
 	setIconAndDialogCaption();
+
+	if (lInitParam)
+	{
+		InitDllStartWithPreSelect((PGUI_DLL_PARAMETER)lInitParam);
+	}
 	return TRUE;
 }
+
 
 void MainGui::OnDestroy()
 {

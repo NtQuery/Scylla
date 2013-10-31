@@ -19,12 +19,21 @@
     <Filter Include="Quelldateien\GUI">
       <UniqueIdentifier>{6f76186f-b79c-41e2-8939-05d9de028aad}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Headerdateien\Helper">
+      <UniqueIdentifier>{94d7cf3b-0d27-4bd6-b08f-e5894e02ef30}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Quelldateien\Helper">
+      <UniqueIdentifier>{bbdfcdb4-3526-43c4-8984-da0f635cc93b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="MainGui.cpp">
+      <Filter>Quelldateien\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="Logger.cpp">
       <Filter>Quelldateien\GUI</Filter>
     </ClCompile>
     <ClCompile Include="ProcessLister.cpp">
@@ -43,15 +52,6 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="ProcessAccessHelp.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="ImportRebuild.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="PeDump.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="PeRebuild.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="DllInjection.cpp">
@@ -88,28 +88,37 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="Scylla.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="Architecture.cpp">
-      <Filter>Quelldateien</Filter>
+      <Filter>Quelldateien\GUI</Filter>
     </ClCompile>
     <ClCompile Include="Configuration.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="Logger.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="StringConversion.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="DeviceNameResolver.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
     <ClCompile Include="DumpMemoryGui.cpp">
+      <Filter>Quelldateien\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="DeviceNameResolver.cpp">
+      <Filter>Quelldateien\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="Architecture.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="DumpSectionGui.cpp">
+      <Filter>Quelldateien\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="PeParser.cpp">
       <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="ImportRebuilder.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="FunctionExport.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="DonateGui.cpp">
+      <Filter>Quelldateien\GUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -117,6 +126,9 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="MainGui.h">
+      <Filter>Headerdateien\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger.h">
       <Filter>Headerdateien\GUI</Filter>
     </ClInclude>
     <ClInclude Include="ProcessLister.h">
@@ -139,15 +151,6 @@
     </ClInclude>
     <ClInclude Include="Thunks.h">
       <Filter>Headerdateien\GUI</Filter>
-    </ClInclude>
-    <ClInclude Include="PeRebuild.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="PeDump.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="ImportRebuild.h">
-      <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="ConfigurationHolder.h">
       <Filter>Headerdateien</Filter>
@@ -185,31 +188,40 @@
     <ClInclude Include="TreeImportExport.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="hexedit.h">
+    <ClInclude Include="Scylla.h">
       <Filter>Headerdateien\GUI</Filter>
     </ClInclude>
-    <ClInclude Include="Scylla.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="Architecture.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="Configuration.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="Logger.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="StringConversion.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="DeviceNameResolver.h">
+    <ClInclude Include="DumpMemoryGui.h">
+      <Filter>Headerdateien\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="hexedit.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="DumpMemoryGui.h">
+    <ClInclude Include="DeviceNameResolver.h">
+      <Filter>Headerdateien\Helper</Filter>
+    </ClInclude>
+    <ClInclude Include="Architecture.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="DumpSectionGui.h">
+      <Filter>Headerdateien\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="PeParser.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="ImportRebuilder.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="DonateGui.h">
+      <Filter>Headerdateien\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="FunctionExport.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>

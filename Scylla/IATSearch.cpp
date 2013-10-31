@@ -3,7 +3,7 @@
 #include "Architecture.h"
 
 
-#define DEBUG_COMMENTS
+//#define DEBUG_COMMENTS
 
 bool IATSearch::searchImportAddressTableInProcess( DWORD_PTR startAddress, DWORD_PTR* addressIAT, DWORD* sizeIAT, bool advanced )
 {
@@ -80,7 +80,7 @@ bool IATSearch::findIATAdvanced( DWORD_PTR startAddress, DWORD_PTR* addressIAT, 
 	filterIATPointersList(iatPointers);
 
 	*addressIAT = *(iatPointers.begin());
-	*sizeIAT = *(--iatPointers.end()) - *(iatPointers.begin()) + sizeof(DWORD_PTR);
+	*sizeIAT = (DWORD)(*(--iatPointers.end()) - *(iatPointers.begin()) + sizeof(DWORD_PTR));
 
 	Scylla::windowLog.log(L"IAT Search Advanced: Found %d (0x%X) possible IAT entries.", iatPointers.size(), iatPointers.size());
 	Scylla::windowLog.log(L"IAT Search Advanced: Possible IAT first " PRINTF_DWORD_PTR_FULL L" last " PRINTF_DWORD_PTR_FULL L" entry.", *(iatPointers.begin()), *(--iatPointers.end()));
