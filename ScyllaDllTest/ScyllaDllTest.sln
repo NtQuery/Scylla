@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ScyllaDllTest", "ScyllaDllTest\ScyllaDllTest.vcxproj", "{D7886EB7-3C3B-4AA7-B983-DD85E72798DD}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ScyllaTestExe", "ScyllaTestExe\ScyllaTestExe.vcxproj", "{756E4AF7-342C-417F-86DC-3B2A78E782C9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D7886EB7-3C3B-4AA7-B983-DD85E72798DD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D7886EB7-3C3B-4AA7-B983-DD85E72798DD}.Debug|Win32.Build.0 = Debug|Win32
+		{D7886EB7-3C3B-4AA7-B983-DD85E72798DD}.Release|Win32.ActiveCfg = Release|Win32
+		{D7886EB7-3C3B-4AA7-B983-DD85E72798DD}.Release|Win32.Build.0 = Release|Win32
+		{756E4AF7-342C-417F-86DC-3B2A78E782C9}.Debug|Win32.ActiveCfg = Release|Win32
+		{756E4AF7-342C-417F-86DC-3B2A78E782C9}.Debug|Win32.Build.0 = Release|Win32
+		{756E4AF7-342C-417F-86DC-3B2A78E782C9}.Release|Win32.ActiveCfg = Release|Win32
+		{756E4AF7-342C-417F-86DC-3B2A78E782C9}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
