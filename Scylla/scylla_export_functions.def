@@ -10,3 +10,4 @@ EXPORTS
    ScyllaVersionInformationDword   @9
    ScyllaStartGui   @10
    ScyllaIatSearch   @11
+   ScyllaIatFixAutoW   @12

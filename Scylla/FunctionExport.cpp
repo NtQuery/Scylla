@@ -7,6 +7,7 @@
 #include "ProcessLister.h"
 #include "ApiReader.h"
 #include "IATSearch.h"
+#include "ImportRebuilder.h"
 
 
 extern HINSTANCE hDllModule;
@@ -167,7 +168,6 @@ BOOL WINAPI ScyllaDumpProcessA(DWORD_PTR pid, const char * fileToDump, DWORD_PTR
 	}
 }
 
-
 INT WINAPI ScyllaStartGui(DWORD dwProcessId, HINSTANCE mod)
 {
 	GUI_DLL_PARAMETER guiParam;
@@ -229,8 +229,67 @@ int WINAPI ScyllaIatSearch(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatS
 		}
 	}
 
+	processList.clear();
 	ProcessAccessHelp::closeProcessHandle();
 	apiReader.clearAll();
+
+	return retVal;
+}
+
+
+int WINAPI ScyllaIatFixAutoW(DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId, const WCHAR * dumpFile, const WCHAR * iatFixFile)
+{
+	ApiReader apiReader;
+	ProcessLister processLister;
+	Process *processPtr = 0;
+	std::map<DWORD_PTR, ImportModuleThunk> moduleList;
+
+	std::vector<Process>& processList = processLister.getProcessListSnapshot();
+	for(std::vector<Process>::iterator it = processList.begin(); it != processList.end(); ++it)
+	{
+		if(it->PID == dwProcessId)
+		{
+			processPtr = &(*it);
+			break;
+		}
+	}
+
+	if(!processPtr) return SCY_ERROR_PIDNOTFOUND;
+
+	ProcessAccessHelp::closeProcessHandle();
+	apiReader.clearAll();
+
+	if (!ProcessAccessHelp::openProcessHandle(processPtr->PID))
+	{
+		return SCY_ERROR_PROCOPEN;
+	}
+
+	ProcessAccessHelp::getProcessModules(processPtr->PID, ProcessAccessHelp::moduleList);
+
+	ProcessAccessHelp::selectedModule = 0;
+	ProcessAccessHelp::targetImageBase = processPtr->imageBase;
+	ProcessAccessHelp::targetSizeOfImage = ProcessAccessHelp::getSizeOfImageProcess(ProcessAccessHelp::hProcess, ProcessAccessHelp::targetImageBase);
+
+	apiReader.readApisFromModuleList();
+
+	apiReader.readAndParseIAT(iatAddr, iatSize, moduleList);
+
+	//add IAT section to dump
+	ImportRebuilder importRebuild(dumpFile);
+	importRebuild.enableOFTSupport();
+
+	int retVal = SCY_ERROR_IATWRITE;
+
+	if (importRebuild.rebuildImportTable(iatFixFile, moduleList))
+	{
+		retVal = SCY_ERROR_SUCCESS;
+	}
+
+	processList.clear();
+	moduleList.clear();
+	ProcessAccessHelp::closeProcessHandle();
+	apiReader.clearAll();
+
 
 	return retVal;
 }
