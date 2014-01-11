@@ -2,6 +2,14 @@
 
 #include <windows.h>
 
+const int SCY_ERROR_SUCCESS = 0;
+const int SCY_ERROR_PROCOPEN = -1;
+const int SCY_ERROR_IATWRITE = -2;
+const int SCY_ERROR_IATSEARCH = -3;
+const int SCY_ERROR_IATNOTFOUND = -4;
+const int SCY_ERROR_PIDNOTFOUND = -5;
+
+
 typedef struct _GUI_DLL_PARAMETER {
 	DWORD dwProcessId;
 	HINSTANCE mod;
@@ -23,8 +31,22 @@ BOOL WINAPI ScyllaDumpProcessA(DWORD_PTR pid, const char * fileToDump, DWORD_PTR
 BOOL WINAPI ScyllaRebuildFileW(const WCHAR * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup);
 BOOL WINAPI ScyllaRebuildFileA(const char * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup);
 
-WCHAR * WINAPI ScyllaVersionInformationW();
-char * WINAPI ScyllaVersionInformationA();
+const WCHAR * WINAPI ScyllaVersionInformationW();
+const char * WINAPI ScyllaVersionInformationA();
 DWORD WINAPI ScyllaVersionInformationDword();
 
-INT WINAPI ScyllaStartGui(DWORD dwProcessId, HINSTANCE mod);
+int WINAPI ScyllaStartGui(DWORD dwProcessId, HINSTANCE mod);
+
+int WINAPI ScyllaIatSearch(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatSize, DWORD_PTR searchStart, BOOL advancedSearch);
+
+
+/*
+C/C++ Prototyps
+
+typedef const WCHAR * (WINAPI * def_ScyllaVersionInformationW)();
+typedef const char * (WINAPI * def_ScyllaVersionInformationA)();
+typedef DWORD (WINAPI * def_ScyllaVersionInformationDword)();
+typedef int (WINAPI * def_ScyllaIatSearch)(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatSize, DWORD_PTR searchStart, BOOL advancedSearch);
+typedef int (WINAPI * def_ScyllaStartGui)(DWORD dwProcessId, HINSTANCE mod);
+
+*/

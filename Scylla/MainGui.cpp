@@ -43,8 +43,6 @@ MainGui::MainGui() : selectedProcess(0), isProcessSuspended(false), importsHandl
 	ProcessAccessHelp::getProcessModules(GetCurrentProcessId(), ProcessAccessHelp::ownModuleList);
 	*/
 
-	Scylla::init();
-
 	hIcon.LoadIcon(IDI_ICON_SCYLLA);
 	hMenuImports.LoadMenu(IDR_MENU_IMPORTS);
 	hMenuLog.LoadMenu(IDR_MENU_LOG);

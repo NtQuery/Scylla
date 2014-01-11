@@ -95,8 +95,12 @@ HANDLE ProcessAccessHelp::NativeOpenProcess(DWORD dwDesiredAccess, DWORD dwProce
 
 void ProcessAccessHelp::closeProcessHandle()
 {
-	CloseHandle(hProcess);
-	hProcess = 0;
+	if (hProcess)
+	{
+		CloseHandle(hProcess);
+		hProcess = 0;
+	}
+
 	moduleList.clear();
 	targetImageBase = 0;
 	selectedModule = 0;

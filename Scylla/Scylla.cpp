@@ -14,7 +14,7 @@ const WCHAR Scylla::DEBUG_LOG_FILENAME[] = L"Scylla_debug.log";
 FileLog Scylla::debugLog(DEBUG_LOG_FILENAME);
 ListboxLog Scylla::windowLog;
 
-void Scylla::init()
+void Scylla::initAsGuiApp()
 {
 	config.loadConfiguration();
 	plugins.findAllPlugins();
@@ -27,5 +27,14 @@ void Scylla::init()
 		processLister.setDebugPrivileges();
 	}
 
+	ProcessAccessHelp::getProcessModules(GetCurrentProcessId(), ProcessAccessHelp::ownModuleList);
+}
+
+void Scylla::initAsDll()
+{
+	ProcessAccessHelp::ownModuleList.clear();
+
+	NativeWinApi::initialize();
+	SystemInformation::getSystemInformation();
 	ProcessAccessHelp::getProcessModules(GetCurrentProcessId(), ProcessAccessHelp::ownModuleList);
 }

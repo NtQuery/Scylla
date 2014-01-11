@@ -6,8 +6,8 @@
 #include "Logger.h"
 
 #define APPNAME_S "Scylla"
-#define APPVERSION_S "v0.9.2"
-#define APPVERSIONDWORD 0x00009200
+#define APPVERSION_S "v0.9.3"
+#define APPVERSIONDWORD 0x00009300
 
 #define DONATE_BTC_ADDRESS "1GmVrhWwUhwLohaCLP4SKV5kkz8rd16N8h"
 
@@ -18,7 +18,8 @@ class Scylla
 {
 public:
 
-	static void init();
+	static void initAsGuiApp();
+	static void initAsDll();
 
 	static ConfigurationHolder config;
 	static PluginLoader plugins;

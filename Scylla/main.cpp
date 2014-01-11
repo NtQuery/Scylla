@@ -7,9 +7,11 @@
 CAppModule _Module;
 
 #include "MainGui.h"
+#include "Scylla.h"
 
 MainGui* pMainGui = NULL; // for Logger
 HINSTANCE hDllModule = 0;
+bool IsDllMode = false;
 
 LONG WINAPI HandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionInfo);
 void AddExceptionHandler();
@@ -29,8 +31,14 @@ int InitializeGui(HINSTANCE hInstance, LPARAM param)
 
 	AtlInitCommonControls(ICC_LISTVIEW_CLASSES | ICC_TREEVIEW_CLASSES);
 
+	Scylla::initAsGuiApp();
+
+	IsDllMode = false;
+
 	HRESULT hRes = _Module.Init(NULL, hInstance);
 	ATLASSERT(SUCCEEDED(hRes));
+
+	
 
 	int nRet = 0;
 	// BLOCK: Run application
@@ -54,6 +62,14 @@ int InitializeGui(HINSTANCE hInstance, LPARAM param)
 	return nRet;
 }
 
+void InitializeDll(HINSTANCE hinstDLL)
+{
+	hDllModule = hinstDLL;
+	IsDllMode = true;
+	Scylla::initAsDll();
+}
+
+
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
 	// Perform actions based on the reason for calling.
@@ -63,7 +79,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 		// Initialize once for each new process.
 		// Return FALSE to fail DLL load.
 		AddExceptionHandler();
-		hDllModule = hinstDLL;
+		InitializeDll(hinstDLL);
 		break;
 
 	case DLL_THREAD_ATTACH:
