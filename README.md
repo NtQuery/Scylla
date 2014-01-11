@@ -51,6 +51,11 @@ Keyboard Shortcuts
 Changelog
 ---------
 
+Version 0.9.3
+
+- new dll function: iat search
+- new dll function: iat fix auto
+
 Version 0.9.2
 
 - Pick DLL -> Set DLL Entrypoint

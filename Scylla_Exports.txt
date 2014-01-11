@@ -1,3 +1,23 @@
+Scylla DLL Export List:
+
+BOOL __stdcall ScyllaDumpCurrentProcessW(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult);
+BOOL __stdcall ScyllaDumpCurrentProcessA(const char * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const char * fileResult);
+
+BOOL __stdcall ScyllaDumpProcessW(DWORD_PTR pid, const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const WCHAR * fileResult);
+BOOL __stdcall ScyllaDumpProcessA(DWORD_PTR pid, const char * fileToDump, DWORD_PTR imagebase, DWORD_PTR entrypoint, const char * fileResult);
+
+BOOL __stdcall ScyllaRebuildFileW(const WCHAR * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup);
+BOOL __stdcall ScyllaRebuildFileA(const char * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup);
+
+const WCHAR * __stdcall ScyllaVersionInformationW();
+const char * __stdcall ScyllaVersionInformationA();
+DWORD __stdcall ScyllaVersionInformationDword();
+
+int __stdcall ScyllaStartGui(DWORD dwProcessId, HINSTANCE mod);
+
+int __stdcall ScyllaIatSearch(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatSize, DWORD_PTR searchStart, BOOL advancedSearch);
+int __stdcall ScyllaIatFixAutoW(DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId, const WCHAR * dumpFile, const WCHAR * iatFixFile);
+
 
 Prototyps:
 ----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -58,8 +78,8 @@ createBackup - create a backup file -> 1 (TRUE) or 0 (FALSE)
 ----------------------------------------------------------------------------------------------------------------------------------------------------
 C/C++:
 ------------
-WCHAR * __stdcall ScyllaVersionInformationW();
-char * __stdcall ScyllaVersionInformationA();
+const WCHAR * __stdcall ScyllaVersionInformationW();
+const char * __stdcall ScyllaVersionInformationA();
 DWORD __stdcall ScyllaVersionInformationDword();
 
 ------------
