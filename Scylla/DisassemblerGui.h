@@ -76,7 +76,7 @@ protected:
 
 	static const size_t DISASSEMBLER_GUI_MEMORY_SIZE = 0x120;
 
-	WCHAR tempBuffer[100];
+	WCHAR tempBuffer[500];
 	int addressHistoryIndex;
 
 	std::vector<DWORD_PTR> addressHistory;

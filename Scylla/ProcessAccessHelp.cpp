@@ -176,6 +176,21 @@ bool ProcessAccessHelp::readMemoryPartlyFromProcess(DWORD_PTR address, SIZE_T si
 	return returnValue;
 }
 
+bool ProcessAccessHelp::writeMemoryToProcess(DWORD_PTR address, SIZE_T size, LPVOID dataBuffer)
+{
+	SIZE_T lpNumberOfBytesWritten = 0;
+	if (!hProcess)
+	{
+#ifdef DEBUG_COMMENTS
+		Scylla::debugLog.log(L"readMemoryFromProcess :: hProcess == NULL");
+#endif
+		return false;
+	}
+
+
+	return (WriteProcessMemory(hProcess,(LPVOID)address, dataBuffer, size,&lpNumberOfBytesWritten) != FALSE);
+}
+
 bool ProcessAccessHelp::readMemoryFromProcess(DWORD_PTR address, SIZE_T size, LPVOID dataBuffer)
 {
 	SIZE_T lpNumberOfBytesRead = 0;
@@ -305,7 +320,7 @@ bool ProcessAccessHelp::disassembleMemory(BYTE * dataBuffer, SIZE_T bufferSize, 
 #ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"disassembleMemory :: res == %d", res);
 #endif
-		return false;
+		return true; //not all instructions fit in buffer
 	}
 }
 

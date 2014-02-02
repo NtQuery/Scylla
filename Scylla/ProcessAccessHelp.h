@@ -141,6 +141,7 @@ public:
 	 * Read memory from target process
 	 */
 	static bool readMemoryFromProcess(DWORD_PTR address, SIZE_T size, LPVOID dataBuffer);
+	static bool writeMemoryToProcess(DWORD_PTR address, SIZE_T size, LPVOID dataBuffer);
 
 	/*
 	 * Read memory from target process and ignore no data pages

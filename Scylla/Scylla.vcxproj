@@ -189,6 +189,7 @@
     <ClCompile Include="DumpMemoryGui.cpp" />
     <ClCompile Include="DumpSectionGui.cpp" />
     <ClCompile Include="FunctionExport.cpp" />
+    <ClCompile Include="IATReferenceScan.cpp" />
     <ClCompile Include="IATSearch.cpp" />
     <ClCompile Include="ImportRebuilder.cpp" />
     <ClCompile Include="ImportsHandling.cpp" />
@@ -223,6 +224,7 @@
     <ClInclude Include="DumpSectionGui.h" />
     <ClInclude Include="FunctionExport.h" />
     <ClInclude Include="hexedit.h" />
+    <ClInclude Include="IATReferenceScan.h" />
     <ClInclude Include="IATSearch.h" />
     <ClInclude Include="ImportRebuilder.h" />
     <ClInclude Include="ImportsHandling.h" />

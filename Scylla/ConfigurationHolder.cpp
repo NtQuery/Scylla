@@ -20,6 +20,7 @@ ConfigurationHolder::ConfigurationHolder(const WCHAR* fileName)
 	config[SUSPEND_PROCESS_FOR_DUMPING] = Configuration(L"SUSPEND_PROCESS_FOR_DUMPING",  Configuration::Boolean);
 	config[OriginalFirstThunk_SUPPORT]  = Configuration(L"OriginalFirstThunk_SUPPORT",	 Configuration::Boolean);
 	config[USE_ADVANCED_IAT_SEARCH]     = Configuration(L"USE_ADVANCED_IAT_SEARCH",	     Configuration::Boolean);
+	config[SCAN_AND_FIX_DIRECT_IMPORTS] = Configuration(L"SCAN_AND_FIX_DIRECT_IMPORTS",	 Configuration::Boolean);
 	buildConfigFilePath(fileName);
 }
 

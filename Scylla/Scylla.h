@@ -6,8 +6,8 @@
 #include "Logger.h"
 
 #define APPNAME_S "Scylla"
-#define APPVERSION_S "v0.9.3"
-#define APPVERSIONDWORD 0x00009300
+#define APPVERSION_S "v0.9.4"
+#define APPVERSIONDWORD 0x00009400
 
 #define DONATE_BTC_ADDRESS "1GmVrhWwUhwLohaCLP4SKV5kkz8rd16N8h"
 

@@ -15,6 +15,7 @@
 #include "DonateGui.h"
 #include "OptionsGui.h"
 #include "TreeImportExport.h"
+#include "IATReferenceScan.h"
 
 extern CAppModule _Module; // o_O
 
@@ -103,6 +104,7 @@ void MainGui::InitDllStartWithPreSelect( PGUI_DLL_PARAMETER guiParam )
 				ProcessAccessHelp::selectedModule = &ProcessAccessHelp::moduleList.at(newSel);
 
 				ProcessAccessHelp::targetImageBase = ProcessAccessHelp::selectedModule->modBaseAddr;
+				ProcessAccessHelp::targetSizeOfImage = ProcessAccessHelp::getSizeOfImageProcess(ProcessAccessHelp::hProcess, ProcessAccessHelp::targetImageBase);
 
 				DWORD modEntryPoint = ProcessAccessHelp::getEntryPointFromFile(ProcessAccessHelp::selectedModule->fullPath);
 
@@ -526,6 +528,7 @@ void MainGui::pickDllActionHandler()
 		ProcessAccessHelp::selectedModule = dlgPickDll.getSelectedModule();
 
 		ProcessAccessHelp::targetImageBase = ProcessAccessHelp::selectedModule->modBaseAddr;
+		ProcessAccessHelp::targetSizeOfImage = ProcessAccessHelp::getSizeOfImageProcess(ProcessAccessHelp::hProcess, ProcessAccessHelp::targetImageBase);
 
 		DWORD modEntryPoint = ProcessAccessHelp::getEntryPointFromFile(ProcessAccessHelp::selectedModule->fullPath);
 
@@ -616,10 +619,9 @@ void MainGui::processSelectedActionHandler(int index)
 
 	//TODO improve
 	ProcessAccessHelp::selectedModule = 0;
-	ProcessAccessHelp::targetSizeOfImage = process.imageSize;
-	ProcessAccessHelp::targetImageBase = process.imageBase;
 
-	ProcessAccessHelp::getSizeOfImageCurrentProcess();
+	ProcessAccessHelp::targetImageBase = process.imageBase;
+	ProcessAccessHelp::targetSizeOfImage = ProcessAccessHelp::getSizeOfImageProcess(ProcessAccessHelp::hProcess, ProcessAccessHelp::targetImageBase);
 
 	process.imageSize = (DWORD)ProcessAccessHelp::targetSizeOfImage;
 
@@ -900,6 +902,28 @@ void MainGui::getImportsActionHandler()
 		importsHandling.displayAllImports();
 
 		updateStatusBar();
+
+		if (Scylla::config[SCAN_AND_FIX_DIRECT_IMPORTS].isTrue())
+		{
+			IATReferenceScan sc;
+			sc.ScanForDirectImports = true;
+			sc.ScanForNormalImports = false;
+			sc.startScan(ProcessAccessHelp::targetImageBase, (DWORD)ProcessAccessHelp::targetSizeOfImage, addressIAT, sizeIAT);
+
+			Scylla::windowLog.log(L"DIRECT IMPORTS - Found %d possible direct imports!", sc.numberOfFoundDirectImports());
+
+			if (sc.numberOfFoundDirectImports() > 0)
+			{
+				sc.patchDirectImportsMemory();
+				Scylla::windowLog.log(L"DIRECT IMPORTS - Patched!");
+			}
+		}
+
+
+		if (isIATOutsidePeImage(addressIAT))
+		{
+			Scylla::windowLog.log(L"WARNING! IAT is not inside the PE image, requires rebasing!");
+		}
 	}
 }
 
@@ -1555,4 +1579,29 @@ void MainGui::setDialogIATAddressAndSize( DWORD_PTR addressIAT, DWORD sizeIAT )
 
 	swprintf_s(stringBuffer, L"IAT found:\r\n\r\nStart: " PRINTF_DWORD_PTR_FULL L"\r\nSize: 0x%04X (%d) ", addressIAT, sizeIAT, sizeIAT);
 	MessageBox(stringBuffer, L"IAT found", MB_ICONINFORMATION);
+}
+
+bool MainGui::isIATOutsidePeImage( DWORD_PTR addressIAT )
+{
+	DWORD_PTR minAdd = 0, maxAdd = 0;
+
+	if(ProcessAccessHelp::selectedModule)
+	{
+		minAdd = ProcessAccessHelp::selectedModule->modBaseAddr;
+		maxAdd = minAdd + ProcessAccessHelp::selectedModule->modBaseSize;
+	}
+	else
+	{
+		minAdd = selectedProcess->imageBase;
+		maxAdd = minAdd + selectedProcess->imageSize;
+	}
+
+	if (addressIAT > minAdd && addressIAT < maxAdd)
+	{
+		return false; //inside pe image
+	}
+	else
+	{
+		return true; //outside pe image, requires rebasing iat
+	}
 }
