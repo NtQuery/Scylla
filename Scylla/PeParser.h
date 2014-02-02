@@ -63,6 +63,12 @@ public:
 	void setEntryPointRva(DWORD entryPoint);
 
 	static bool updatePeHeaderChecksum(const WCHAR * targetFile, DWORD fileSize);
+	BYTE * getSectionMemoryByIndex(int index);
+	DWORD getSectionMemorySizeByIndex(int index);
+	int convertRVAToOffsetVectorIndex(DWORD_PTR dwRVA);
+	DWORD_PTR convertOffsetToRVAVector(DWORD_PTR dwOffset);
+	DWORD_PTR convertRVAToOffsetVector(DWORD_PTR dwRVA);
+	DWORD_PTR convertRVAToOffsetRelative(DWORD_PTR dwRVA);
 protected:
 	PeParser();
 
@@ -121,16 +127,15 @@ protected:
 	bool readSectionFrom(const DWORD_PTR readOffset, PeFileSection & peFileSection, const bool isProcess);
 
 	
-	
+	DWORD_PTR getStandardImagebase();
 
 	bool addNewLastSection(const CHAR * sectionName, DWORD sectionSize, BYTE * sectionData);
 	DWORD alignValue(DWORD badValue, DWORD alignTo);
-	int convertRVAToOffsetVectorIndex(DWORD_PTR dwRVA);
-	DWORD_PTR convertOffsetToRVAVector(DWORD_PTR dwOffset);
-	DWORD_PTR convertRVAToOffsetVector(DWORD_PTR dwRVA);
+
 	void setNumberOfSections(WORD numberOfSections);
 	
 	void removeIatDirectory();
 	bool getFileOverlay();
+
 };
 

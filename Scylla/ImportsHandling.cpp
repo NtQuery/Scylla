@@ -404,11 +404,17 @@ bool ImportsHandling::setImport(CTreeItem item, const WCHAR * moduleName, const 
 				{
 					//update module name
 					wcscpy_s(module->moduleName, module->thunkList.begin()->second.moduleName);
+					scanAndFixModuleList();
+					displayAllImports();
+				}
+				else
+				{
+					//updateModuleInTreeView(module, module->hTreeItem);
+
+					updateCounts();
 				}
 
-				updateModuleInTreeView(module, module->hTreeItem);
 
-				updateCounts();
 				return true;
 			}
 		}

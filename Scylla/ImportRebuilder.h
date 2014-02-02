@@ -3,6 +3,7 @@
 #include <map>
 #include "PeParser.h"
 #include "Thunks.h"
+#include "IATReferenceScan.h"
 
 
 class ImportRebuilder : public PeParser {
@@ -23,6 +24,7 @@ public:
 
 	bool rebuildImportTable(const WCHAR * newFilePath, std::map<DWORD_PTR, ImportModuleThunk> & moduleList);
 	void enableOFTSupport();
+	void enableNewIatInSection(DWORD_PTR iatAddress, DWORD iatSize);
 private:
 	PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor;
 	PIMAGE_THUNK_DATA pThunkData;
@@ -36,6 +38,10 @@ private:
 	//OriginalFirstThunk Array in Import Section
 	size_t sizeOfOFTArray;
 	bool useOFT;
+	bool newIatInSection;
+	DWORD_PTR IatAddress;
+	DWORD IatSize;
+	IATReferenceScan iatRefScan;
 
 	DWORD fillImportSection(std::map<DWORD_PTR, ImportModuleThunk> & moduleList);
 	BYTE * getMemoryPointerFromRVA(DWORD_PTR dwRVA);
@@ -49,4 +55,6 @@ private:
 	void calculateImportSizes(std::map<DWORD_PTR, ImportModuleThunk> & moduleList);
 
 	void addSpecialImportDescriptor(DWORD_PTR rvaFirstThunk, DWORD sectionOffsetOFTArray);
+	void patchFileForNewIatLocation();
+	void changeIatBaseAddress( std::map<DWORD_PTR, ImportModuleThunk> & moduleList );
 };

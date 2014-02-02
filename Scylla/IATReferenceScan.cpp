@@ -53,25 +53,25 @@ void IATReferenceScan::startScan(DWORD_PTR imageBase, DWORD imageSize, DWORD_PTR
 
 }
 
-void IATReferenceScan::patchNewIatBaseMemory(DWORD_PTR newIatBaseAddress)
-{
-	NewIatAddressVA = newIatBaseAddress;
-
-	for (std::vector<IATReference>::iterator iter = iatReferenceList.begin(); iter != iatReferenceList.end(); iter++)
-	{
-		patchReferenceInMemory(&(*iter));
-	}
-}
-
-void IATReferenceScan::patchNewIatBaseFile(DWORD_PTR newIatBaseAddress)
-{
-	NewIatAddressVA = newIatBaseAddress;
-
-	for (std::vector<IATReference>::iterator iter = iatReferenceList.begin(); iter != iatReferenceList.end(); iter++)
-	{
-		patchReferenceInFile(&(*iter));
-	}
-}
+//void IATReferenceScan::patchNewIatBaseMemory(DWORD_PTR newIatBaseAddress)
+//{
+//	NewIatAddressVA = newIatBaseAddress;
+//
+//	for (std::vector<IATReference>::iterator iter = iatReferenceList.begin(); iter != iatReferenceList.end(); iter++)
+//	{
+//		patchReferenceInMemory(&(*iter));
+//	}
+//}
+//
+//void IATReferenceScan::patchNewIatBaseFile(DWORD_PTR newIatBaseAddress)
+//{
+//	NewIatAddressVA = newIatBaseAddress;
+//
+//	for (std::vector<IATReference>::iterator iter = iatReferenceList.begin(); iter != iatReferenceList.end(); iter++)
+//	{
+//		patchReferenceInFile(&(*iter));
+//	}
+//}
 
 void IATReferenceScan::patchDirectImportsMemory()
 {
@@ -315,7 +315,7 @@ bool IATReferenceScan::isAddressValidMemory( DWORD_PTR address )
 
 void IATReferenceScan::patchReferenceInMemory( IATReference * ref )
 {
-	DWORD_PTR newIatAddressPointer = ref->targetPointer - IatAddressVA + NewIatAddressVA;
+	DWORD_PTR newIatAddressPointer = ref->targetPointer - IatAddressVA + NewIatAddressRVA;
 
 	DWORD patchBytes = 0;
 
@@ -380,7 +380,7 @@ DWORD_PTR IATReferenceScan::lookUpIatForPointer( DWORD_PTR addr )
 {
 	if (!iatBackup)
 	{
-		iatBackup = (DWORD_PTR *)calloc(IatSize + 1, 1);
+		iatBackup = (DWORD_PTR *)calloc(IatSize + sizeof(DWORD_PTR), 1);
 		if (!iatBackup)
 		{
 			return 0;
@@ -402,4 +402,36 @@ DWORD_PTR IATReferenceScan::lookUpIatForPointer( DWORD_PTR addr )
 	}
 
 	return 0;
+}
+
+void IATReferenceScan::patchNewIat(DWORD_PTR stdImagebase, DWORD_PTR newIatBaseAddress, PeParser * peParser)
+{
+	NewIatAddressRVA = newIatBaseAddress;
+	DWORD patchBytes = 0;
+
+	for (std::vector<IATReference>::iterator iter = iatReferenceList.begin(); iter != iatReferenceList.end(); iter++)
+	{
+		IATReference * ref = &(*iter);
+
+		DWORD_PTR newIatAddressPointer = (ref->targetPointer - IatAddressVA) + NewIatAddressRVA + stdImagebase;
+
+#ifdef _WIN64
+		patchBytes = (DWORD)(newIatAddressPointer - (ref->addressVA - ImageBase + standardImageBase) - 6);
+#else
+		patchBytes = newIatAddressPointer;
+#endif
+		DWORD_PTR patchOffset = peParser->convertRVAToOffsetRelative(ref->addressVA - ImageBase);
+		int index = peParser->convertRVAToOffsetVectorIndex(ref->addressVA - ImageBase);
+		BYTE * memory = peParser->getSectionMemoryByIndex(index);
+		DWORD memorySize = peParser->getSectionMemorySizeByIndex(index);
+
+
+		Scylla::debugLog.log(L"address %X old %X new %X",ref->addressVA, ref->targetPointer, newIatAddressPointer);
+
+		memory += patchOffset + 2;
+		//Scylla::debugLog.log(L"%X %X %X %X %X %X",memory[0],memory[1],memory[2],memory[3],memory[4],memory[5] );
+		
+
+		*((DWORD *)memory) = patchBytes;
+	}
 }

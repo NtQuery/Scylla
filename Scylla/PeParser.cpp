@@ -609,6 +609,10 @@ bool PeParser::readSectionFrom(const DWORD_PTR readOffset, PeFileSection & peFil
 			{
 				//real size
 				peFileSection.dataSize = (DWORD)(currentOffset - readOffset);
+
+				//some safety space because of something like this at the end of a section:
+				//FF25 C0604000 JMP DWORD PTR DS:[<&KERNEL32.RtlUnwind>]
+				peFileSection.dataSize += sizeof(DWORD);;
 			}
 
 			break;
@@ -617,6 +621,7 @@ bool PeParser::readSectionFrom(const DWORD_PTR readOffset, PeFileSection & peFil
 		currentReadSize = maxReadSize;
 		currentOffset -= currentReadSize;
 	}
+
 
 	if (peFileSection.dataSize)
 	{
@@ -872,6 +877,18 @@ bool PeParser::addNewLastSection(const CHAR * sectionName, DWORD sectionSize, BY
 	return true;
 }
 
+DWORD_PTR PeParser::getStandardImagebase()
+{
+	if (isPE32())
+	{
+		return pNTHeader32->OptionalHeader.ImageBase;
+	}
+	else
+	{
+		return pNTHeader64->OptionalHeader.ImageBase;
+	}
+}
+
 int PeParser::convertRVAToOffsetVectorIndex(DWORD_PTR dwRVA)
 {
 	for (WORD i = 0; i < getNumberOfSections(); i++)
@@ -892,6 +909,19 @@ DWORD_PTR PeParser::convertRVAToOffsetVector(DWORD_PTR dwRVA)
 		if ((listPeSection[i].sectionHeader.VirtualAddress <= dwRVA) && ((listPeSection[i].sectionHeader.VirtualAddress + listPeSection[i].sectionHeader.Misc.VirtualSize) > dwRVA))
 		{
 			return ((dwRVA - listPeSection[i].sectionHeader.VirtualAddress) + listPeSection[i].sectionHeader.PointerToRawData);
+		}
+	}
+
+	return 0;
+}
+
+DWORD_PTR PeParser::convertRVAToOffsetRelative(DWORD_PTR dwRVA)
+{
+	for (WORD i = 0; i < getNumberOfSections(); i++)
+	{
+		if ((listPeSection[i].sectionHeader.VirtualAddress <= dwRVA) && ((listPeSection[i].sectionHeader.VirtualAddress + listPeSection[i].sectionHeader.Misc.VirtualSize) > dwRVA))
+		{
+			return (dwRVA - listPeSection[i].sectionHeader.VirtualAddress);
 		}
 	}
 
@@ -1220,4 +1250,14 @@ bool PeParser::updatePeHeaderChecksum(const WCHAR * targetFile, DWORD fileSize)
 	}
 
 	return retValue;
+}
+
+BYTE * PeParser::getSectionMemoryByIndex(int index)
+{
+	return listPeSection[index].data;
+}
+
+DWORD PeParser::getSectionMemorySizeByIndex(int index)
+{
+	return listPeSection[index].dataSize;
 }

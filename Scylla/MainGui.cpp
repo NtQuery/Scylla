@@ -1367,6 +1367,14 @@ void MainGui::dumpFixActionHandler()
 			importRebuild.enableOFTSupport();
 		}
 
+		if (Scylla::config[CREATE_NEW_IAT_IN_SECTION].isTrue())
+		{
+			DWORD_PTR addressIAT = EditIATAddress.GetValue();
+			DWORD sizeIAT = EditIATSize.GetValue();
+			importRebuild.enableNewIatInSection(addressIAT,sizeIAT);
+		}
+
+
 		if (importRebuild.rebuildImportTable(newFilePath, importsHandling.moduleList))
 		{
 			Scylla::windowLog.log(L"Import Rebuild success %s", newFilePath);

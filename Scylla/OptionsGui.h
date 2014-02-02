@@ -30,6 +30,7 @@ public:
 		DDX_CHECK(IDC_CHECKOFTSUPPORT, oftSupport)
 		DDX_CHECK(IDC_CHECK_USEADVANCEDIATSEARCH, useAdvancedIatSearch)
 		DDX_CHECK(IDC_SCANFIXDIRECTIMPORT, scanAndFixDirectImports)
+		DDX_CHECK(IDC_NEWIATINSECTION, createNewIatInSection)
 	END_DDX_MAP()
 
 	BEGIN_MSG_MAP(OptionsGui)
@@ -56,6 +57,7 @@ protected:
 	bool oftSupport;
 	bool useAdvancedIatSearch;
 	bool scanAndFixDirectImports;
+	bool createNewIatInSection;
 	// Controls
 
 	CEdit EditSectionName;

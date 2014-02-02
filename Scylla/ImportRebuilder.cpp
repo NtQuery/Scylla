@@ -22,6 +22,12 @@ bool ImportRebuilder::rebuildImportTable(const WCHAR * newFilePath, std::map<DWO
 			{
 				alignAllSectionHeaders();
 				fixPeHeader();
+
+				if (newIatInSection)
+				{
+					patchFileForNewIatLocation();
+				}
+
 				retValue = savePeFileToDisk(newFilePath);
 			}
 		}
@@ -35,6 +41,11 @@ bool ImportRebuilder::buildNewImportTable(std::map<DWORD_PTR, ImportModuleThunk>
 	createNewImportSection(moduleList);
 
 	importSectionIndex = listPeSection.size() - 1;
+
+	if (newIatInSection)
+	{
+		changeIatBaseAddress(moduleList);
+	}
 
 	DWORD dwSize = fillImportSection(moduleList);
 
@@ -51,6 +62,10 @@ bool ImportRebuilder::buildNewImportTable(std::map<DWORD_PTR, ImportModuleThunk>
 	{
 		//OFT array is at the beginning of the import section
 		vaImportAddress += (DWORD)sizeOfOFTArray;
+	}
+	if (newIatInSection)
+	{
+		vaImportAddress += (DWORD)IatSize;
 	}
 
 	if (isPE32())
@@ -84,6 +99,11 @@ bool ImportRebuilder::createNewImportSection(std::map<DWORD_PTR, ImportModuleThu
 	{
 		StringConversion::ToASCII(sectionNameW, sectionName, _countof(sectionName));
 	}
+
+	if (newIatInSection)
+	{
+		sizeOfImportSection += IatSize;
+	}
 	
 	return addNewLastSection(sectionName, (DWORD)sizeOfImportSection, 0);
 }
@@ -114,7 +134,7 @@ DWORD ImportRebuilder::fillImportSection(std::map<DWORD_PTR, ImportModuleThunk> 
 	DWORD_PTR lastRVA = 0;
 
 	BYTE * sectionData = listPeSection[importSectionIndex].data;
-	DWORD offset;
+	DWORD offset = 0;
 	DWORD offsetOFTArray = 0;
 
 	if (useOFT)
@@ -122,9 +142,10 @@ DWORD ImportRebuilder::fillImportSection(std::map<DWORD_PTR, ImportModuleThunk> 
 		//OFT Array is always at the beginning of the import section
 		offset = (DWORD)sizeOfOFTArray; //size includes null termination
 	}
-	else
+
+	if (newIatInSection)
 	{
-		offset = 0;
+		offset += IatSize; //new iat at the beginning
 	}
 
 	pImportDescriptor = (PIMAGE_IMPORT_DESCRIPTOR)((DWORD_PTR)sectionData + offset);
@@ -362,5 +383,40 @@ BYTE * ImportRebuilder::getMemoryPointerFromRVA(DWORD_PTR dwRVA)
 void ImportRebuilder::enableOFTSupport()
 {
 	useOFT = true;
+}
+
+void ImportRebuilder::enableNewIatInSection(DWORD_PTR iatAddress, DWORD iatSize)
+{
+	newIatInSection = true;
+	IatAddress = iatAddress;
+	IatSize = iatSize;
+
+	iatRefScan.ScanForDirectImports = false;
+	iatRefScan.ScanForNormalImports = true;
+
+	iatRefScan.startScan(ProcessAccessHelp::targetImageBase, (DWORD)ProcessAccessHelp::targetSizeOfImage, IatAddress, IatSize);
+}
+
+void ImportRebuilder::patchFileForNewIatLocation()
+{
+	iatRefScan.patchNewIat(getStandardImagebase(), listPeSection[importSectionIndex].sectionHeader.VirtualAddress, (PeParser *)this);
+}
+
+void ImportRebuilder::changeIatBaseAddress( std::map<DWORD_PTR, ImportModuleThunk> & moduleList )
+{
+	std::map<DWORD_PTR, ImportModuleThunk>::iterator mapIt;
+	std::map<DWORD_PTR, ImportThunk>::iterator mapIt2;
+
+	DWORD_PTR oldIatRva = IatAddress - ProcessAccessHelp::targetImageBase;
+
+	for ( mapIt = moduleList.begin() ; mapIt != moduleList.end(); mapIt++ )
+	{
+		(*mapIt).second.firstThunk = (*mapIt).second.firstThunk - oldIatRva + listPeSection[importSectionIndex].sectionHeader.VirtualAddress;
+
+		for ( mapIt2 = (*mapIt).second.thunkList.begin() ; mapIt2 != (*mapIt).second.thunkList.end(); mapIt2++ )
+		{
+			(*mapIt2).second.rva = (*mapIt2).second.rva - oldIatRva + listPeSection[importSectionIndex].sectionHeader.VirtualAddress;
+		}
+	}
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "ProcessAccessHelp.h"
+#include "PeParser.h"
 
 enum IATReferenceType {
 	IAT_REFERENCE_PTR_JMP,
@@ -50,12 +51,13 @@ public:
 
 
 	void startScan(DWORD_PTR imageBase, DWORD imageSize, DWORD_PTR iatAddress, DWORD iatSize);
-	void patchNewIatBaseMemory(DWORD_PTR newIatBaseAddress);
-	void patchNewIatBaseFile(DWORD_PTR newIatBaseAddress);
+	//void patchNewIatBaseMemory(DWORD_PTR newIatBaseAddress);
+	//void patchNewIatBaseFile(DWORD_PTR newIatBaseAddress);
+
+	void patchNewIat(DWORD_PTR stdImagebase, DWORD_PTR newIatBaseAddress, PeParser * peParser);
 	void patchDirectImportsMemory();
 	int numberOfFoundDirectImports();
 private:
-	DWORD_PTR NewIatAddressVA;
 	DWORD_PTR NewIatAddressRVA;
 
 	DWORD_PTR IatAddressVA;
