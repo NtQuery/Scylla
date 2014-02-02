@@ -51,6 +51,12 @@ Keyboard Shortcuts
 Changelog
 ---------
 
+Version 0.9.4
+
+- direct import scan + fix: 5 byte CALL/JMP, junk byte must be after CALL/JMP
+- create new iat in section
+- fixed various bugs 
+
 Version 0.9.3
 
 - new dll function: iat search
