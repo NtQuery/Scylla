@@ -5,6 +5,8 @@
 //#define DEBUG_COMMENTS
 
 
+FileLog IATReferenceScan::directImportLog(L"Scylla_direct_imports.log");
+
 int IATReferenceScan::numberOfFoundDirectImports()
 {
 	return (int)iatDirectImportList.size();
@@ -73,8 +75,9 @@ void IATReferenceScan::startScan(DWORD_PTR imageBase, DWORD imageSize, DWORD_PTR
 //	}
 //}
 
-void IATReferenceScan::patchDirectImportsMemory()
+void IATReferenceScan::patchDirectImportsMemory( bool junkByteAfterInstruction )
 {
+	JunkByteAfterInstruction = junkByteAfterInstruction;
 	for (std::vector<IATReference>::iterator iter = iatDirectImportList.begin(); iter != iatDirectImportList.end(); iter++)
 	{
 		patchDirectImportInMemory(&(*iter));
@@ -351,6 +354,11 @@ void IATReferenceScan::patchDirectImportInMemory( IATReference * ref )
 			return;
 		}
 
+		if (!JunkByteAfterInstruction)
+		{
+			ref->addressVA -= 1;
+		}
+
 		ProcessAccessHelp::writeMemoryToProcess(ref->addressVA, 2, patchPreBytes);
 
 #ifdef _WIN64
@@ -461,4 +469,38 @@ void IATReferenceScan::findDirectIatReferenceMov( _DInst * instruction )
 			}
 		}
 	}
+}
+
+void IATReferenceScan::printDirectImportLog()
+{
+	IATReferenceScan::directImportLog.log(L"------------------------------------------------------------");
+	IATReferenceScan::directImportLog.log(L"ImageBase " PRINTF_DWORD_PTR_FULL L" ImageSize %08X IATAddress " PRINTF_DWORD_PTR_FULL L" IATSize 0x%X", ImageBase, ImageSize, IatAddressVA, IatSize);
+	int count = 0;
+	for (std::vector<IATReference>::iterator iter = iatDirectImportList.begin(); iter != iatDirectImportList.end(); iter++)
+	{
+		IATReference * ref = &(*iter);
+
+		ref->targetPointer = lookUpIatForPointer(ref->targetAddressInIat);
+
+		count++;
+		WCHAR * type;
+
+		if (ref->type == IAT_REFERENCE_DIRECT_CALL)
+		{
+			type = L"CALL";
+		}
+		else if (ref->type == IAT_REFERENCE_DIRECT_JMP)
+		{
+			type = L"JMP";
+		}
+		else if (ref->type == IAT_REFERENCE_DIRECT_MOV)
+		{
+			type = L"MOV";
+		}
+
+		IATReferenceScan::directImportLog.log(L"%04d AddrVA " PRINTF_DWORD_PTR_FULL L" Type %s Value " PRINTF_DWORD_PTR_FULL L" IatRefPointer " PRINTF_DWORD_PTR_FULL, count, ref->addressVA, type, ref->targetAddressInIat, ref->targetPointer);
+
+	}
+
+	IATReferenceScan::directImportLog.log(L"------------------------------------------------------------");
 }

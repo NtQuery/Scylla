@@ -20,8 +20,9 @@ ConfigurationHolder::ConfigurationHolder(const WCHAR* fileName)
 	config[SUSPEND_PROCESS_FOR_DUMPING] = Configuration(L"SUSPEND_PROCESS_FOR_DUMPING",  Configuration::Boolean);
 	config[OriginalFirstThunk_SUPPORT]  = Configuration(L"OriginalFirstThunk_SUPPORT",	 Configuration::Boolean);
 	config[USE_ADVANCED_IAT_SEARCH]     = Configuration(L"USE_ADVANCED_IAT_SEARCH",	     Configuration::Boolean);
-	config[SCAN_AND_FIX_DIRECT_IMPORTS] = Configuration(L"SCAN_AND_FIX_DIRECT_IMPORTS",	 Configuration::Boolean);
-	config[CREATE_NEW_IAT_IN_SECTION] = Configuration(L"CREATE_NEW_IAT_IN_SECTION",	 Configuration::Boolean);
+	config[SCAN_DIRECT_IMPORTS]			= Configuration(L"SCAN_DIRECT_IMPORTS",			 Configuration::Boolean);
+	config[FIX_DIRECT_IMPORTS]			= Configuration(L"FIX_DIRECT_IMPORTS",			 Configuration::Boolean);
+	config[CREATE_NEW_IAT_IN_SECTION]	= Configuration(L"CREATE_NEW_IAT_IN_SECTION",	 Configuration::Boolean);
 	buildConfigFilePath(fileName);
 }
 

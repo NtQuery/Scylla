@@ -2,6 +2,7 @@
 #include <vector>
 #include "ProcessAccessHelp.h"
 #include "PeParser.h"
+#include "Logger.h"
 
 enum IATReferenceType {
 	IAT_REFERENCE_PTR_JMP,
@@ -49,15 +50,18 @@ public:
 
 	bool ScanForDirectImports;
 	bool ScanForNormalImports;
-
+	bool JunkByteAfterInstruction;
 
 	void startScan(DWORD_PTR imageBase, DWORD imageSize, DWORD_PTR iatAddress, DWORD iatSize);
 	//void patchNewIatBaseMemory(DWORD_PTR newIatBaseAddress);
 	//void patchNewIatBaseFile(DWORD_PTR newIatBaseAddress);
 
 	void patchNewIat(DWORD_PTR stdImagebase, DWORD_PTR newIatBaseAddress, PeParser * peParser);
-	void patchDirectImportsMemory();
+	void patchDirectImportsMemory(bool junkByteAfterInstruction);
 	int numberOfFoundDirectImports();
+
+	static FileLog directImportLog;
+	void printDirectImportLog();
 private:
 	DWORD_PTR NewIatAddressRVA;
 

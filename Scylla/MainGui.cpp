@@ -903,7 +903,7 @@ void MainGui::getImportsActionHandler()
 
 		updateStatusBar();
 
-		if (Scylla::config[SCAN_AND_FIX_DIRECT_IMPORTS].isTrue())
+		if (Scylla::config[SCAN_DIRECT_IMPORTS].isTrue())
 		{
 			IATReferenceScan sc;
 			sc.ScanForDirectImports = true;
@@ -914,9 +914,28 @@ void MainGui::getImportsActionHandler()
 
 			if (sc.numberOfFoundDirectImports() > 0)
 			{
-				sc.patchDirectImportsMemory();
-				Scylla::windowLog.log(L"DIRECT IMPORTS - Patched!");
+				sc.printDirectImportLog();
+
+				if (Scylla::config[FIX_DIRECT_IMPORTS].isTrue())
+				{
+					int msgboxID = MessageBox(L"Direct Imports found. Where is the junk byte?\r\n\r\nYES = After Instruction\r\nNO = Before the Instruction\r\nCancel = Do nothing", L"Information", MB_YESNOCANCEL|MB_ICONINFORMATION);
+
+					switch (msgboxID)
+					{
+					case IDYES:
+						sc.patchDirectImportsMemory(true);
+						Scylla::windowLog.log(L"DIRECT IMPORTS - Patched!");
+						break;
+					case IDNO:
+						sc.patchDirectImportsMemory(false);
+						Scylla::windowLog.log(L"DIRECT IMPORTS - Patched!");
+						break;
+					default:
+						break;
+					}
+				}
 			}
+
 		}
 
 
