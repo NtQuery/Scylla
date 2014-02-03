@@ -7,7 +7,8 @@ enum IATReferenceType {
 	IAT_REFERENCE_PTR_JMP,
 	IAT_REFERENCE_PTR_CALL,
 	IAT_REFERENCE_DIRECT_JMP,
-	IAT_REFERENCE_DIRECT_CALL
+	IAT_REFERENCE_DIRECT_CALL,
+	IAT_REFERENCE_DIRECT_MOV
 };
 
 class IATReference
@@ -65,7 +66,6 @@ private:
 	DWORD_PTR ImageBase;
 	DWORD ImageSize;
 
-	DWORD_PTR standardImageBase;
 
 	DWORD_PTR * iatBackup;
 
@@ -77,12 +77,13 @@ private:
 	void analyzeInstruction( _DInst * instruction );
 	void findNormalIatReference( _DInst * instruction );
 	void getIatEntryAddress( IATReference* ref );
-	void findDirectIatReference( _DInst * instruction );
-	bool isAddressValidMemory( DWORD_PTR address );
+	void findDirectIatReferenceCallJmp( _DInst * instruction );
+	bool isAddressValidImageMemory( DWORD_PTR address );
 	void patchReferenceInMemory( IATReference * ref );
 	void patchReferenceInFile( IATReference* ref );
 	void patchDirectImportInMemory( IATReference * iter );
 	DWORD_PTR lookUpIatForPointer( DWORD_PTR addr );
+	void findDirectIatReferenceMov( _DInst * instruction );
 };
 
 /*

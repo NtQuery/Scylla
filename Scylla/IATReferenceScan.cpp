@@ -179,7 +179,8 @@ void IATReferenceScan::analyzeInstruction( _DInst * instruction )
 	
 	if (ScanForDirectImports)
 	{
-		findDirectIatReference(instruction);
+		findDirectIatReferenceCallJmp(instruction);
+		findDirectIatReferenceMov(instruction);
 	}
 }
 
@@ -260,7 +261,7 @@ void IATReferenceScan::getIatEntryAddress( IATReference * ref )
 	}
 }
 
-void IATReferenceScan::findDirectIatReference( _DInst * instruction )
+void IATReferenceScan::findDirectIatReferenceCallJmp( _DInst * instruction )
 {
 #ifdef DEBUG_COMMENTS
 	_DecodedInst inst;
@@ -287,7 +288,7 @@ void IATReferenceScan::findDirectIatReference( _DInst * instruction )
 
 			if ((ref.targetAddressInIat < ImageBase) || (ref.targetAddressInIat > (ImageBase+ImageSize))) //call/JMP outside pe image
 			{
-				if (isAddressValidMemory(ref.targetAddressInIat))
+				if (isAddressValidImageMemory(ref.targetAddressInIat))
 				{
 #ifdef DEBUG_COMMENTS
 					distorm_format(&ProcessAccessHelp::decomposerCi, instruction, &inst);
@@ -301,7 +302,7 @@ void IATReferenceScan::findDirectIatReference( _DInst * instruction )
 	}
 }
 
-bool IATReferenceScan::isAddressValidMemory( DWORD_PTR address )
+bool IATReferenceScan::isAddressValidImageMemory( DWORD_PTR address )
 {
 	MEMORY_BASIC_INFORMATION memBasic = {0};
 
@@ -310,7 +311,7 @@ bool IATReferenceScan::isAddressValidMemory( DWORD_PTR address )
 		return false;
 	}
 
-	return (memBasic.Type == MEM_IMAGE);
+	return (memBasic.Type == MEM_IMAGE && isPageExecutable(memBasic.Protect));
 }
 
 void IATReferenceScan::patchReferenceInMemory( IATReference * ref )
@@ -325,21 +326,6 @@ void IATReferenceScan::patchReferenceInMemory( IATReference * ref )
 	patchBytes = newIatAddressPointer;
 #endif
 	ProcessAccessHelp::writeMemoryToProcess(ref->addressVA + 2, sizeof(DWORD), &patchBytes);
-}
-
-void IATReferenceScan::patchReferenceInFile( IATReference * ref )
-{
-	DWORD_PTR newIatAddressPointer = (ref->targetPointer - IatAddressVA) + NewIatAddressRVA + standardImageBase;
-
-	DWORD patchBytes = 0;
-
-#ifdef _WIN64
-	patchBytes = (DWORD)(newIatAddressPointer - (ref->addressVA - ImageBase + standardImageBase) - 6);
-#else
-	patchBytes = newIatAddressPointer;
-#endif
-
-
 }
 
 void IATReferenceScan::patchDirectImportInMemory( IATReference * ref )
@@ -416,7 +402,7 @@ void IATReferenceScan::patchNewIat(DWORD_PTR stdImagebase, DWORD_PTR newIatBaseA
 		DWORD_PTR newIatAddressPointer = (ref->targetPointer - IatAddressVA) + NewIatAddressRVA + stdImagebase;
 
 #ifdef _WIN64
-		patchBytes = (DWORD)(newIatAddressPointer - (ref->addressVA - ImageBase + standardImageBase) - 6);
+		patchBytes = (DWORD)(newIatAddressPointer - (ref->addressVA - ImageBase + stdImagebase) - 6);
 #else
 		patchBytes = newIatAddressPointer;
 #endif
@@ -426,12 +412,53 @@ void IATReferenceScan::patchNewIat(DWORD_PTR stdImagebase, DWORD_PTR newIatBaseA
 		DWORD memorySize = peParser->getSectionMemorySizeByIndex(index);
 
 
-		Scylla::debugLog.log(L"address %X old %X new %X",ref->addressVA, ref->targetPointer, newIatAddressPointer);
+		if (memorySize < (DWORD)(patchOffset + 6))
+		{
+			Scylla::debugLog.log(L"Error - Cannot fix IAT reference RVA: " PRINTF_DWORD_PTR_FULL, ref->addressVA - ImageBase);
+		}
+		else
+		{
+			memory += patchOffset + 2;		
 
-		memory += patchOffset + 2;
-		//Scylla::debugLog.log(L"%X %X %X %X %X %X",memory[0],memory[1],memory[2],memory[3],memory[4],memory[5] );
-		
+			*((DWORD *)memory) = patchBytes;
+		}
+		//Scylla::debugLog.log(L"address %X old %X new %X",ref->addressVA, ref->targetPointer, newIatAddressPointer);
 
-		*((DWORD *)memory) = patchBytes;
+	}
+}
+
+void IATReferenceScan::findDirectIatReferenceMov( _DInst * instruction )
+{
+#ifdef DEBUG_COMMENTS
+	_DecodedInst inst;
+#endif
+
+	IATReference ref;
+	ref.targetPointer = 0;
+	ref.type = IAT_REFERENCE_DIRECT_MOV;
+
+	if (instruction->size >= 5 && instruction->opcode == I_MOV)
+	{
+		//MOV REGISTER, 0xFFFFFFFF
+		if (instruction->ops[0].type == O_REG && instruction->ops[1].type == O_IMM)
+		{
+			ref.targetAddressInIat = (DWORD_PTR)instruction->imm.qword;
+			ref.addressVA = (DWORD_PTR)instruction->addr;
+
+			if (ref.targetAddressInIat > 0x000FFFFF && ref.targetAddressInIat != (DWORD_PTR)-1)
+			{
+				if ((ref.targetAddressInIat < ImageBase) || (ref.targetAddressInIat > (ImageBase+ImageSize)))
+				{
+					if (isAddressValidImageMemory(ref.targetAddressInIat))
+					{
+#ifdef DEBUG_COMMENTS
+						distorm_format(&ProcessAccessHelp::decomposerCi, instruction, &inst);
+						Scylla::debugLog.log(PRINTF_DWORD_PTR_FULL L" " PRINTF_DWORD_PTR_FULL L" %S %S %d %d - target address: " PRINTF_DWORD_PTR_FULL,(DWORD_PTR)instruction->addr, ImageBase, inst.mnemonic.p, inst.operands.p, instruction->ops[0].type, instruction->size, INSTRUCTION_GET_TARGET(instruction));
+#endif
+						iatDirectImportList.push_back(ref);
+					}
+				}
+			}
+		}
 	}
 }
