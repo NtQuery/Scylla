@@ -21,6 +21,11 @@ Source code is licensed under GNU GENERAL PUBLIC LICENSE v3.0
 Known Bugs
 ----------
 
+### Windows 7 x64
+
+Sometimes the API kernel32.dll GetProcAddress cannot be resolved, because the IAT has an entry from apphelp.dll
+Solution? I don't know
+
 ### Only Windows XP x64:
 
 Windows XP x64 has some API bugs. 100% correct imports reconstruction is impossible.
@@ -51,9 +56,9 @@ Keyboard Shortcuts
 Changelog
 ---------
 
-Version 0.9.4
+Version 0.9.4 Final
 
-- direct import scan + fix: 5 byte CALL/JMP, junk byte must be after CALL/JMP
+- direct import scanner (LEA, MOV, PUSH, CALL, JMP) + fixer with 2 fix methods
 - create new iat in section
 - fixed various bugs 
 

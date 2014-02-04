@@ -103,7 +103,8 @@ private:
 	void checkMemoryRangeAndAddToList( IATReference * ref, _DInst * instruction );
 	void findDirectIatReferenceLea( _DInst * instruction );
 	void patchDirectImportInDump32( int patchPreFixBytes, int instructionSize, DWORD patchBytes, BYTE * memory, DWORD memorySize, bool generateReloc, DWORD patchOffset, DWORD sectionRVA );
-	
+	void patchDirectJumpTableEntry(DWORD_PTR targetIatPointer, DWORD_PTR stdImagebase, DWORD directImportsJumpTableRVA, PeParser * peParser, BYTE * jmpTableMemory, DWORD newIatBase );
+
 
 };
 

@@ -590,23 +590,75 @@ void IATReferenceScan::checkMemoryRangeAndAddToList( IATReference * ref, _DInst 
 	}
 }
 
-void IATReferenceScan::patchDirectJumpTable( DWORD_PTR stdImagebase, DWORD directImportsJumpTableRVA, PeParser * peParser, BYTE * jmpTableMemory, DWORD newIatBase )
+void IATReferenceScan::patchDirectJumpTableEntry(DWORD_PTR targetIatPointer, DWORD_PTR stdImagebase, DWORD directImportsJumpTableRVA, PeParser * peParser, BYTE * jmpTableMemory, DWORD newIatBase )
 {
 	DWORD patchBytes = 0;
 	for (std::vector<IATReference>::iterator iter = iatDirectImportList.begin(); iter != iatDirectImportList.end(); iter++)
 	{
 		IATReference * ref = &(*iter);
 
-		DWORD_PTR refTargetPointer = ref->targetPointer;
+		//only one jmp in table for different direct imports with same iat address
+		if (ref->targetPointer == targetIatPointer)
+		{
+			//patch dump
+			DWORD_PTR patchOffset = peParser->convertRVAToOffsetRelative(ref->addressVA - ImageBase);
+			int index = peParser->convertRVAToOffsetVectorIndex(ref->addressVA - ImageBase);
+			BYTE * memory = peParser->getSectionMemoryByIndex(index);
+			DWORD memorySize = peParser->getSectionMemorySizeByIndex(index);
+			DWORD sectionRVA = peParser->getSectionAddressRVAByIndex(index);
+
+			if (ref->type == IAT_REFERENCE_DIRECT_CALL || ref->type == IAT_REFERENCE_DIRECT_JMP)
+			{
+				if (ref->instructionSize == 5)
+				{
+					patchBytes = directImportsJumpTableRVA - (ref->addressVA - ImageBase) - 5;
+					patchDirectImportInDump32(1, 5, patchBytes, memory, memorySize, false, patchOffset, sectionRVA);
+				}
+			}
+			else if (ref->type == IAT_REFERENCE_DIRECT_PUSH || ref->type == IAT_REFERENCE_DIRECT_MOV)
+			{
+				if (ref->instructionSize == 5)
+				{
+					patchBytes = directImportsJumpTableRVA + stdImagebase;
+					patchDirectImportInDump32(1, 5, patchBytes, memory, memorySize, true, patchOffset, sectionRVA);				
+				}
+			}
+			else if (ref->type == IAT_REFERENCE_DIRECT_LEA)
+			{
+				if (ref->instructionSize == 6)
+				{
+					patchBytes = directImportsJumpTableRVA + stdImagebase;
+					patchDirectImportInDump32(2, 6, patchBytes, memory, memorySize, true, patchOffset, sectionRVA);
+				}
+			}
+		}
+	}
+}
+
+void IATReferenceScan::patchDirectJumpTable( DWORD_PTR stdImagebase, DWORD directImportsJumpTableRVA, PeParser * peParser, BYTE * jmpTableMemory, DWORD newIatBase )
+{
+
+	std::set<DWORD_PTR> apiPointers;
+	for (std::vector<IATReference>::iterator iter = iatDirectImportList.begin(); iter != iatDirectImportList.end(); iter++)
+	{
+		IATReference * ref = &(*iter);
+		apiPointers.insert(ref->targetPointer);
+	}
+
+	DWORD patchBytes;
+
+	for (std::set<DWORD_PTR>::iterator apiIter = apiPointers.begin(); apiIter != apiPointers.end(); apiIter++)
+	{
+		DWORD_PTR refTargetPointer = *apiIter;
 		if (newIatBase) //create new iat in section
 		{
-			refTargetPointer = (ref->targetPointer - IatAddressVA) + newIatBase + ImageBase;
+			refTargetPointer = (*apiIter - IatAddressVA) + newIatBase + ImageBase;
 		}
 		//create jump table in section
 		DWORD_PTR newIatAddressPointer = refTargetPointer - ImageBase + stdImagebase;
 
 #ifdef _WIN64
-		patchBytes = (DWORD)(newIatAddressPointer - (ref->addressVA - ImageBase + stdImagebase) - 6);
+		patchBytes = (DWORD)(newIatAddressPointer - (directImportsJumpTableRVA + stdImagebase) - 6);
 #else
 		patchBytes = newIatAddressPointer; //dont forget relocation here
 		directImportLog.log(L"Relocation direct imports fix: Base RVA %08X Offset %04X Type IMAGE_REL_BASED_HIGHLOW", (directImportsJumpTableRVA + 2) & 0xFFFFF000, (directImportsJumpTableRVA + 2) & 0x00000FFF);
@@ -615,42 +667,13 @@ void IATReferenceScan::patchDirectJumpTable( DWORD_PTR stdImagebase, DWORD direc
 		jmpTableMemory[1] = 0x25;
 		*((DWORD *)&jmpTableMemory[2]) = patchBytes;
 
-		//patch dump
-		DWORD_PTR patchOffset = peParser->convertRVAToOffsetRelative(ref->addressVA - ImageBase);
-		int index = peParser->convertRVAToOffsetVectorIndex(ref->addressVA - ImageBase);
-		BYTE * memory = peParser->getSectionMemoryByIndex(index);
-		DWORD memorySize = peParser->getSectionMemorySizeByIndex(index);
-		DWORD sectionRVA = peParser->getSectionAddressRVAByIndex(index);
-
-		if (ref->type == IAT_REFERENCE_DIRECT_CALL || ref->type == IAT_REFERENCE_DIRECT_JMP)
-		{
-			if (ref->instructionSize == 5)
-			{
-				patchBytes = directImportsJumpTableRVA - (ref->addressVA - ImageBase) - 5;
-				patchDirectImportInDump32(1, 5, patchBytes, memory, memorySize, false, patchOffset, sectionRVA);
-			}
-		}
-		else if (ref->type == IAT_REFERENCE_DIRECT_PUSH || ref->type == IAT_REFERENCE_DIRECT_MOV)
-		{
-			if (ref->instructionSize == 5)
-			{
-				patchBytes = directImportsJumpTableRVA + stdImagebase;
-				patchDirectImportInDump32(1, 5, patchBytes, memory, memorySize, true, patchOffset, sectionRVA);				
-			}
-		}
-		else if (ref->type == IAT_REFERENCE_DIRECT_LEA)
-		{
-			if (ref->instructionSize == 6)
-			{
-				patchBytes = directImportsJumpTableRVA + stdImagebase;
-				patchDirectImportInDump32(2, 6, patchBytes, memory, memorySize, true, patchOffset, sectionRVA);
-			}
-		}
-
+		patchDirectJumpTableEntry(*apiIter, stdImagebase, directImportsJumpTableRVA, peParser, jmpTableMemory, newIatBase);
 
 		jmpTableMemory += 6;
 		directImportsJumpTableRVA += 6;
 	}
+
+
 
 }
 
