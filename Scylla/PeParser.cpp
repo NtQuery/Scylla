@@ -1261,3 +1261,8 @@ DWORD PeParser::getSectionMemorySizeByIndex(int index)
 {
 	return listPeSection[index].dataSize;
 }
+
+DWORD PeParser::getSectionAddressRVAByIndex( int index )
+{
+	return listPeSection[index].sectionHeader.VirtualAddress;
+}

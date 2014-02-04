@@ -645,7 +645,6 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 
 	if (countDuplicates == 0)
 	{
-		Scylla::windowLog.log(L"getApiByVirtualAddress :: No Api found " PRINTF_DWORD_PTR_FULL, virtualAddress);
 		return 0;
 	}
 	else if (countDuplicates == 1)
@@ -905,6 +904,10 @@ void ApiReader::parseIAT(DWORD_PTR addressIAT, BYTE * iatBuffer, SIZE_T size)
 		{
 			
 			apiFound = getApiByVirtualAddress(pIATAddress[i], &isSuspect);
+			if (apiFound == 0)
+			{
+				Scylla::windowLog.log(L"getApiByVirtualAddress :: No Api found " PRINTF_DWORD_PTR_FULL, pIATAddress[i]);
+			}
 			if (apiFound == (ApiInfo *)1)
 			{
 #ifdef DEBUG_COMMENTS

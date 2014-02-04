@@ -21,7 +21,8 @@ ConfigurationHolder::ConfigurationHolder(const WCHAR* fileName)
 	config[OriginalFirstThunk_SUPPORT]  = Configuration(L"OriginalFirstThunk_SUPPORT",	 Configuration::Boolean);
 	config[USE_ADVANCED_IAT_SEARCH]     = Configuration(L"USE_ADVANCED_IAT_SEARCH",	     Configuration::Boolean);
 	config[SCAN_DIRECT_IMPORTS]			= Configuration(L"SCAN_DIRECT_IMPORTS",			 Configuration::Boolean);
-	config[FIX_DIRECT_IMPORTS]			= Configuration(L"FIX_DIRECT_IMPORTS",			 Configuration::Boolean);
+	config[FIX_DIRECT_IMPORTS_NORMAL]			= Configuration(L"FIX_DIRECT_IMPORTS_NORMAL",			 Configuration::Boolean);
+	config[FIX_DIRECT_IMPORTS_UNIVERSAL]		= Configuration(L"FIX_DIRECT_IMPORTS_UNIVERSAL",			 Configuration::Boolean);
 	config[CREATE_NEW_IAT_IN_SECTION]	= Configuration(L"CREATE_NEW_IAT_IN_SECTION",	 Configuration::Boolean);
 	buildConfigFilePath(fileName);
 }

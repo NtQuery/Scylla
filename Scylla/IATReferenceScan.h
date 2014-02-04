@@ -3,13 +3,16 @@
 #include "ProcessAccessHelp.h"
 #include "PeParser.h"
 #include "Logger.h"
+#include "ApiReader.h"
 
 enum IATReferenceType {
 	IAT_REFERENCE_PTR_JMP,
 	IAT_REFERENCE_PTR_CALL,
 	IAT_REFERENCE_DIRECT_JMP,
 	IAT_REFERENCE_DIRECT_CALL,
-	IAT_REFERENCE_DIRECT_MOV
+	IAT_REFERENCE_DIRECT_MOV,
+	IAT_REFERENCE_DIRECT_PUSH,
+	IAT_REFERENCE_DIRECT_LEA
 };
 
 class IATReference
@@ -18,6 +21,7 @@ public:
 	DWORD_PTR addressVA; //Address of reference
 	DWORD_PTR targetPointer; //Place inside IAT
 	DWORD_PTR targetAddressInIat; //WIN API?
+	BYTE instructionSize;
 	IATReferenceType type;
 };
 
@@ -28,6 +32,7 @@ public:
 
 	IATReferenceScan()
 	{
+		apiReader = 0;
 		IatAddressVA = 0;
 		IatSize = 0;
 		ImageBase = 0;
@@ -51,17 +56,20 @@ public:
 	bool ScanForDirectImports;
 	bool ScanForNormalImports;
 	bool JunkByteAfterInstruction;
+	ApiReader * apiReader;
 
 	void startScan(DWORD_PTR imageBase, DWORD imageSize, DWORD_PTR iatAddress, DWORD iatSize);
 	//void patchNewIatBaseMemory(DWORD_PTR newIatBaseAddress);
 	//void patchNewIatBaseFile(DWORD_PTR newIatBaseAddress);
 
 	void patchNewIat(DWORD_PTR stdImagebase, DWORD_PTR newIatBaseAddress, PeParser * peParser);
+	void patchDirectJumpTable( DWORD_PTR imageBase, DWORD directImportsJumpTableRVA, PeParser * peParser, BYTE * jmpTableMemory, DWORD newIatBase);
 	void patchDirectImportsMemory(bool junkByteAfterInstruction);
 	int numberOfFoundDirectImports();
-
+	int getSizeInBytesOfJumpTableInSection();
 	static FileLog directImportLog;
 	void printDirectImportLog();
+	void changeIatBaseOfDirectImports( DWORD newIatBaseAddressRVA );
 private:
 	DWORD_PTR NewIatAddressRVA;
 
@@ -88,6 +96,12 @@ private:
 	void patchDirectImportInMemory( IATReference * iter );
 	DWORD_PTR lookUpIatForPointer( DWORD_PTR addr );
 	void findDirectIatReferenceMov( _DInst * instruction );
+	void findDirectIatReferencePush( _DInst * instruction );
+	void checkMemoryRangeAndAddToList( IATReference * ref, _DInst * instruction );
+	void findDirectIatReferenceLea( _DInst * instruction );
+	void patchDirectImportInDump32( int patchPreFixBytes, int instructionSize, DWORD patchBytes, BYTE * memory, DWORD memorySize, bool generateReloc, DWORD patchOffset, DWORD sectionRVA );
+
+
 };
 
 /*

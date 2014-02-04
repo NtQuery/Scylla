@@ -41,7 +41,8 @@ void OptionsGui::saveOptions() const
 	Scylla::config[OriginalFirstThunk_SUPPORT].setBool(oftSupport);
 	Scylla::config[USE_ADVANCED_IAT_SEARCH].setBool(useAdvancedIatSearch);
 	Scylla::config[SCAN_DIRECT_IMPORTS].setBool(scanDirectImports);
-	Scylla::config[FIX_DIRECT_IMPORTS].setBool(fixDirectImports);
+	Scylla::config[FIX_DIRECT_IMPORTS_NORMAL].setBool(fixDirectImportsNormal);
+	Scylla::config[FIX_DIRECT_IMPORTS_UNIVERSAL].setBool(fixDirectImportsUniversal);
 	Scylla::config[CREATE_NEW_IAT_IN_SECTION].setBool(createNewIatInSection);
 }
 
@@ -61,6 +62,7 @@ void OptionsGui::loadOptions()
 	oftSupport = Scylla::config[OriginalFirstThunk_SUPPORT].getBool();
 	useAdvancedIatSearch = Scylla::config[USE_ADVANCED_IAT_SEARCH].getBool();
 	scanDirectImports = Scylla::config[SCAN_DIRECT_IMPORTS].getBool();
-	fixDirectImports = Scylla::config[FIX_DIRECT_IMPORTS].getBool();
+	fixDirectImportsNormal = Scylla::config[FIX_DIRECT_IMPORTS_NORMAL].getBool();
+	fixDirectImportsUniversal = Scylla::config[FIX_DIRECT_IMPORTS_UNIVERSAL].getBool();
 	createNewIatInSection = Scylla::config[CREATE_NEW_IAT_IN_SECTION].getBool();
 }

@@ -5,10 +5,22 @@
 
 //#define DEBUG_COMMENTS
 
+/*
+New Scylla section contains:
+
+1. (optional) direct imports jump table
+2. (optional) new iat
+3. (optional) OFT
+4. Normal IAT entries
+
+*/
 
 bool ImportRebuilder::rebuildImportTable(const WCHAR * newFilePath, std::map<DWORD_PTR, ImportModuleThunk> & moduleList)
 {
 	bool retValue = false;
+
+	std::map<DWORD_PTR, ImportModuleThunk> copyModule;
+	copyModule.insert(moduleList.begin(), moduleList.end());
 
 	if (isValidPeFile())
 	{
@@ -16,7 +28,7 @@ bool ImportRebuilder::rebuildImportTable(const WCHAR * newFilePath, std::map<DWO
 		{
 			setDefaultFileAlignment();
 
-			retValue = buildNewImportTable(moduleList);
+			retValue = buildNewImportTable(copyModule);
 
 			if (retValue)
 			{
@@ -26,6 +38,11 @@ bool ImportRebuilder::rebuildImportTable(const WCHAR * newFilePath, std::map<DWO
 				if (newIatInSection)
 				{
 					patchFileForNewIatLocation();
+				}
+
+				if (BuildDirectImportsJumpTable)
+				{
+					patchFileForDirectImportJumpTable();
 				}
 
 				retValue = savePeFileToDisk(newFilePath);
@@ -42,8 +59,21 @@ bool ImportRebuilder::buildNewImportTable(std::map<DWORD_PTR, ImportModuleThunk>
 
 	importSectionIndex = listPeSection.size() - 1;
 
+	if (BuildDirectImportsJumpTable)
+	{
+		directImportsJumpTableRVA = listPeSection[importSectionIndex].sectionHeader.VirtualAddress;
+		JMPTableMemory = listPeSection[importSectionIndex].data;
+	}
+
 	if (newIatInSection)
 	{
+		newIatBaseAddressRVA = listPeSection[importSectionIndex].sectionHeader.VirtualAddress;
+
+		if (BuildDirectImportsJumpTable)
+		{
+			newIatBaseAddressRVA += iatReferenceScan->getSizeInBytesOfJumpTableInSection();
+		}
+
 		changeIatBaseAddress(moduleList);
 	}
 
@@ -66,6 +96,11 @@ bool ImportRebuilder::buildNewImportTable(std::map<DWORD_PTR, ImportModuleThunk>
 	if (newIatInSection)
 	{
 		vaImportAddress += (DWORD)IatSize;
+	}
+
+	if (BuildDirectImportsJumpTable)
+	{
+		vaImportAddress += (DWORD)iatReferenceScan->getSizeInBytesOfJumpTableInSection();
 	}
 
 	if (isPE32())
@@ -104,6 +139,10 @@ bool ImportRebuilder::createNewImportSection(std::map<DWORD_PTR, ImportModuleThu
 	{
 		sizeOfImportSection += IatSize;
 	}
+	if (BuildDirectImportsJumpTable)
+	{
+		sizeOfImportSection += iatReferenceScan->getSizeInBytesOfJumpTableInSection();
+	}
 	
 	return addNewLastSection(sectionName, (DWORD)sizeOfImportSection, 0);
 }
@@ -137,15 +176,29 @@ DWORD ImportRebuilder::fillImportSection(std::map<DWORD_PTR, ImportModuleThunk> 
 	DWORD offset = 0;
 	DWORD offsetOFTArray = 0;
 
-	if (useOFT)
-	{
-		//OFT Array is always at the beginning of the import section
-		offset = (DWORD)sizeOfOFTArray; //size includes null termination
-	}
+	/*
+	New Scylla section contains:
 
+	1. (optional) direct imports jump table
+	2. (optional) new iat
+	3. (optional) OFT
+	4. Normal IAT entries
+
+	*/
+	if (BuildDirectImportsJumpTable)
+	{
+		offset += iatReferenceScan->getSizeInBytesOfJumpTableInSection();
+		offsetOFTArray += iatReferenceScan->getSizeInBytesOfJumpTableInSection();
+	}
 	if (newIatInSection)
 	{
 		offset += IatSize; //new iat at the beginning
+		offsetOFTArray += IatSize;
+		memset(sectionData, 0xFF, offset);
+	}
+	if (useOFT)
+	{
+		offset += (DWORD)sizeOfOFTArray; //size includes null termination
 	}
 
 	pImportDescriptor = (PIMAGE_IMPORT_DESCRIPTOR)((DWORD_PTR)sectionData + offset);
@@ -177,7 +230,6 @@ DWORD ImportRebuilder::fillImportSection(std::map<DWORD_PTR, ImportModuleThunk> 
 
 			if (useOFT)
 			{
-				//OFT Array is always at the beginning of the import section
 				pThunk = (PIMAGE_THUNK_DATA)((DWORD_PTR)sectionData + offsetOFTArray);
 				offsetOFTArray += sizeof(DWORD_PTR); //increase OFT array index
 			}
@@ -391,15 +443,15 @@ void ImportRebuilder::enableNewIatInSection(DWORD_PTR iatAddress, DWORD iatSize)
 	IatAddress = iatAddress;
 	IatSize = iatSize;
 
-	iatRefScan.ScanForDirectImports = false;
-	iatRefScan.ScanForNormalImports = true;
+	iatReferenceScan->ScanForDirectImports = false;
+	iatReferenceScan->ScanForNormalImports = true;
 
-	iatRefScan.startScan(ProcessAccessHelp::targetImageBase, (DWORD)ProcessAccessHelp::targetSizeOfImage, IatAddress, IatSize);
+	iatReferenceScan->startScan(ProcessAccessHelp::targetImageBase, (DWORD)ProcessAccessHelp::targetSizeOfImage, IatAddress, IatSize);
 }
 
 void ImportRebuilder::patchFileForNewIatLocation()
 {
-	iatRefScan.patchNewIat(getStandardImagebase(), listPeSection[importSectionIndex].sectionHeader.VirtualAddress, (PeParser *)this);
+	iatReferenceScan->patchNewIat(getStandardImagebase(), newIatBaseAddressRVA, (PeParser *)this);
 }
 
 void ImportRebuilder::changeIatBaseAddress( std::map<DWORD_PTR, ImportModuleThunk> & moduleList )
@@ -411,12 +463,24 @@ void ImportRebuilder::changeIatBaseAddress( std::map<DWORD_PTR, ImportModuleThun
 
 	for ( mapIt = moduleList.begin() ; mapIt != moduleList.end(); mapIt++ )
 	{
-		(*mapIt).second.firstThunk = (*mapIt).second.firstThunk - oldIatRva + listPeSection[importSectionIndex].sectionHeader.VirtualAddress;
+		(*mapIt).second.firstThunk = (*mapIt).second.firstThunk - oldIatRva + newIatBaseAddressRVA;
 
 		for ( mapIt2 = (*mapIt).second.thunkList.begin() ; mapIt2 != (*mapIt).second.thunkList.end(); mapIt2++ )
 		{
-			(*mapIt2).second.rva = (*mapIt2).second.rva - oldIatRva + listPeSection[importSectionIndex].sectionHeader.VirtualAddress;
+			(*mapIt2).second.rva = (*mapIt2).second.rva - oldIatRva + newIatBaseAddressRVA;
 		}
+	}
+}
+
+void ImportRebuilder::patchFileForDirectImportJumpTable()
+{
+	if (newIatInSection)
+	{
+		iatReferenceScan->patchDirectJumpTable(getStandardImagebase(), directImportsJumpTableRVA, (PeParser *)this, JMPTableMemory, newIatBaseAddressRVA);
+	}
+	else
+	{
+		iatReferenceScan->patchDirectJumpTable(getStandardImagebase(), directImportsJumpTableRVA, (PeParser *)this, JMPTableMemory, 0);
 	}
 }
 

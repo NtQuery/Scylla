@@ -15,7 +15,6 @@
 #include "DonateGui.h"
 #include "OptionsGui.h"
 #include "TreeImportExport.h"
-#include "IATReferenceScan.h"
 
 extern CAppModule _Module; // o_O
 
@@ -265,7 +264,11 @@ void MainGui::OnProcessListDrop(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void MainGui::OnProcessListSelected(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	processSelectedActionHandler(ComboProcessList.GetCurSel());
+	int index = ComboProcessList.GetCurSel();
+	if (index != CB_ERR)
+	{
+		processSelectedActionHandler(index);
+	}
 }
 
 void MainGui::OnPickDLL(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -905,34 +908,37 @@ void MainGui::getImportsActionHandler()
 
 		if (Scylla::config[SCAN_DIRECT_IMPORTS].isTrue())
 		{
-			IATReferenceScan sc;
-			sc.ScanForDirectImports = true;
-			sc.ScanForNormalImports = false;
-			sc.startScan(ProcessAccessHelp::targetImageBase, (DWORD)ProcessAccessHelp::targetSizeOfImage, addressIAT, sizeIAT);
+			iatReferenceScan.ScanForDirectImports = true;
+			iatReferenceScan.ScanForNormalImports = false;
+			iatReferenceScan.apiReader = &apiReader;
+			iatReferenceScan.startScan(ProcessAccessHelp::targetImageBase, (DWORD)ProcessAccessHelp::targetSizeOfImage, addressIAT, sizeIAT);
 
-			Scylla::windowLog.log(L"DIRECT IMPORTS - Found %d possible direct imports!", sc.numberOfFoundDirectImports());
+			Scylla::windowLog.log(L"DIRECT IMPORTS - Found %d possible direct imports!", iatReferenceScan.numberOfFoundDirectImports());
 
-			if (sc.numberOfFoundDirectImports() > 0)
+			if (iatReferenceScan.numberOfFoundDirectImports() > 0)
 			{
-				sc.printDirectImportLog();
+				iatReferenceScan.printDirectImportLog();
 
-				if (Scylla::config[FIX_DIRECT_IMPORTS].isTrue())
+				if (Scylla::config[FIX_DIRECT_IMPORTS_NORMAL].isTrue())
 				{
-					int msgboxID = MessageBox(L"Direct Imports found. Where is the junk byte?\r\n\r\nYES = After Instruction\r\nNO = Before the Instruction\r\nCancel = Do nothing", L"Information", MB_YESNOCANCEL|MB_ICONINFORMATION);
+					int msgboxID = MessageBox(L"Direct Imports found. I can patch only direct imports by JMP/CALL (use universal method if you don't like this) but where is the junk byte?\r\n\r\nYES = After Instruction\r\nNO = Before the Instruction\r\nCancel = Do nothing", L"Information", MB_YESNOCANCEL|MB_ICONINFORMATION);
 
-					switch (msgboxID)
+					if (msgboxID != IDCANCEL)
 					{
-					case IDYES:
-						sc.patchDirectImportsMemory(true);
-						Scylla::windowLog.log(L"DIRECT IMPORTS - Patched!");
-						break;
-					case IDNO:
-						sc.patchDirectImportsMemory(false);
-						Scylla::windowLog.log(L"DIRECT IMPORTS - Patched!");
-						break;
-					default:
-						break;
+						bool isAfter;
+						if (msgboxID == IDYES)
+						{
+							isAfter = true;
+						}
+						else
+						{
+							isAfter = false;
+						}
+
+						iatReferenceScan.patchDirectImportsMemory(isAfter);
+						Scylla::windowLog.log(L"DIRECT IMPORTS - Patched! Please dump target.");
 					}
+
 				}
 			}
 
@@ -1386,11 +1392,22 @@ void MainGui::dumpFixActionHandler()
 			importRebuild.enableOFTSupport();
 		}
 
+		if (Scylla::config[SCAN_DIRECT_IMPORTS].isTrue() && Scylla::config[FIX_DIRECT_IMPORTS_UNIVERSAL].isTrue())
+		{
+			if (iatReferenceScan.numberOfFoundDirectImports() > 0)
+			{
+				importRebuild.iatReferenceScan = &iatReferenceScan;
+				importRebuild.BuildDirectImportsJumpTable = true;
+			}
+		}
+
 		if (Scylla::config[CREATE_NEW_IAT_IN_SECTION].isTrue())
 		{
+			importRebuild.iatReferenceScan = &iatReferenceScan;
+
 			DWORD_PTR addressIAT = EditIATAddress.GetValue();
 			DWORD sizeIAT = EditIATSize.GetValue();
-			importRebuild.enableNewIatInSection(addressIAT,sizeIAT);
+			importRebuild.enableNewIatInSection(addressIAT, sizeIAT);
 		}
 
 

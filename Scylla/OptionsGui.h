@@ -30,7 +30,8 @@ public:
 		DDX_CHECK(IDC_CHECKOFTSUPPORT, oftSupport)
 		DDX_CHECK(IDC_CHECK_USEADVANCEDIATSEARCH, useAdvancedIatSearch)
 		DDX_CHECK(IDC_SCANDIRECTIMPORT, scanDirectImports)
-		DDX_CHECK(IDC_FIXDIRECTIMPORTS, fixDirectImports)
+		DDX_CHECK(IDC_FIXDIRECTIMPORTSNORMAL, fixDirectImportsNormal)
+		DDX_CHECK(IDC_FIXDIRECTIMPORTSUNIVERSAL, fixDirectImportsUniversal)
 		DDX_CHECK(IDC_NEWIATINSECTION, createNewIatInSection)
 	END_DDX_MAP()
 
@@ -58,7 +59,8 @@ protected:
 	bool oftSupport;
 	bool useAdvancedIatSearch;
 	bool scanDirectImports;
-	bool fixDirectImports;
+	bool fixDirectImportsNormal;
+	bool fixDirectImportsUniversal;
 	bool createNewIatInSection;
 	// Controls
 

@@ -69,6 +69,7 @@ public:
 	DWORD_PTR convertOffsetToRVAVector(DWORD_PTR dwOffset);
 	DWORD_PTR convertRVAToOffsetVector(DWORD_PTR dwRVA);
 	DWORD_PTR convertRVAToOffsetRelative(DWORD_PTR dwRVA);
+	DWORD getSectionAddressRVAByIndex( int index );
 protected:
 	PeParser();
 
@@ -136,6 +137,6 @@ protected:
 	
 	void removeIatDirectory();
 	bool getFileOverlay();
-
+	
 };
 

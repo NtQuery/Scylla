@@ -484,6 +484,12 @@ void IATSearch::findExecutableMemoryPagesByStartAddress( DWORD_PTR startAddress,
 void IATSearch::filterIATPointersList( std::set<DWORD_PTR> & iatPointers )
 {
 	std::set<DWORD_PTR>::iterator iter;
+
+	if (iatPointers.size() <= 2)
+	{
+		return;
+	}
+
 	iter = iatPointers.begin();
 	std::advance(iter, iatPointers.size() / 2); //start in the middle, important!
 

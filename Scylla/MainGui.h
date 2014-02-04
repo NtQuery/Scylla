@@ -23,6 +23,7 @@
 #include "DumpSectionGui.h"
 #include "ImportsHandling.h"
 #include "FunctionExport.h"
+#include "IATReferenceScan.h"
 
 class MainGui : public CDialogImpl<MainGui>, public CWinDataExchange<MainGui>, public CDialogResize<MainGui>, public CMessageFilter
 {
@@ -155,6 +156,7 @@ protected:
 	ImportsHandling importsHandling;
 	//ProcessAccessHelp processAccessHelp;
 	ApiReader apiReader;
+	IATReferenceScan iatReferenceScan;
 
 	Process * selectedProcess;
 	bool isProcessSuspended;
@@ -311,4 +313,5 @@ protected:
 	void checkSuspendProcess();
 	void setDialogIATAddressAndSize( DWORD_PTR addressIAT, DWORD sizeIAT );
 	void InitDllStartWithPreSelect( PGUI_DLL_PARAMETER guiParam );
+	bool isIATOutsidePeImage( DWORD_PTR addressIAT );
 };
