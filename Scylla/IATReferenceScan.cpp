@@ -1,6 +1,7 @@
 #include "IATReferenceScan.h"
 #include "Scylla.h"
 #include "Architecture.h"
+#include <set>
 
 //#define DEBUG_COMMENTS
 
@@ -10,6 +11,34 @@ FileLog IATReferenceScan::directImportLog(L"Scylla_direct_imports.log");
 int IATReferenceScan::numberOfFoundDirectImports()
 {
 	return (int)iatDirectImportList.size();
+}
+
+int IATReferenceScan::numberOfFoundUniqueDirectImports()
+{
+	std::set<DWORD_PTR> apiPointers;
+	for (std::vector<IATReference>::iterator iter = iatDirectImportList.begin(); iter != iatDirectImportList.end(); iter++)
+	{
+		IATReference * ref = &(*iter);
+		apiPointers.insert(ref->targetAddressInIat);
+	}
+
+	return (int)apiPointers.size();
+}
+
+int IATReferenceScan::numberOfDirectImportApisNotInIat()
+{
+	std::set<DWORD_PTR> apiPointers;
+	for (std::vector<IATReference>::iterator iter = iatDirectImportList.begin(); iter != iatDirectImportList.end(); iter++)
+	{
+		IATReference * ref = &(*iter);
+
+		if (ref->targetPointer == 0)
+		{
+			apiPointers.insert(ref->targetAddressInIat);
+		}
+	}
+
+	return (int)apiPointers.size();
 }
 
 int IATReferenceScan::getSizeInBytesOfJumpTableInSection()
@@ -282,33 +311,6 @@ void IATReferenceScan::getIatEntryAddress( IATReference * ref )
 	}
 }
 
-void IATReferenceScan::findDirectIatReferenceCallJmp( _DInst * instruction )
-{
-	IATReference ref;
-	ref.targetPointer = 0;
-	
-
-	if (META_GET_FC(instruction->meta) == FC_CALL || META_GET_FC(instruction->meta) == FC_UNC_BRANCH)
-	{
-		if ((instruction->size >= 5) && (instruction->ops[0].type == O_PC)) //CALL/JMP 0x00000000
-		{
-			if (META_GET_FC(instruction->meta) == FC_CALL)
-			{
-				ref.type = IAT_REFERENCE_DIRECT_CALL;
-			}
-			else
-			{
-				ref.type = IAT_REFERENCE_DIRECT_JMP;
-			}
-			ref.addressVA = (DWORD_PTR)instruction->addr;
-			ref.targetAddressInIat = (DWORD_PTR)INSTRUCTION_GET_TARGET(instruction);
-			ref.instructionSize = instruction->size;
-
-			checkMemoryRangeAndAddToList(&ref, instruction);
-		}
-	}
-}
-
 bool IATReferenceScan::isAddressValidImageMemory( DWORD_PTR address )
 {
 	MEMORY_BASIC_INFORMATION memBasic = {0};
@@ -340,7 +342,6 @@ void IATReferenceScan::patchDirectImportInMemory( IATReference * ref )
 	DWORD patchBytes = 0;
 	BYTE patchPreBytes[2];
 
-	ref->targetPointer = lookUpIatForPointer(ref->targetAddressInIat);
 	if (ref->targetPointer)
 	{
 		patchPreBytes[0] = 0xFF;
@@ -439,32 +440,6 @@ void IATReferenceScan::patchNewIat(DWORD_PTR stdImagebase, DWORD_PTR newIatBaseA
 	}
 }
 
-void IATReferenceScan::findDirectIatReferenceMov( _DInst * instruction )
-{
-	IATReference ref;
-	ref.targetPointer = 0;
-	ref.type = IAT_REFERENCE_DIRECT_MOV;
-
-	if (instruction->opcode == I_MOV)
-	{
-#ifdef _WIN64
-		if (instruction->size >= 7) //MOV REGISTER, 0xFFFFFFFFFFFFFFFF
-#else
-		if (instruction->size >= 5) //MOV REGISTER, 0xFFFFFFFF
-#endif
-		{
-			if (instruction->ops[0].type == O_REG && instruction->ops[1].type == O_IMM)
-			{
-				ref.targetAddressInIat = (DWORD_PTR)instruction->imm.qword;
-				ref.addressVA = (DWORD_PTR)instruction->addr;
-				ref.instructionSize = instruction->size;
-
-				checkMemoryRangeAndAddToList(&ref, instruction);
-			}
-		}
-	}
-}
-
 void IATReferenceScan::printDirectImportLog()
 {
 	IATReferenceScan::directImportLog.log(L"------------------------------------------------------------");
@@ -477,8 +452,6 @@ void IATReferenceScan::printDirectImportLog()
 		IATReference * ref = &(*iter);
 		
 		ApiInfo * apiInfo = apiReader->getApiByVirtualAddress(ref->targetAddressInIat, &isSuspect);
-
-		ref->targetPointer = lookUpIatForPointer(ref->targetAddressInIat);
 
 		count++;
 		WCHAR * type = L"U";
@@ -511,18 +484,61 @@ void IATReferenceScan::printDirectImportLog()
 	IATReferenceScan::directImportLog.log(L"------------------------------------------------------------");
 }
 
+void IATReferenceScan::findDirectIatReferenceCallJmp( _DInst * instruction )
+{
+	IATReference ref;
+
+	if (META_GET_FC(instruction->meta) == FC_CALL || META_GET_FC(instruction->meta) == FC_UNC_BRANCH)
+	{
+		if ((instruction->size >= 5) && (instruction->ops[0].type == O_PC)) //CALL/JMP 0x00000000
+		{
+			if (META_GET_FC(instruction->meta) == FC_CALL)
+			{
+				ref.type = IAT_REFERENCE_DIRECT_CALL;
+			}
+			else
+			{
+				ref.type = IAT_REFERENCE_DIRECT_JMP;
+			}
+			
+			ref.targetAddressInIat = (DWORD_PTR)INSTRUCTION_GET_TARGET(instruction);
+
+			checkMemoryRangeAndAddToList(&ref, instruction);
+		}
+	}
+}
+
+void IATReferenceScan::findDirectIatReferenceMov( _DInst * instruction )
+{
+	IATReference ref;
+	ref.type = IAT_REFERENCE_DIRECT_MOV;
+
+	if (instruction->opcode == I_MOV)
+	{
+#ifdef _WIN64
+		if (instruction->size >= 7) //MOV REGISTER, 0xFFFFFFFFFFFFFFFF
+#else
+		if (instruction->size >= 5) //MOV REGISTER, 0xFFFFFFFF
+#endif
+		{
+			if (instruction->ops[0].type == O_REG && instruction->ops[1].type == O_IMM)
+			{
+				ref.targetAddressInIat = (DWORD_PTR)instruction->imm.qword;
+
+				checkMemoryRangeAndAddToList(&ref, instruction);
+			}
+		}
+	}
+}
 
 void IATReferenceScan::findDirectIatReferencePush( _DInst * instruction )
 {
 	IATReference ref;
-	ref.targetPointer = 0;
 	ref.type = IAT_REFERENCE_DIRECT_PUSH;
 
 	if (instruction->size >= 5 && instruction->opcode == I_PUSH)
 	{
 		ref.targetAddressInIat = (DWORD_PTR)instruction->imm.qword;
-		ref.addressVA = (DWORD_PTR)instruction->addr;
-		ref.instructionSize = instruction->size;
 
 		checkMemoryRangeAndAddToList(&ref, instruction);
 	}
@@ -531,7 +547,6 @@ void IATReferenceScan::findDirectIatReferencePush( _DInst * instruction )
 void IATReferenceScan::findDirectIatReferenceLea( _DInst * instruction )
 {
 	IATReference ref;
-	ref.targetPointer = 0;
 	ref.type = IAT_REFERENCE_DIRECT_LEA;
 
 	if (instruction->size >= 5 && instruction->opcode == I_LEA)
@@ -539,8 +554,6 @@ void IATReferenceScan::findDirectIatReferenceLea( _DInst * instruction )
 		if (instruction->ops[0].type == O_REG && instruction->ops[1].type == O_DISP) //LEA EDX, [0xb58bb8]
 		{
 			ref.targetAddressInIat = (DWORD_PTR)instruction->disp;
-			ref.addressVA = (DWORD_PTR)instruction->addr;
-			ref.instructionSize = instruction->size;
 
 			checkMemoryRangeAndAddToList(&ref, instruction);
 		}
@@ -562,6 +575,10 @@ void IATReferenceScan::checkMemoryRangeAndAddToList( IATReference * ref, _DInst 
 				bool isSuspect = false;
 				if (apiReader->getApiByVirtualAddress(ref->targetAddressInIat, &isSuspect) != 0)
 				{
+					ref->addressVA = (DWORD_PTR)instruction->addr;
+					ref->instructionSize = instruction->size;
+					ref->targetPointer = lookUpIatForPointer(ref->targetAddressInIat);
+
 #ifdef DEBUG_COMMENTS
 					distorm_format(&ProcessAccessHelp::decomposerCi, instruction, &inst);
 					Scylla::debugLog.log(PRINTF_DWORD_PTR_FULL L" " PRINTF_DWORD_PTR_FULL L" %S %S %d %d - target address: " PRINTF_DWORD_PTR_FULL,(DWORD_PTR)instruction->addr, ImageBase, inst.mnemonic.p, inst.operands.p, instruction->ops[0].type, instruction->size, ref->targetAddressInIat);
@@ -639,7 +656,6 @@ void IATReferenceScan::patchDirectJumpTable( DWORD_PTR stdImagebase, DWORD direc
 
 void IATReferenceScan::patchDirectImportInDump32( int patchPreFixBytes, int instructionSize, DWORD patchBytes, BYTE * memory, DWORD memorySize, bool generateReloc, DWORD patchOffset, DWORD sectionRVA )
 {
-
 	if (memorySize < (DWORD)(patchOffset + instructionSize))
 	{
 		Scylla::debugLog.log(L"Error - Cannot fix direct import reference RVA: %X", sectionRVA + patchOffset);
@@ -654,6 +670,45 @@ void IATReferenceScan::patchDirectImportInDump32( int patchPreFixBytes, int inst
 
 		*((DWORD *)memory) = patchBytes;
 	}
+}
+
+DWORD IATReferenceScan::addAdditionalApisToList()
+{
+	std::set<DWORD_PTR> apiPointers;
+
+	for (std::vector<IATReference>::iterator iter = iatDirectImportList.begin(); iter != iatDirectImportList.end(); iter++)
+	{
+		IATReference * ref = &(*iter);
+
+		if (ref->targetPointer == 0)
+		{
+			apiPointers.insert(ref->targetAddressInIat);
+		}
+	}
+
+	DWORD_PTR iatAddy = IatAddressVA + IatSize;
+	DWORD newIatSize = IatSize;
+
+	bool isSuspect = false;
+	for (std::set<DWORD_PTR>::iterator apiIter = apiPointers.begin(); apiIter != apiPointers.end(); apiIter++)
+	{
+		for (std::vector<IATReference>::iterator iter = iatDirectImportList.begin(); iter != iatDirectImportList.end(); iter++)
+		{
+			IATReference * ref = &(*iter);
+
+			if (ref->targetPointer == 0  && ref->targetAddressInIat == *apiIter)
+			{
+				ref->targetPointer = iatAddy;
+				ApiInfo * apiInfo = apiReader->getApiByVirtualAddress(ref->targetAddressInIat, &isSuspect);
+				apiReader->addFoundApiToModuleList(iatAddy, apiInfo, true, isSuspect);
+			}
+		}
+
+		iatAddy += sizeof(DWORD_PTR);
+		newIatSize += sizeof(DWORD_PTR);
+	}
+
+	return newIatSize;
 }
 
 

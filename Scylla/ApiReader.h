@@ -26,7 +26,7 @@ public:
 	bool isApiAddressValid(DWORD_PTR virtualAddress);
 	ApiInfo * getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isSuspect);
 	void readAndParseIAT(DWORD_PTR addressIAT, DWORD sizeIAT, std::map<DWORD_PTR, ImportModuleThunk> &moduleListNew );
-
+	void addFoundApiToModuleList(DWORD_PTR iatAddress, ApiInfo * apiFound, bool isNewModule, bool isSuspect);
 	void clearAll();
 
 private:
@@ -61,7 +61,7 @@ private:
 	void setMinMaxApiAddress(DWORD_PTR virtualAddress);
 	
 	void parseModuleWithMapping(ModuleInfo *moduleInfo); //not used
-	void addFoundApiToModuleList(DWORD_PTR iatAddress, ApiInfo * apiFound, bool isNewModule, bool isSuspect);
+	
 	bool addModuleToModuleList(const WCHAR * moduleName, DWORD_PTR firstThunk);
 	bool addFunctionToModuleList(ApiInfo * apiFound, DWORD_PTR va, DWORD_PTR rva, WORD ordinal, bool valid, bool suspect);
 	bool addNotFoundApiToModuleList(DWORD_PTR iatAddressVA, DWORD_PTR apiAddress);

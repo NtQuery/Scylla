@@ -612,7 +612,12 @@ bool PeParser::readSectionFrom(const DWORD_PTR readOffset, PeFileSection & peFil
 
 				//some safety space because of something like this at the end of a section:
 				//FF25 C0604000 JMP DWORD PTR DS:[<&KERNEL32.RtlUnwind>]
-				peFileSection.dataSize += sizeof(DWORD);;
+				peFileSection.dataSize += sizeof(DWORD);
+
+				if (peFileSection.normalSize < peFileSection.dataSize)
+				{
+					peFileSection.dataSize = peFileSection.normalSize;
+				}
 			}
 
 			break;

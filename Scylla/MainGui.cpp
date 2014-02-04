@@ -913,10 +913,20 @@ void MainGui::getImportsActionHandler()
 			iatReferenceScan.apiReader = &apiReader;
 			iatReferenceScan.startScan(ProcessAccessHelp::targetImageBase, (DWORD)ProcessAccessHelp::targetSizeOfImage, addressIAT, sizeIAT);
 
-			Scylla::windowLog.log(L"DIRECT IMPORTS - Found %d possible direct imports!", iatReferenceScan.numberOfFoundDirectImports());
+			Scylla::windowLog.log(L"DIRECT IMPORTS - Found %d possible direct imports with %d unique APIs!", iatReferenceScan.numberOfFoundDirectImports(), iatReferenceScan.numberOfFoundUniqueDirectImports());
 
 			if (iatReferenceScan.numberOfFoundDirectImports() > 0)
 			{
+				if (iatReferenceScan.numberOfDirectImportApisNotInIat() > 0)
+				{
+					Scylla::windowLog.log(L"DIRECT IMPORTS - Found %d additional api addresses!", iatReferenceScan.numberOfDirectImportApisNotInIat());
+					DWORD sizeIatNew = iatReferenceScan.addAdditionalApisToList();
+					Scylla::windowLog.log(L"DIRECT IMPORTS - Old IAT size 0x%08X new IAT size 0x%08X!", sizeIAT, sizeIatNew);
+					EditIATSize.SetValue(sizeIatNew);
+					importsHandling.scanAndFixModuleList();
+					importsHandling.displayAllImports();
+				}
+
 				iatReferenceScan.printDirectImportLog();
 
 				if (Scylla::config[FIX_DIRECT_IMPORTS_NORMAL].isTrue())

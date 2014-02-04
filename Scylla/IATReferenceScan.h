@@ -66,10 +66,13 @@ public:
 	void patchDirectJumpTable( DWORD_PTR imageBase, DWORD directImportsJumpTableRVA, PeParser * peParser, BYTE * jmpTableMemory, DWORD newIatBase);
 	void patchDirectImportsMemory(bool junkByteAfterInstruction);
 	int numberOfFoundDirectImports();
+	int numberOfFoundUniqueDirectImports();
+	int numberOfDirectImportApisNotInIat();
 	int getSizeInBytesOfJumpTableInSection();
 	static FileLog directImportLog;
 	void printDirectImportLog();
 	void changeIatBaseOfDirectImports( DWORD newIatBaseAddressRVA );
+	DWORD addAdditionalApisToList();
 private:
 	DWORD_PTR NewIatAddressRVA;
 
@@ -100,7 +103,7 @@ private:
 	void checkMemoryRangeAndAddToList( IATReference * ref, _DInst * instruction );
 	void findDirectIatReferenceLea( _DInst * instruction );
 	void patchDirectImportInDump32( int patchPreFixBytes, int instructionSize, DWORD patchBytes, BYTE * memory, DWORD memorySize, bool generateReloc, DWORD patchOffset, DWORD sectionRVA );
-
+	
 
 };
 
