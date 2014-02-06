@@ -601,7 +601,7 @@ void IATReferenceScan::patchDirectJumpTableEntry(DWORD_PTR targetIatPointer, DWO
 		if (ref->targetPointer == targetIatPointer)
 		{
 			//patch dump
-			DWORD_PTR patchOffset = peParser->convertRVAToOffsetRelative(ref->addressVA - ImageBase);
+			DWORD patchOffset = (DWORD)peParser->convertRVAToOffsetRelative(ref->addressVA - ImageBase);
 			int index = peParser->convertRVAToOffsetVectorIndex(ref->addressVA - ImageBase);
 			BYTE * memory = peParser->getSectionMemoryByIndex(index);
 			DWORD memorySize = peParser->getSectionMemorySizeByIndex(index);
@@ -609,33 +609,39 @@ void IATReferenceScan::patchDirectJumpTableEntry(DWORD_PTR targetIatPointer, DWO
 
 			if (ref->type == IAT_REFERENCE_DIRECT_CALL || ref->type == IAT_REFERENCE_DIRECT_JMP)
 			{
+#ifndef _WIN64
 				if (ref->instructionSize == 5)
 				{
 					patchBytes = directImportsJumpTableRVA - (ref->addressVA - ImageBase) - 5;
 					patchDirectImportInDump32(1, 5, patchBytes, memory, memorySize, false, patchOffset, sectionRVA);
 				}
+#endif
 			}
 			else if (ref->type == IAT_REFERENCE_DIRECT_PUSH || ref->type == IAT_REFERENCE_DIRECT_MOV)
 			{
+#ifndef _WIN64
 				if (ref->instructionSize == 5) //for x86
 				{
 					patchBytes = directImportsJumpTableRVA + stdImagebase;
 					patchDirectImportInDump32(1, 5, patchBytes, memory, memorySize, true, patchOffset, sectionRVA);				
 				}
-
-				if (ref->instructionSize > 5) //for x64
+#else
+				if (ref->instructionSize == 10) //for x64
 				{
 					DWORD_PTR patchBytes64 = directImportsJumpTableRVA + stdImagebase;
-					patchDirectImportInDump32(1, ref->instructionSize, patchBytes64, memory, memorySize, true, patchOffset, sectionRVA);
+					patchDirectImportInDump64(2, 10, patchBytes64, memory, memorySize, true, patchOffset, sectionRVA);
 				}
+#endif
 			}
 			else if (ref->type == IAT_REFERENCE_DIRECT_LEA)
 			{
+#ifndef _WIN64
 				if (ref->instructionSize == 6)
 				{
 					patchBytes = directImportsJumpTableRVA + stdImagebase;
 					patchDirectImportInDump32(2, 6, patchBytes, memory, memorySize, true, patchOffset, sectionRVA);
 				}
+#endif
 			}
 		}
 	}
@@ -698,6 +704,24 @@ void IATReferenceScan::patchDirectImportInDump32( int patchPreFixBytes, int inst
 		}
 
 		*((DWORD *)memory) = patchBytes;
+	}
+}
+
+void IATReferenceScan::patchDirectImportInDump64( int patchPreFixBytes, int instructionSize, DWORD_PTR patchBytes, BYTE * memory, DWORD memorySize, bool generateReloc, DWORD patchOffset, DWORD sectionRVA )
+{
+	if (memorySize < (DWORD)(patchOffset + instructionSize))
+	{
+		Scylla::debugLog.log(L"Error - Cannot fix direct import reference RVA: %X", sectionRVA + patchOffset);
+	}
+	else
+	{
+		memory += patchOffset + patchPreFixBytes;
+		if (generateReloc)
+		{
+			directImportLog.log(L"Relocation direct imports fix: Base RVA %08X Offset %04X Type IMAGE_REL_BASED_DIR64", (sectionRVA + patchOffset + patchPreFixBytes) & 0xFFFFF000, (sectionRVA + patchOffset+ patchPreFixBytes) & 0x00000FFF);
+		}
+
+		*((DWORD_PTR *)memory) = patchBytes;
 	}
 }
 
