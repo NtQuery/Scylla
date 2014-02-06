@@ -43,7 +43,7 @@ int IATReferenceScan::numberOfDirectImportApisNotInIat()
 
 int IATReferenceScan::getSizeInBytesOfJumpTableInSection()
 {
-	return ((int)iatDirectImportList.size() * 6); //for x86 and x64 the same size
+	return (numberOfFoundUniqueDirectImports() * 6); //for x86 and x64 the same size, FF25 00000000
 }
 
 void IATReferenceScan::startScan(DWORD_PTR imageBase, DWORD imageSize, DWORD_PTR iatAddress, DWORD iatSize)
@@ -617,10 +617,16 @@ void IATReferenceScan::patchDirectJumpTableEntry(DWORD_PTR targetIatPointer, DWO
 			}
 			else if (ref->type == IAT_REFERENCE_DIRECT_PUSH || ref->type == IAT_REFERENCE_DIRECT_MOV)
 			{
-				if (ref->instructionSize == 5)
+				if (ref->instructionSize == 5) //for x86
 				{
 					patchBytes = directImportsJumpTableRVA + stdImagebase;
 					patchDirectImportInDump32(1, 5, patchBytes, memory, memorySize, true, patchOffset, sectionRVA);				
+				}
+
+				if (ref->instructionSize > 5) //for x64
+				{
+					DWORD_PTR patchBytes64 = directImportsJumpTableRVA + stdImagebase;
+					patchDirectImportInDump32(1, ref->instructionSize, patchBytes64, memory, memorySize, true, patchOffset, sectionRVA);
 				}
 			}
 			else if (ref->type == IAT_REFERENCE_DIRECT_LEA)

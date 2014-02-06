@@ -929,7 +929,7 @@ void MainGui::getImportsActionHandler()
 
 				iatReferenceScan.printDirectImportLog();
 
-				if (Scylla::config[FIX_DIRECT_IMPORTS_NORMAL].isTrue())
+				if (Scylla::config[FIX_DIRECT_IMPORTS_NORMAL].isTrue() && (Scylla::config[FIX_DIRECT_IMPORTS_UNIVERSAL].isTrue() == false))
 				{
 					int msgboxID = MessageBox(L"Direct Imports found. I can patch only direct imports by JMP/CALL (use universal method if you don't like this) but where is the junk byte?\r\n\r\nYES = After Instruction\r\nNO = Before the Instruction\r\nCancel = Do nothing", L"Information", MB_YESNOCANCEL|MB_ICONINFORMATION);
 
