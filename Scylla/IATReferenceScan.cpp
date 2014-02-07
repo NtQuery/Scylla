@@ -672,8 +672,9 @@ void IATReferenceScan::patchDirectJumpTable( DWORD_PTR stdImagebase, DWORD direc
 #ifdef _WIN64
 		patchBytes = (DWORD)(newIatAddressPointer - (directImportsJumpTableRVA + stdImagebase) - 6);
 #else
-		patchBytes = newIatAddressPointer; //dont forget relocation here
-		directImportLog.log(L"Relocation direct imports fix: Base RVA %08X Offset %04X Type IMAGE_REL_BASED_HIGHLOW", (directImportsJumpTableRVA + 2) & 0xFFFFF000, (directImportsJumpTableRVA + 2) & 0x00000FFF);
+		patchBytes = newIatAddressPointer;
+		DWORD relocOffset = (directImportsJumpTableRVA + 2);
+		directImportLog.log(L"Relocation direct imports fix: Base RVA %08X Type HIGHLOW Offset %04X RelocTableEntry %04X", relocOffset & 0xFFFFF000, relocOffset & 0x00000FFF, (IMAGE_REL_BASED_HIGHLOW << 12) + (relocOffset & 0x00000FFF));
 #endif
 		jmpTableMemory[0] = 0xFF;
 		jmpTableMemory[1] = 0x25;
@@ -684,9 +685,6 @@ void IATReferenceScan::patchDirectJumpTable( DWORD_PTR stdImagebase, DWORD direc
 		jmpTableMemory += 6;
 		directImportsJumpTableRVA += 6;
 	}
-
-
-
 }
 
 void IATReferenceScan::patchDirectImportInDump32( int patchPreFixBytes, int instructionSize, DWORD patchBytes, BYTE * memory, DWORD memorySize, bool generateReloc, DWORD patchOffset, DWORD sectionRVA )
@@ -700,7 +698,8 @@ void IATReferenceScan::patchDirectImportInDump32( int patchPreFixBytes, int inst
 		memory += patchOffset + patchPreFixBytes;
 		if (generateReloc)
 		{
-			directImportLog.log(L"Relocation direct imports fix: Base RVA %08X Offset %04X Type IMAGE_REL_BASED_HIGHLOW", (sectionRVA + patchOffset + patchPreFixBytes) & 0xFFFFF000, (sectionRVA + patchOffset+ patchPreFixBytes) & 0x00000FFF);
+			DWORD relocOffset = sectionRVA + patchOffset+ patchPreFixBytes;
+			directImportLog.log(L"Relocation direct imports fix: Base RVA %08X Type HIGHLOW Offset %04X RelocTableEntry %04X", relocOffset & 0xFFFFF000, relocOffset & 0x00000FFF, (IMAGE_REL_BASED_HIGHLOW << 12) + (relocOffset & 0x00000FFF));
 		}
 
 		*((DWORD *)memory) = patchBytes;
@@ -718,7 +717,8 @@ void IATReferenceScan::patchDirectImportInDump64( int patchPreFixBytes, int inst
 		memory += patchOffset + patchPreFixBytes;
 		if (generateReloc)
 		{
-			directImportLog.log(L"Relocation direct imports fix: Base RVA %08X Offset %04X Type IMAGE_REL_BASED_DIR64", (sectionRVA + patchOffset + patchPreFixBytes) & 0xFFFFF000, (sectionRVA + patchOffset+ patchPreFixBytes) & 0x00000FFF);
+			DWORD relocOffset = sectionRVA + patchOffset+ patchPreFixBytes;
+			directImportLog.log(L"Relocation direct imports fix: Base RVA %08X Type DIR64 Offset %04X RelocTableEntry %04X", relocOffset & 0xFFFFF000, relocOffset & 0x00000FFF, (IMAGE_REL_BASED_DIR64 << 12) + (relocOffset & 0x00000FFF));
 		}
 
 		*((DWORD_PTR *)memory) = patchBytes;
