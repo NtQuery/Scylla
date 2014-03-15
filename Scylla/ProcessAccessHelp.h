@@ -224,4 +224,5 @@ public:
 	static bool suspendProcess();
 	static bool resumeProcess();
 	static bool terminateProcess();
+    static bool isPageExecutable( DWORD Protect );
 };

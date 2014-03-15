@@ -29,7 +29,6 @@ private:
 
 	bool isAddressAccessable(DWORD_PTR address);
 	void findIATPointers(std::set<DWORD_PTR> & iatPointers);
-	bool isPageExecutable(DWORD value);
 	void findExecutableMemoryPagesByStartAddress( DWORD_PTR startAddress, DWORD_PTR* baseAddress, SIZE_T* memorySize );
 	void filterIATPointersList( std::set<DWORD_PTR> & iatPointers );
 };

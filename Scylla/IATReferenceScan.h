@@ -87,7 +87,6 @@ private:
 	std::vector<IATReference> iatReferenceList;
 	std::vector<IATReference> iatDirectImportList;
 
-	bool isPageExecutable( DWORD Protect );
 	void scanMemoryPage( PVOID BaseAddress, SIZE_T RegionSize );
 	void analyzeInstruction( _DInst * instruction );
 	void findNormalIatReference( _DInst * instruction );

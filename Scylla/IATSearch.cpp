@@ -241,35 +241,6 @@ bool IATSearch::isIATPointerValid(DWORD_PTR iatPointer)
 	}
 }
 
-bool IATSearch::isPageExecutable(DWORD value)
-{
-	if (value & PAGE_NOCACHE) value ^= PAGE_NOCACHE;
-
-	if (value & PAGE_WRITECOMBINE) value ^= PAGE_WRITECOMBINE;
-
-	switch(value)
-	{
-	case PAGE_EXECUTE:
-		{
-			return true;
-		}
-	case PAGE_EXECUTE_READ:
-		{
-			return true;
-		}
-	case PAGE_EXECUTE_READWRITE:
-		{
-			return true;
-		}
-	case PAGE_EXECUTE_WRITECOPY:
-		{
-			return true;
-		}
-	default:
-		return false;
-	}
-}
-
 bool IATSearch::findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, DWORD * sizeIAT)
 {
 	MEMORY_BASIC_INFORMATION memBasic = {0};

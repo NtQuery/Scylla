@@ -82,7 +82,7 @@ void IATReferenceScan::startScan(DWORD_PTR imageBase, DWORD imageSize, DWORD_PTR
 		}
 		else
 		{
-			if (isPageExecutable(memBasic.Protect))
+			if (ProcessAccessHelp::isPageExecutable(memBasic.Protect))
 			{
 				//do read and scan
 				scanMemoryPage(memBasic.BaseAddress, memBasic.RegionSize);
@@ -123,37 +123,6 @@ void IATReferenceScan::patchDirectImportsMemory( bool junkByteAfterInstruction )
 	{
 		patchDirectImportInMemory(&(*iter));
 	}
-}
-
-
-bool IATReferenceScan::isPageExecutable( DWORD Protect )
-{
-	if (Protect & PAGE_NOCACHE) Protect ^= PAGE_NOCACHE;
-
-	if (Protect & PAGE_WRITECOMBINE) Protect ^= PAGE_WRITECOMBINE;
-
-	switch(Protect)
-	{
-	case PAGE_EXECUTE:
-		{
-			return true;
-		}
-	case PAGE_EXECUTE_READ:
-		{
-			return true;
-		}
-	case PAGE_EXECUTE_READWRITE:
-		{
-			return true;
-		}
-	case PAGE_EXECUTE_WRITECOPY:
-		{
-			return true;
-		}
-	default:
-		return false;
-	}
-
 }
 
 void IATReferenceScan::scanMemoryPage( PVOID BaseAddress, SIZE_T RegionSize )
@@ -320,7 +289,7 @@ bool IATReferenceScan::isAddressValidImageMemory( DWORD_PTR address )
 		return false;
 	}
 
-	return (memBasic.Type == MEM_IMAGE && isPageExecutable(memBasic.Protect));
+	return (memBasic.Type == MEM_IMAGE && ProcessAccessHelp::isPageExecutable(memBasic.Protect));
 }
 
 void IATReferenceScan::patchReferenceInMemory( IATReference * ref )

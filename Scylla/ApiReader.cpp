@@ -880,70 +880,58 @@ void ApiReader::parseIAT(DWORD_PTR addressIAT, BYTE * iatBuffer, SIZE_T size)
 	DWORD_PTR * pIATAddress = (DWORD_PTR *)iatBuffer;
 	SIZE_T sizeIAT = size / sizeof(DWORD_PTR);
 
-	bool foundModuleBreak = false;
-
 	for (SIZE_T i = 0; i < sizeIAT; i++)
 	{
 		//Scylla::windowLog.log(L"%08X %08X %d von %d", addressIAT + (DWORD_PTR)&pIATAddress[i] - (DWORD_PTR)iatBuffer, pIATAddress[i],i,sizeIAT);
 
+        if (!isInvalidMemoryForIat(pIATAddress[i]))
+        {
+            if ( (pIATAddress[i] > minApiAddress) && (pIATAddress[i] < maxApiAddress) )
+            {
 
-		if (pIATAddress[i] == 0 || pIATAddress[i] == -1)
-		{
-			/*if (pIATAddress[i+1] != 0)
-			{
-				printf("parseIAT :: Module break\n");
-			}*/
-			/*else
-			{
-				printf("parseIAT :: IAT finished\n");
-				break;
-			}*/
-			foundModuleBreak = true;
-		} 
-		else if ( (pIATAddress[i] > minApiAddress) && (pIATAddress[i] < maxApiAddress) )
-		{
-			
-			apiFound = getApiByVirtualAddress(pIATAddress[i], &isSuspect);
-			if (apiFound == 0)
-			{
-				Scylla::windowLog.log(L"getApiByVirtualAddress :: No Api found " PRINTF_DWORD_PTR_FULL, pIATAddress[i]);
-			}
-			if (apiFound == (ApiInfo *)1)
-			{
+                apiFound = getApiByVirtualAddress(pIATAddress[i], &isSuspect);
+                if (apiFound == 0)
+                {
+                    Scylla::windowLog.log(L"getApiByVirtualAddress :: No Api found " PRINTF_DWORD_PTR_FULL, pIATAddress[i]);
+                }
+                if (apiFound == (ApiInfo *)1)
+                {
 #ifdef DEBUG_COMMENTS
-				Scylla::debugLog.log(L"apiFound == (ApiInfo *)1 -> " PRINTF_DWORD_PTR_FULL, pIATAddress[i]);
+                    Scylla::debugLog.log(L"apiFound == (ApiInfo *)1 -> " PRINTF_DWORD_PTR_FULL, pIATAddress[i]);
 #endif
-			}
-			else if (apiFound)
-			{
-				countApiFound++;
+                }
+                else if (apiFound)
+                {
+                    countApiFound++;
 #ifdef DEBUG_COMMENTS
-				Scylla::debugLog.log(PRINTF_DWORD_PTR_FULL L" %s %d %s", apiFound->va, apiFound->module->getFilename(), apiFound->ordinal, apiFound->name);
+                    Scylla::debugLog.log(PRINTF_DWORD_PTR_FULL L" %s %d %s", apiFound->va, apiFound->module->getFilename(), apiFound->ordinal, apiFound->name);
 #endif
-				if (module != apiFound->module)
-				{
-					module = apiFound->module;
-					addFoundApiToModuleList(addressIAT + (DWORD_PTR)&pIATAddress[i] - (DWORD_PTR)iatBuffer, apiFound, true, isSuspect);
-				}
-				else
-				{
-					addFoundApiToModuleList(addressIAT + (DWORD_PTR)&pIATAddress[i] - (DWORD_PTR)iatBuffer, apiFound, false, isSuspect);
-				}
-				
-			}
-			else
-			{
-				countApiNotFound++;
-				addNotFoundApiToModuleList(addressIAT + (DWORD_PTR)&pIATAddress[i] - (DWORD_PTR)iatBuffer, pIATAddress[i]);
-				//printf("parseIAT :: API not found %08X\n", pIATAddress[i]);
-			}
-		}
-		else
-		{
-			//printf("parseIAT :: API not found %08X\n", pIATAddress[i]);
-			countApiNotFound++;
-			addNotFoundApiToModuleList(addressIAT + (DWORD_PTR)&pIATAddress[i] - (DWORD_PTR)iatBuffer, pIATAddress[i]);
-		}
+                    if (module != apiFound->module)
+                    {
+                        module = apiFound->module;
+                        addFoundApiToModuleList(addressIAT + (DWORD_PTR)&pIATAddress[i] - (DWORD_PTR)iatBuffer, apiFound, true, isSuspect);
+                    }
+                    else
+                    {
+                        addFoundApiToModuleList(addressIAT + (DWORD_PTR)&pIATAddress[i] - (DWORD_PTR)iatBuffer, apiFound, false, isSuspect);
+                    }
+
+                }
+                else
+                {
+                    countApiNotFound++;
+                    addNotFoundApiToModuleList(addressIAT + (DWORD_PTR)&pIATAddress[i] - (DWORD_PTR)iatBuffer, pIATAddress[i]);
+                    //printf("parseIAT :: API not found %08X\n", pIATAddress[i]);
+                }
+            }
+            else
+            {
+                //printf("parseIAT :: API not found %08X\n", pIATAddress[i]);
+                countApiNotFound++;
+                addNotFoundApiToModuleList(addressIAT + (DWORD_PTR)&pIATAddress[i] - (DWORD_PTR)iatBuffer, pIATAddress[i]);
+            }
+        }
+
 	}
 
 	Scylla::windowLog.log(L"IAT parsing finished, found %d valid APIs, missed %d APIs", countApiFound, countApiNotFound);
@@ -1183,4 +1171,31 @@ bool ApiReader::isWinSxSModule( ModuleInfo * module )
 	{
 		return false;
 	}
+}
+
+bool ApiReader::isInvalidMemoryForIat( DWORD_PTR address )
+{
+    if (address == 0)
+        return true;
+
+   if (address == -1)
+       return true;
+
+   MEMORY_BASIC_INFORMATION memBasic = {0};
+
+   if (VirtualQueryEx(ProcessAccessHelp::hProcess, (LPCVOID)address, &memBasic, sizeof(MEMORY_BASIC_INFORMATION)))
+   {
+       if((memBasic.State == MEM_COMMIT) && ProcessAccessHelp::isPageExecutable(memBasic.Protect))
+       {
+           return false;
+       }
+       else
+       {
+           return true;
+       }
+   }
+   else
+   {
+       return true;
+   }
 }

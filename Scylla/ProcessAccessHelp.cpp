@@ -882,3 +882,33 @@ bool ProcessAccessHelp::terminateProcess()
 
 	return false;
 }
+
+bool ProcessAccessHelp::isPageExecutable( DWORD Protect )
+{
+    if (Protect & PAGE_NOCACHE) Protect ^= PAGE_NOCACHE;
+    if (Protect & PAGE_GUARD) Protect ^= PAGE_GUARD;
+    if (Protect & PAGE_WRITECOMBINE) Protect ^= PAGE_WRITECOMBINE;
+
+    switch(Protect)
+    {
+    case PAGE_EXECUTE:
+        {
+            return true;
+        }
+    case PAGE_EXECUTE_READ:
+        {
+            return true;
+        }
+    case PAGE_EXECUTE_READWRITE:
+        {
+            return true;
+        }
+    case PAGE_EXECUTE_WRITECOPY:
+        {
+            return true;
+        }
+    default:
+        return false;
+    }
+
+}
