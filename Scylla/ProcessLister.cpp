@@ -79,36 +79,22 @@ DWORD ProcessLister::setDebugPrivileges()
 /************************************************************************/
 /* Check if a process is 32 or 64bit                                    */
 /************************************************************************/
-ProcessType ProcessLister::checkIsProcess64(DWORD dwPID)
+ProcessType ProcessLister::checkIsProcess64(HANDLE hProcess)
 {
-	HANDLE hProcess;
 	BOOL bIsWow64 = FALSE;
 
-	if (dwPID == 0)
-	{
-		//unknown
-		return PROCESS_UNKNOWN;
-	}
-
-	//hProcess = OpenProcess(PROCESS_QUERY_INFORMATION|PROCESS_VM_READ, NULL, dwPID);
-
-	hProcess = ProcessAccessHelp::NativeOpenProcess(PROCESS_QUERY_INFORMATION|PROCESS_VM_READ, dwPID);
-
-	if(!hProcess)
-	{
-		//missing rights
-		return PROCESS_MISSING_RIGHTS;
-	}
+    if (!hProcess)
+    {
+        return PROCESS_MISSING_RIGHTS;
+    }
 
 	if (!isWindows64())
 	{
 		//32bit win can only run 32bit process
-		CloseHandle(hProcess);
 		return PROCESS_32;
 	}
 
 	_IsWow64Process(hProcess, &bIsWow64);
-	CloseHandle(hProcess);
 
 	if (bIsWow64 == FALSE)
 	{
@@ -122,14 +108,10 @@ ProcessType ProcessLister::checkIsProcess64(DWORD dwPID)
 	}
 }
 
-bool ProcessLister::getAbsoluteFilePath(Process * process)
+bool ProcessLister::getAbsoluteFilePath(HANDLE hProcess, Process * process)
 {
 	WCHAR processPath[MAX_PATH];
-	HANDLE hProcess;
 	bool retVal = false;
-
-	//hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, NULL, process->PID);
-	hProcess = ProcessAccessHelp::NativeOpenProcess(PROCESS_QUERY_INFORMATION|PROCESS_VM_READ, process->PID);
 
 	wcscpy_s(process->fullPath, L"Unknown path");
 
@@ -168,177 +150,143 @@ bool ProcessLister::getAbsoluteFilePath(Process * process)
 		}
 	}
 
-	CloseHandle(hProcess);
 	return retVal;
 }
 
-std::vector<Process>& ProcessLister::getProcessListSnapshot()
+std::vector<Process>& ProcessLister::getProcessListSnapshotNative()
 {
-	HANDLE hProcessSnap;
-	ProcessType processType;
-	PROCESSENTRY32 pe32;
-	HANDLE hModuleSnap = INVALID_HANDLE_VALUE;
-	MODULEENTRY32 me32 = {0};
-	Process process;
+    ULONG retLength = 0;
+    ULONG bufferLength = 1;
+    PSYSTEM_PROCESS_INFORMATION pBuffer = (PSYSTEM_PROCESS_INFORMATION)malloc(bufferLength);
+    PSYSTEM_PROCESS_INFORMATION pIter;
+    if (!processList.empty())
+    {
+        //clear elements, but keep reversed memory
+        processList.clear();
+    }
+    else
+    {
+        //first time, reserve memory
+        processList.reserve(34);
+    }
 
+    if (NativeWinApi::NtQuerySystemInformation(SystemProcessInformation, pBuffer, bufferLength, &retLength) == STATUS_INFO_LENGTH_MISMATCH)
+    {
+        free(pBuffer);
+        bufferLength = retLength + sizeof(SYSTEM_PROCESS_INFORMATION);
+        pBuffer = (PSYSTEM_PROCESS_INFORMATION)malloc(bufferLength);
+        if (!pBuffer)
+            return processList;
 
-	if (!processList.empty())
-	{
-		//clear elements, but keep reversed memory
-		processList.clear();
-	}
-	else
-	{
-		//first time, reserve memory
-		processList.reserve(34);
-	}
+        if (NativeWinApi::NtQuerySystemInformation(SystemProcessInformation, pBuffer, bufferLength, &retLength) != STATUS_SUCCESS)
+        {
+            return processList;
+        }
+    }
+    else
+    {
+        return processList;
+    }
 
-	hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-	if(hProcessSnap == INVALID_HANDLE_VALUE)
-	{
-		return processList;
-	}
+    pIter = pBuffer;
 
-	pe32.dwSize = sizeof(PROCESSENTRY32);
+    while(TRUE)
+    {
+        if (pIter->UniqueProcessId > (HANDLE)4) //small filter
+        {
+            handleProcessInformationAndAddToList(pIter);
+        }
 
-	if(!Process32First(hProcessSnap, &pe32))
-	{
-		CloseHandle(hProcessSnap);
-		return processList;
-	}
+        if (pIter->NextEntryOffset == 0)
+        {
+            break;
+        }
+        else
+        {
+            pIter = (PSYSTEM_PROCESS_INFORMATION)((DWORD_PTR)pIter + (DWORD_PTR)pIter->NextEntryOffset);
+        }
+    }
 
-	do
-	{
-		//filter process list
-		if (pe32.th32ProcessID > 4)
-		{
+    std::reverse(processList.begin(), processList.end()); //reverse process list
 
-			processType = checkIsProcess64(pe32.th32ProcessID);
-
-			if (processType != PROCESS_MISSING_RIGHTS)
-			{
-				
-
-#ifdef _WIN64
-				if (processType == PROCESS_64)
-#else
-				if (processType == PROCESS_32)
-#endif
-				{
-					process.PID = pe32.th32ProcessID;
-					
-
-					hModuleSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, process.PID);
-					if(hModuleSnap != INVALID_HANDLE_VALUE)
-					{
-						me32.dwSize = sizeof(MODULEENTRY32);
-
-						Module32First(hModuleSnap, &me32);
-						process.imageBase = (DWORD_PTR)me32.hModule;
-						process.imageSize = me32.modBaseSize;
-						CloseHandle(hModuleSnap);
-					}
-
-					wcscpy_s(process.filename, pe32.szExeFile);
-
-					getAbsoluteFilePath(&process);
-
-					processList.push_back(process);
-				}
-			}
-		}
-	} while(Process32Next(hProcessSnap, &pe32));
-
-	CloseHandle(hProcessSnap);
-
-
-	//reverse process list
-	std::reverse(processList.begin(), processList.end());
-
-	return processList;
+    free(pBuffer);
+    return processList;
 }
 
-void ProcessLister::getAllModuleInformation()
+void ProcessLister::handleProcessInformationAndAddToList( PSYSTEM_PROCESS_INFORMATION pProcess )
 {
-	/*for (std::size_t i = 0; i < processList.size(); i++)
-	{
-		getModuleInformationByProcess(&processList[i]);
-	}*/
-}
+    Process process;
+    WCHAR tempProcessName[MAX_PATH*2] = {0};
 
-void ProcessLister::getModuleInformationByProcess(Process *process)
-{
-/*	MODULEENTRY32 me32 = {0};
-	HANDLE hModuleSnap = INVALID_HANDLE_VALUE;
-	char temp[111];
+    process.PID = (DWORD)pProcess->UniqueProcessId;
 
+    HANDLE hProcess = ProcessAccessHelp::NativeOpenProcess(PROCESS_QUERY_INFORMATION|PROCESS_VM_READ, process.PID);
 
-	if (process->PID == 0)
-	{
-		MessageBox(0, "PID == NULL","ProcessLister::getModuleInformationByProcess", MB_OK|MB_ICONWARNING);
-		return;
-	}
+    if (hProcess)
+    {
+        ProcessType processType = checkIsProcess64(hProcess);
 
 #ifdef _WIN64
-	if (!process->is64BitProcess)
-	{
-		//MessageBox(hWndDlg, "I'm a x64 process and you're trying to access a 32-bit process!","displayModuleList", MB_OK);
-		return;
-	}
+        if (processType == PROCESS_64)
 #else
-	if (process->is64BitProcess)
-	{
-		//MessageBox(hWndDlg, "I'm a 32-bit process and you're trying to access a x64 process!","displayModuleList", MB_OK);
-		return;
-	}
+        if (processType == PROCESS_32)
 #endif
+        {
+            process.sessionId = pProcess->SessionId;
 
-	hModuleSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, process->PID);
+            memcpy(tempProcessName, pProcess->ImageName.Buffer, pProcess->ImageName.Length);
+            wcscpy_s(process.filename, tempProcessName);
 
-	if(hModuleSnap == INVALID_HANDLE_VALUE)
-	{
-		sprintf_s(temp, "GetLastError %d",GetLastError());
-		MessageBox(0, temp,"ProcessLister::getModuleInformationByProcess", MB_OK|MB_ICONWARNING);
-		return;
-	}
+            getAbsoluteFilePath(hProcess, &process);
+            process.pebAddress = getPebAddressFromProcess(hProcess);
+            getProcessImageInformation(hProcess, &process);
 
-	me32.dwSize = sizeof(MODULEENTRY32);
+            processList.push_back(process);
+        }
+        CloseHandle(hProcess);
+    }
+}
 
-	if(!Module32First(hModuleSnap, &me32))
-	{
-		MessageBox(0, "Module32First error","ProcessLister::getModuleInformationByProcess", MB_OK|MB_ICONWARNING);
-		CloseHandle(hModuleSnap);
-		return;
-	}
+void ProcessLister::getProcessImageInformation( HANDLE hProcess, Process* process )
+{
+    DWORD_PTR readImagebase = 0;
+    process->imageBase = 0;
+    process->imageSize = 0;
 
-	do {
+    if (hProcess && process->pebAddress)
+    {
+        PEB_CURRENT * peb = (PEB_CURRENT *)process->pebAddress;
 
-		ModuleInfo moduleInfo;
+        if (ReadProcessMemory(hProcess, &peb->ImageBaseAddress, &readImagebase, sizeof(DWORD_PTR), 0))
+        {
+            process->imageBase = readImagebase;
+            process->imageSize = (DWORD)ProcessAccessHelp::getSizeOfImageProcess(hProcess, process->imageBase);
+        }
+    }
+}
 
-		if (!_strnicmp(me32.szExePath,"\\Systemroot",11))
-		{
-			char * path = (char *)malloc(MAX_PATH);
-			sprintf_s(path"%s\\%s",getenv("SystemRoot"),(me32.szExePath + 12));
-			strcpy_s(moduleInfo.fullPath,MAX_PATH, path);
-			free(path);
-		}
-		else if(!_strnicmp(me32.szExePath,"\\??\\",4))
-		{
-			strcpy_s(moduleInfo.fullPath,MAX_PATH, (me32.szExePath + 4));
-		}
-		else
-		{
-			strcpy_s(moduleInfo.fullPath,MAX_PATH,me32.szExePath);
-		}
+DWORD_PTR ProcessLister::getPebAddressFromProcess( HANDLE hProcess )
+{
+    if (hProcess)
+    {
+        ULONG RequiredLen = 0;
+        void * PebAddress = 0;
+        PROCESS_BASIC_INFORMATION myProcessBasicInformation[5] = {0};
 
-		moduleInfo.hModule = (DWORD_PTR)me32.hModule;
-		moduleInfo.modBaseSize = me32.modBaseSize;
-		moduleInfo.modBaseAddr = (DWORD_PTR)me32.modBaseAddr;
+        if(NativeWinApi::NtQueryInformationProcess(hProcess, ProcessBasicInformation, myProcessBasicInformation, sizeof(PROCESS_BASIC_INFORMATION), &RequiredLen) == STATUS_SUCCESS)
+        {
+            PebAddress = (void*)myProcessBasicInformation->PebBaseAddress;
+        }
+        else
+        {
+            if(NativeWinApi::NtQueryInformationProcess(hProcess, ProcessBasicInformation, myProcessBasicInformation, RequiredLen, &RequiredLen) == STATUS_SUCCESS)
+            {
+                PebAddress = (void*)myProcessBasicInformation->PebBaseAddress;
+            }
+        }
 
-		process->moduleList[moduleInfo.hModule] = moduleInfo;
+        return (DWORD_PTR)PebAddress;
+    }
 
-	} while(Module32Next(hModuleSnap, &me32));
-
-	CloseHandle(hModuleSnap);*/
-
+    return 0;
 }

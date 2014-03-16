@@ -184,7 +184,7 @@ int WINAPI ScyllaIatSearch(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatS
 	Process *processPtr = 0;
 	IATSearch iatSearch;
 
-	std::vector<Process>& processList = processLister.getProcessListSnapshot();
+	std::vector<Process>& processList = processLister.getProcessListSnapshotNative();
 	for(std::vector<Process>::iterator it = processList.begin(); it != processList.end(); ++it)
 	{
 		if(it->PID == dwProcessId)
@@ -208,7 +208,7 @@ int WINAPI ScyllaIatSearch(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatS
 
 	ProcessAccessHelp::selectedModule = 0;
 	ProcessAccessHelp::targetImageBase = processPtr->imageBase;
-	ProcessAccessHelp::targetSizeOfImage = ProcessAccessHelp::getSizeOfImageProcess(ProcessAccessHelp::hProcess, ProcessAccessHelp::targetImageBase);
+	ProcessAccessHelp::targetSizeOfImage = processPtr->imageSize;
 
 	apiReader.readApisFromModuleList();
 
@@ -244,7 +244,7 @@ int WINAPI ScyllaIatFixAutoW(DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId
 	Process *processPtr = 0;
 	std::map<DWORD_PTR, ImportModuleThunk> moduleList;
 
-	std::vector<Process>& processList = processLister.getProcessListSnapshot();
+	std::vector<Process>& processList = processLister.getProcessListSnapshotNative();
 	for(std::vector<Process>::iterator it = processList.begin(); it != processList.end(); ++it)
 	{
 		if(it->PID == dwProcessId)
@@ -268,7 +268,7 @@ int WINAPI ScyllaIatFixAutoW(DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId
 
 	ProcessAccessHelp::selectedModule = 0;
 	ProcessAccessHelp::targetImageBase = processPtr->imageBase;
-	ProcessAccessHelp::targetSizeOfImage = ProcessAccessHelp::getSizeOfImageProcess(ProcessAccessHelp::hProcess, ProcessAccessHelp::targetImageBase);
+	ProcessAccessHelp::targetSizeOfImage = processPtr->imageSize;
 
 	apiReader.readApisFromModuleList();
 

@@ -70,13 +70,13 @@ BOOL MainGui::PreTranslateMessage(MSG* pMsg)
 void MainGui::InitDllStartWithPreSelect( PGUI_DLL_PARAMETER guiParam )
 {
 	ComboProcessList.ResetContent();
-	std::vector<Process>& processList = Scylla::processLister.getProcessListSnapshot();
+	std::vector<Process>& processList = Scylla::processLister.getProcessListSnapshotNative();
 	int newSel = -1;
 	for (size_t i = 0; i < processList.size(); i++)
 	{
 		if (processList[i].PID == guiParam->dwProcessId)
 			newSel = (int)i;
-		swprintf_s(stringBuffer, L"0x%04X - %s - %s", processList[i].PID, processList[i].filename, processList[i].fullPath);
+		swprintf_s(stringBuffer, L"%04d - %s - %s", processList[i].PID, processList[i].filename, processList[i].fullPath);
 		ComboProcessList.AddString(stringBuffer);
 	}
 	if (newSel != -1)
@@ -624,7 +624,7 @@ void MainGui::processSelectedActionHandler(int index)
 	ProcessAccessHelp::selectedModule = 0;
 
 	ProcessAccessHelp::targetImageBase = process.imageBase;
-	ProcessAccessHelp::targetSizeOfImage = ProcessAccessHelp::getSizeOfImageProcess(ProcessAccessHelp::hProcess, ProcessAccessHelp::targetImageBase);
+	ProcessAccessHelp::targetSizeOfImage = process.imageSize;
 
 	process.imageSize = (DWORD)ProcessAccessHelp::targetSizeOfImage;
 
@@ -645,11 +645,11 @@ void MainGui::fillProcessListComboBox(CComboBox& hCombo)
 {
 	hCombo.ResetContent();
 
-	std::vector<Process>& processList = Scylla::processLister.getProcessListSnapshot();
+	std::vector<Process>& processList = Scylla::processLister.getProcessListSnapshotNative();
 
 	for (size_t i = 0; i < processList.size(); i++)
 	{
-		swprintf_s(stringBuffer, L"0x%04X - %s - %s", processList[i].PID, processList[i].filename, processList[i].fullPath);
+		swprintf_s(stringBuffer, L"%04d - %s - %s", processList[i].PID, processList[i].filename, processList[i].fullPath);
 		hCombo.AddString(stringBuffer);
 	}
 }
