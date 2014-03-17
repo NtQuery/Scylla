@@ -314,4 +314,5 @@ protected:
 	void setDialogIATAddressAndSize( DWORD_PTR addressIAT, DWORD sizeIAT );
 	void InitDllStartWithPreSelect( PGUI_DLL_PARAMETER guiParam );
 	bool isIATOutsidePeImage( DWORD_PTR addressIAT );
+    bool getCurrentDefaultDumpFilename( WCHAR * buffer, size_t bufferSize );
 };

@@ -1143,7 +1143,8 @@ void MainGui::dumpMemoryActionHandler()
 
 void MainGui::dumpSectionActionHandler()
 {
-	WCHAR selectedFilePath[MAX_PATH];
+	WCHAR selectedFilePath[MAX_PATH] = {0};
+    WCHAR defaultFilename[MAX_PATH] = {0};
 	DumpSectionGui dlgDumpSection;
 	const WCHAR * fileFilter;
 	const WCHAR * defExtension;
@@ -1173,8 +1174,9 @@ void MainGui::dumpSectionActionHandler()
 
 	if(dlgDumpSection.DoModal())
 	{
+        getCurrentDefaultDumpFilename(defaultFilename, _countof(defaultFilename));
 		getCurrentModulePath(stringBuffer, _countof(stringBuffer));
-		if(showFileDialog(selectedFilePath, true, NULL, fileFilter, defExtension, stringBuffer))
+		if(showFileDialog(selectedFilePath, true, defaultFilename, fileFilter, defExtension, stringBuffer))
 		{
 			checkSuspendProcess();
 
@@ -1209,7 +1211,8 @@ void MainGui::dumpActionHandler()
 	if(!selectedProcess)
 		return;
 
-	WCHAR selectedFilePath[MAX_PATH];
+    WCHAR selectedFilePath[MAX_PATH] = {0};
+    WCHAR defaultFilename[MAX_PATH] = {0};
 	const WCHAR * fileFilter;
 	const WCHAR * defExtension;
 	DWORD_PTR modBase = 0;
@@ -1229,7 +1232,8 @@ void MainGui::dumpActionHandler()
 	}
 
 	getCurrentModulePath(stringBuffer, _countof(stringBuffer));
-	if(showFileDialog(selectedFilePath, true, NULL, fileFilter, defExtension, stringBuffer))
+    getCurrentDefaultDumpFilename(defaultFilename, _countof(defaultFilename));
+	if(showFileDialog(selectedFilePath, true, defaultFilename, fileFilter, defExtension, stringBuffer))
 	{
 		entrypoint = EditOEPAddress.GetValue();
 
@@ -1658,4 +1662,48 @@ bool MainGui::isIATOutsidePeImage( DWORD_PTR addressIAT )
 	{
 		return true; //outside pe image, requires rebasing iat
 	}
+}
+
+bool MainGui::getCurrentDefaultDumpFilename( WCHAR * buffer, size_t bufferSize )
+{
+    if(!selectedProcess)
+        return false;
+
+    WCHAR * fullPath;
+
+    if(ProcessAccessHelp::selectedModule)
+    {
+        fullPath = ProcessAccessHelp::selectedModule->fullPath;
+    }
+    else
+    {
+        fullPath = selectedProcess->fullPath;
+    }
+
+    WCHAR * temp = wcsrchr(fullPath, L'\\');
+    if(temp)
+    {
+        temp++;
+        wcscpy_s(buffer, bufferSize, temp);
+
+        temp = wcsrchr(buffer, L'.');
+        if (temp)
+        {
+            *temp = 0;
+
+            if(ProcessAccessHelp::selectedModule)
+            {
+                wcscat_s(buffer, bufferSize, L"_dump.dll");
+            }
+            else
+            {
+                wcscat_s(buffer, bufferSize, L"_dump.exe");
+            }
+        }
+        
+
+        return true;
+    }
+
+    return false;
 }
