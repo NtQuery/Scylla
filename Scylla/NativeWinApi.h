@@ -108,6 +108,14 @@ typedef struct _OBJECT_ATTRIBUTES
 	PVOID SecurityQualityOfService;
 } OBJECT_ATTRIBUTES, *POBJECT_ATTRIBUTES;
 
+typedef struct _MEMORY_REGION_INFORMATION
+{
+    PVOID AllocationBase; //Imagebase
+    ULONG AllocationProtect;
+    ULONG RegionType;
+    SIZE_T RegionSize; //Size of image
+} MEMORY_REGION_INFORMATION, *PMEMORY_REGION_INFORMATION;
+
 typedef enum _OBJECT_INFORMATION_CLASS {
 	ObjectBasicInformation,
 	ObjectNameInformation,
@@ -142,11 +150,13 @@ typedef enum _THREADINFOCLASS {
 //
 // Memory Information Classes for NtQueryVirtualMemory
 //
-typedef enum _MEMORY_INFORMATION_CLASS {
-	MemoryBasicInformation,
-	MemoryWorkingSetList,
-	MemorySectionName,
-	MemoryBasicVlmInformation
+typedef enum _MEMORY_INFORMATION_CLASS
+{
+    MemoryBasicInformation,
+    MemoryWorkingSetInformation,
+    MemoryMappedFilenameInformation, //MemorySectionName, UNICODE_STRING, Wrapper: GetMappedFileNameW
+    MemoryRegionInformation, //MemoryBasicVlmInformation, MEMORY_REGION_INFORMATION
+    MemoryWorkingSetExInformation
 } MEMORY_INFORMATION_CLASS;
 
 typedef enum _PROCESSINFOCLASS {
@@ -417,7 +427,7 @@ typedef NTSTATUS (WINAPI *def_NtQueryInformationFile)(HANDLE FileHandle, PIO_STA
 typedef NTSTATUS (WINAPI *def_NtQueryInformationThread)(HANDLE ThreadHandle,THREADINFOCLASS ThreadInformationClass,PVOID ThreadInformation,ULONG ThreadInformationLength,PULONG ReturnLength);
 typedef NTSTATUS (WINAPI *def_NtQueryInformationProcess)(HANDLE ProcessHandle,PROCESSINFOCLASS ProcessInformationClass,PVOID ProcessInformation,ULONG ProcessInformationLength,PULONG ReturnLength);
 typedef NTSTATUS (WINAPI *def_NtQuerySystemInformation)(SYSTEM_INFORMATION_CLASS SystemInformationClass,PVOID SystemInformation,ULONG SystemInformationLength, PULONG ReturnLength);
-typedef NTSTATUS (WINAPI *def_NtQueryVirtualMemory)(HANDLE ProcessHandle, PVOID BaseAddress, MEMORY_INFORMATION_CLASS MemoryInformationClass, PVOID Buffer, ULONG Length, PULONG ResultLength); 
+typedef NTSTATUS (WINAPI *def_NtQueryVirtualMemory)(HANDLE ProcessHandle, PVOID BaseAddress, MEMORY_INFORMATION_CLASS MemoryInformationClass, PVOID Buffer, SIZE_T MemoryInformationLength, PSIZE_T ReturnLength); 
 typedef NTSTATUS (WINAPI *def_NtOpenProcess)(PHANDLE ProcessHandle, ACCESS_MASK AccessMask, PVOID ObjectAttributes, PCLIENT_ID ClientId );
 typedef NTSTATUS (WINAPI *def_NtOpenThread)(PHANDLE ThreadHandle,ACCESS_MASK DesiredAccess,POBJECT_ATTRIBUTES ObjectAttributes,PCLIENT_ID ClientId);
 typedef NTSTATUS (WINAPI *def_NtResumeThread)(HANDLE ThreadHandle, PULONG SuspendCount);

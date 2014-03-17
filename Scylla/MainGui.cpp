@@ -103,7 +103,7 @@ void MainGui::InitDllStartWithPreSelect( PGUI_DLL_PARAMETER guiParam )
 				ProcessAccessHelp::selectedModule = &ProcessAccessHelp::moduleList.at(newSel);
 
 				ProcessAccessHelp::targetImageBase = ProcessAccessHelp::selectedModule->modBaseAddr;
-				ProcessAccessHelp::targetSizeOfImage = ProcessAccessHelp::getSizeOfImageProcess(ProcessAccessHelp::hProcess, ProcessAccessHelp::targetImageBase);
+				ProcessAccessHelp::targetSizeOfImage = ProcessAccessHelp::selectedModule->modBaseSize;
 
 				DWORD modEntryPoint = ProcessAccessHelp::getEntryPointFromFile(ProcessAccessHelp::selectedModule->fullPath);
 
@@ -531,7 +531,7 @@ void MainGui::pickDllActionHandler()
 		ProcessAccessHelp::selectedModule = dlgPickDll.getSelectedModule();
 
 		ProcessAccessHelp::targetImageBase = ProcessAccessHelp::selectedModule->modBaseAddr;
-		ProcessAccessHelp::targetSizeOfImage = ProcessAccessHelp::getSizeOfImageProcess(ProcessAccessHelp::hProcess, ProcessAccessHelp::targetImageBase);
+		ProcessAccessHelp::targetSizeOfImage = ProcessAccessHelp::selectedModule->modBaseSize;
 
 		DWORD modEntryPoint = ProcessAccessHelp::getEntryPointFromFile(ProcessAccessHelp::selectedModule->fullPath);
 
@@ -614,7 +614,7 @@ void MainGui::processSelectedActionHandler(int index)
 		return;
 	}
 
-	ProcessAccessHelp::getProcessModules(process.PID, ProcessAccessHelp::moduleList);
+	ProcessAccessHelp::getProcessModules(ProcessAccessHelp::hProcess, ProcessAccessHelp::moduleList);
 
 	apiReader.readApisFromModuleList();
 

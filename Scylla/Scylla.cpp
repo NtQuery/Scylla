@@ -27,7 +27,7 @@ void Scylla::initAsGuiApp()
 		processLister.setDebugPrivileges();
 	}
 
-	ProcessAccessHelp::getProcessModules(GetCurrentProcessId(), ProcessAccessHelp::ownModuleList);
+	ProcessAccessHelp::getProcessModules(GetCurrentProcess(), ProcessAccessHelp::ownModuleList);
 }
 
 void Scylla::initAsDll()
@@ -36,5 +36,5 @@ void Scylla::initAsDll()
 
 	NativeWinApi::initialize();
 	SystemInformation::getSystemInformation();
-	ProcessAccessHelp::getProcessModules(GetCurrentProcessId(), ProcessAccessHelp::ownModuleList);
+	ProcessAccessHelp::getProcessModules(GetCurrentProcess(), ProcessAccessHelp::ownModuleList);
 }

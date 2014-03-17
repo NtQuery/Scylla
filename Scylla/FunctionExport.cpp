@@ -204,7 +204,7 @@ int WINAPI ScyllaIatSearch(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatS
 		return SCY_ERROR_PROCOPEN;
 	}
 
-	ProcessAccessHelp::getProcessModules(processPtr->PID, ProcessAccessHelp::moduleList);
+	ProcessAccessHelp::getProcessModules(ProcessAccessHelp::hProcess, ProcessAccessHelp::moduleList);
 
 	ProcessAccessHelp::selectedModule = 0;
 	ProcessAccessHelp::targetImageBase = processPtr->imageBase;
@@ -264,7 +264,7 @@ int WINAPI ScyllaIatFixAutoW(DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId
 		return SCY_ERROR_PROCOPEN;
 	}
 
-	ProcessAccessHelp::getProcessModules(processPtr->PID, ProcessAccessHelp::moduleList);
+	ProcessAccessHelp::getProcessModules(ProcessAccessHelp::hProcess, ProcessAccessHelp::moduleList);
 
 	ProcessAccessHelp::selectedModule = 0;
 	ProcessAccessHelp::targetImageBase = processPtr->imageBase;

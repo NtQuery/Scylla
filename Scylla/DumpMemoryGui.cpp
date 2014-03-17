@@ -365,7 +365,7 @@ void DumpMemoryGui::getMemoryList()
 		memory.protect = memBasic.Protect;
 		
 
-		if (memory.type == MEM_MAPPED)
+		if (memory.type == MEM_MAPPED || memory.type == MEM_IMAGE)
 		{
 			if (!getMappedFilename(&memory))
 			{
@@ -538,7 +538,6 @@ bool DumpMemoryGui::getMappedFilename( Memory* memory )
 {
 	WCHAR filename[MAX_PATH] = {0};
 
-	//TODO replace with Nt direct syscall
 	if (GetMappedFileNameW(ProcessAccessHelp::hProcess, (LPVOID)memory->address, filename, _countof(filename)) > 0)
 	{
 		return deviceNameResolver->resolveDeviceLongNameToShort(filename, memory->mappedFilename);
