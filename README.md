@@ -56,6 +56,13 @@ Keyboard Shortcuts
 Changelog
 ---------
 
+Version 0.9.5
+
+- improved process lister
+- improved module lister
+- improved dump name
+- improved IAT parser
+
 Version 0.9.4 Final
 
 - direct import scanner (LEA, MOV, PUSH, CALL, JMP) + fixer with 2 fix methods
