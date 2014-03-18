@@ -56,6 +56,10 @@ Keyboard Shortcuts
 Changelog
 ---------
 
+Version 0.9.5a
+
+- Fixed virtual device bug caused by QueryDosDeviceW bug
+
 Version 0.9.5
 
 - improved process lister
