@@ -9,8 +9,8 @@
 
 class HardDisk {
 public:
-	WCHAR shortName[3];
-	WCHAR longName[MAX_PATH];
+	TCHAR shortName[3];
+	TCHAR longName[MAX_PATH];
 	size_t longNameLength;
 };
 
@@ -19,10 +19,11 @@ class DeviceNameResolver
 public:
 	DeviceNameResolver();
 	~DeviceNameResolver();
-	bool resolveDeviceLongNameToShort( WCHAR * sourcePath, WCHAR * targetPath );
+	bool resolveDeviceLongNameToShort(const TCHAR * sourcePath, TCHAR * targetPath);
 private:
 	std::vector<HardDisk> deviceNameList;
 
 	void initDeviceNameList();
+    void fixVirtualDevices();
 };
 

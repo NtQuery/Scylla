@@ -16,10 +16,19 @@ def_NtSetInformationThread NativeWinApi::NtSetInformationThread = 0;
 def_NtSuspendProcess NativeWinApi::NtSuspendProcess = 0;
 def_NtTerminateProcess NativeWinApi::NtTerminateProcess = 0;
 
+def_NtOpenSymbolicLinkObject NativeWinApi::NtOpenSymbolicLinkObject = 0;
+def_NtQuerySymbolicLinkObject NativeWinApi::NtQuerySymbolicLinkObject = 0;
+
 def_RtlNtStatusToDosError NativeWinApi::RtlNtStatusToDosError = 0;
+def_NtClose NativeWinApi::NtClose = 0;
 
 void NativeWinApi::initialize()
 {
+    if (RtlNtStatusToDosError)
+    {
+        return;
+    }
+
 	HMODULE hModuleNtdll = GetModuleHandle(L"ntdll.dll");
 
 	if (!hModuleNtdll)
@@ -42,9 +51,11 @@ void NativeWinApi::initialize()
 	NtSetInformationThread = (def_NtSetInformationThread)GetProcAddress(hModuleNtdll, "NtSetInformationThread");
 	NtSuspendProcess = (def_NtSuspendProcess)GetProcAddress(hModuleNtdll, "NtSuspendProcess");
 	NtTerminateProcess = (def_NtTerminateProcess)GetProcAddress(hModuleNtdll, "NtTerminateProcess");
+    NtOpenSymbolicLinkObject = (def_NtOpenSymbolicLinkObject)GetProcAddress(hModuleNtdll, "NtOpenSymbolicLinkObject");
+    NtQuerySymbolicLinkObject = (def_NtQuerySymbolicLinkObject)GetProcAddress(hModuleNtdll, "NtQuerySymbolicLinkObject");
 
 	RtlNtStatusToDosError = (def_RtlNtStatusToDosError)GetProcAddress(hModuleNtdll, "RtlNtStatusToDosError");
-
+    NtClose = (def_NtClose)GetProcAddress(hModuleNtdll, "NtClose");
 }
 
 

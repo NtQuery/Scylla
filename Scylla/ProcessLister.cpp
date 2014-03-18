@@ -31,7 +31,7 @@ bool ProcessLister::isWindows64()
 	if (_IsWow64Process)
 	{
 		_IsWow64Process(GetCurrentProcess(), &bIsWow64);
-		if (bIsWow64 == TRUE)
+		if (bIsWow64 != FALSE)
 		{
 			return true;
 		}
@@ -121,6 +121,8 @@ bool ProcessLister::getAbsoluteFilePath(HANDLE hProcess, Process * process)
 		return false;
 	}
 
+    
+
 	if (GetProcessImageFileNameW(hProcess, processPath, _countof(processPath)) > 0)
 	{
 		if (!deviceNameResolver->resolveDeviceLongNameToShort(processPath, process->fullPath))
@@ -129,10 +131,8 @@ bool ProcessLister::getAbsoluteFilePath(HANDLE hProcess, Process * process)
 			Scylla::debugLog.log(L"getAbsoluteFilePath :: resolveDeviceLongNameToShort failed with path %s", processPath);
 #endif
 			//some virtual volumes
-			if (GetModuleFileNameExW(hProcess, 0, process->fullPath, _countof(process->fullPath)) != 0)
-			{
-				retVal = true;
-			}
+
+            MessageBoxW(0, processPath, L"Cannot resolve this path!", MB_ICONERROR);        
 		}
 		else
 		{

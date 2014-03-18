@@ -436,12 +436,18 @@ typedef NTSTATUS (WINAPI *def_NtCreateThreadEx)(PHANDLE hThread,ACCESS_MASK Desi
 typedef NTSTATUS (WINAPI *def_NtSuspendProcess)(HANDLE ProcessHandle);
 typedef NTSTATUS (WINAPI *def_NtResumeProcess)(HANDLE ProcessHandle);
 
+typedef NTSTATUS (WINAPI *def_NtOpenSymbolicLinkObject)(PHANDLE LinkHandle,ACCESS_MASK DesiredAccess,POBJECT_ATTRIBUTES ObjectAttributes);
+typedef NTSTATUS (WINAPI *def_NtQuerySymbolicLinkObject)(HANDLE LinkHandle,PUNICODE_STRING LinkTarget,PULONG ReturnedLength);
+
 typedef ULONG (WINAPI *def_RtlNtStatusToDosError)(NTSTATUS Status);
+typedef NTSTATUS (WINAPI *def_NtClose)(HANDLE Handle);
 
 //Flags from waliedassar
 #define NtCreateThreadExFlagCreateSuspended  0x1
 #define NtCreateThreadExFlagSuppressDllMains 0x2
 #define NtCreateThreadExFlagHideFromDebugger 0x4
+
+#define SYMBOLIC_LINK_QUERY (0x0001)
 
 class NativeWinApi {
 public:
@@ -461,9 +467,17 @@ public:
 	static def_NtSetInformationThread NtSetInformationThread;
 	static def_NtSuspendProcess NtSuspendProcess;
 	static def_NtTerminateProcess NtTerminateProcess;
+    static def_NtOpenSymbolicLinkObject NtOpenSymbolicLinkObject;
+    static def_NtQuerySymbolicLinkObject NtQuerySymbolicLinkObject;
 
-
+    static def_NtClose NtClose;
 	static def_RtlNtStatusToDosError RtlNtStatusToDosError;
+
+    static void RtlInitUnicodeString(PUNICODE_STRING DestinationString, PWSTR SourceString)
+    {
+        DestinationString->Buffer = SourceString;
+        DestinationString->MaximumLength = DestinationString->Length = (USHORT)wcslen(SourceString) * sizeof(WCHAR);
+    }
 
 	static void initialize();
 
