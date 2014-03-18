@@ -31,7 +31,7 @@ public:
 	DisassemblerAddressType type;
 	DWORD moduleSize;
 
-	bool operator<(DisassemblerAddressComment rhs) { return address < rhs.address; }
+	bool operator<(const DisassemblerAddressComment& rhs) { return address < rhs.address; }
 };
 
 class DisassemblerGui : public CDialogImpl<DisassemblerGui>, public CWinDataExchange<DisassemblerGui>, public CDialogResize<DisassemblerGui>

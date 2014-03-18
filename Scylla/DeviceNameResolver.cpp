@@ -81,6 +81,9 @@ void DeviceNameResolver::fixVirtualDevices()
 
         if(NT_SUCCESS(NativeWinApi::NtOpenSymbolicLinkObject(&hFile, SYMBOLIC_LINK_QUERY, &oa)))
         {
+            unicodeOutput.Length = MAX_PATH * 2 * sizeof(WCHAR);
+            unicodeOutput.MaximumLength = unicodeOutput.Length;
+
             if (NT_SUCCESS(NativeWinApi::NtQuerySymbolicLinkObject(hFile, &unicodeOutput, &retLen)))
             {
                 hardDisk.longNameLength = wcslen(unicodeOutput.Buffer);

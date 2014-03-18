@@ -100,7 +100,7 @@ bool ConfigurationHolder::saveNumericToConfigFile(const Configuration & configOb
 	}
 
 	BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), buf, configPath);
-	return ret == TRUE;
+	return !!ret;
 }
 
 bool ConfigurationHolder::readNumericFromConfigFile(Configuration & configObject, int nBase)
@@ -124,7 +124,7 @@ bool ConfigurationHolder::readNumericFromConfigFile(Configuration & configObject
 bool ConfigurationHolder::saveStringToConfigFile(const Configuration & configObject) const
 {
 	BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), configObject.getString(), configPath);
-	return ret == TRUE;
+	return !!ret;
 }
 
 bool ConfigurationHolder::readStringFromConfigFile(Configuration & configObject)
@@ -151,7 +151,7 @@ bool ConfigurationHolder::saveBooleanToConfigFile(const Configuration & configOb
 {
 	const WCHAR *boolValue = configObject.isTrue() ? L"1" : L"0";
 	BOOL ret = WritePrivateProfileString(CONFIG_FILE_SECTION_NAME, configObject.getName(), boolValue, configPath);
-	return ret == TRUE;
+	return !!ret;
 }
 
 bool ConfigurationHolder::loadConfig(Configuration & configObject)
