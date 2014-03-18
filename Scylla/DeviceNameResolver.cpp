@@ -60,6 +60,7 @@ bool DeviceNameResolver::resolveDeviceLongNameToShort(const TCHAR * sourcePath, 
 
 void DeviceNameResolver::fixVirtualDevices()
 {
+    const USHORT BufferSize = MAX_PATH * 2 * sizeof(WCHAR);
     WCHAR longCopy[MAX_PATH] = {0};
     OBJECT_ATTRIBUTES oa = {0};
     UNICODE_STRING unicodeInput = {0};
@@ -68,9 +69,9 @@ void DeviceNameResolver::fixVirtualDevices()
     ULONG retLen = 0;
     HardDisk hardDisk;
 
-    unicodeOutput.Length = MAX_PATH * 2 * sizeof(WCHAR);
-    unicodeOutput.MaximumLength = unicodeOutput.Length;
-    unicodeOutput.Buffer = (PWSTR)calloc(unicodeOutput.Length, 1);
+    unicodeOutput.Buffer = (PWSTR)malloc(BufferSize);
+    if (!unicodeOutput.Buffer)
+        return;
 
     for (unsigned int i = 0; i < deviceNameList.size(); i++)
     {
@@ -81,8 +82,9 @@ void DeviceNameResolver::fixVirtualDevices()
 
         if(NT_SUCCESS(NativeWinApi::NtOpenSymbolicLinkObject(&hFile, SYMBOLIC_LINK_QUERY, &oa)))
         {
-            unicodeOutput.Length = MAX_PATH * 2 * sizeof(WCHAR);
+            unicodeOutput.Length = BufferSize;
             unicodeOutput.MaximumLength = unicodeOutput.Length;
+            ZeroMemory(unicodeOutput.Buffer, unicodeOutput.Length);
 
             if (NT_SUCCESS(NativeWinApi::NtQuerySymbolicLinkObject(hFile, &unicodeOutput, &retLen)))
             {
