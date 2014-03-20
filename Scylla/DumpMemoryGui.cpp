@@ -540,7 +540,12 @@ bool DumpMemoryGui::getMappedFilename( Memory* memory )
 
 	if (GetMappedFileNameW(ProcessAccessHelp::hProcess, (LPVOID)memory->address, filename, _countof(filename)) > 0)
 	{
-		return deviceNameResolver->resolveDeviceLongNameToShort(filename, memory->mappedFilename);
+		if (!deviceNameResolver->resolveDeviceLongNameToShort(filename, memory->mappedFilename))
+        {
+            wcscpy_s(memory->mappedFilename, filename);
+        }
+
+        return true;
 	}
 
 	return false;

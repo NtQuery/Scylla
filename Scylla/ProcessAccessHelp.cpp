@@ -682,8 +682,15 @@ bool ProcessAccessHelp::getProcessModules(HANDLE hProcess, std::vector<ModuleInf
                 {
                     if (!deviceNameResolver.resolveDeviceLongNameToShort(filename, module.fullPath))
                     {
-                        MessageBoxW(0, filename, L"Cannot resolve this path!", MB_ICONERROR);
+                        if (!GetModuleFileNameExW(hProcess, (HMODULE)module.modBaseAddr, module.fullPath, _countof(module.fullPath)))
+                        {
+                            wcscpy_s(module.fullPath, filename);
+                        }
                     }
+                }
+                else
+                {
+                    GetModuleFileNameExW(hProcess, (HMODULE)module.modBaseAddr, module.fullPath, _countof(module.fullPath));
                 }
 
                 moduleList.push_back(module);

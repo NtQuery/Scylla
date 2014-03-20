@@ -132,7 +132,10 @@ bool ProcessLister::getAbsoluteFilePath(HANDLE hProcess, Process * process)
 #endif
 			//some virtual volumes
 
-            MessageBoxW(0, processPath, L"Cannot resolve this path!", MB_ICONERROR);        
+            if (GetModuleFileNameExW(hProcess, 0, process->fullPath, _countof(process->fullPath)) != 0)
+            {
+                retVal = true;
+            }       
 		}
 		else
 		{
