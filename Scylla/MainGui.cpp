@@ -841,22 +841,22 @@ void MainGui::iatAutosearchActionHandler()
 			{
 				if (iatSearch.searchImportAddressTableInProcess(searchAddress, &addressIATAdv, &sizeIATAdv, true))
 				{
-					Scylla::windowLog.log(L"IAT Search Advanced: IAT VA " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" Size 0x%04X (%d)", addressIATAdv, addressIATAdv - ProcessAccessHelp::targetImageBase, sizeIATAdv, sizeIATAdv);
+					Scylla::windowLog.log(L"IAT Search Adv: IAT VA " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" Size 0x%04X (%d)", addressIATAdv, addressIATAdv - ProcessAccessHelp::targetImageBase, sizeIATAdv, sizeIATAdv);
 				}
 				else
 				{
-					Scylla::windowLog.log(L"IAT Search Advanced: IAT not found at OEP " PRINTF_DWORD_PTR_FULL L"!", searchAddress);
+					Scylla::windowLog.log(L"IAT Search Adv: IAT not found at OEP " PRINTF_DWORD_PTR_FULL L"!", searchAddress);
 				}
 			}
 
 
 			if (iatSearch.searchImportAddressTableInProcess(searchAddress, &addressIAT, &sizeIAT, false))
 			{
-				Scylla::windowLog.log(L"IAT Search Normal: IAT VA " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" Size 0x%04X (%d)", addressIAT, addressIAT - ProcessAccessHelp::targetImageBase, sizeIAT, sizeIAT);
+				Scylla::windowLog.log(L"IAT Search Nor: IAT VA " PRINTF_DWORD_PTR_FULL L" RVA " PRINTF_DWORD_PTR_FULL L" Size 0x%04X (%d)", addressIAT, addressIAT - ProcessAccessHelp::targetImageBase, sizeIAT, sizeIAT);
 			}
 			else
 			{
-				Scylla::windowLog.log(L"IAT Search Normal: IAT not found at OEP " PRINTF_DWORD_PTR_FULL L"!", searchAddress);
+				Scylla::windowLog.log(L"IAT Search Nor: IAT not found at OEP " PRINTF_DWORD_PTR_FULL L"!", searchAddress);
 			}
 
 			if (addressIAT != 0 && addressIATAdv == 0)

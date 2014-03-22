@@ -5,6 +5,7 @@
 #include "Architecture.h"
 #include "SystemInformation.h"
 #include "StringConversion.h"
+#include "PeParser.h"
 
 stdext::hash_multimap<DWORD_PTR, ApiInfo *> ApiReader::apiList; //api look up table
 std::map<DWORD_PTR, ImportModuleThunk> *  ApiReader::moduleThunkList; //store found apis
@@ -12,7 +13,7 @@ std::map<DWORD_PTR, ImportModuleThunk> *  ApiReader::moduleThunkList; //store fo
 DWORD_PTR ApiReader::minApiAddress = 0xFFFFFFFF;
 DWORD_PTR ApiReader::maxApiAddress = 0;
 
-//#define DEBUG_COMMENTS
+#define DEBUG_COMMENTS
 
 void ApiReader::readApisFromModuleList()
 {
@@ -290,6 +291,14 @@ BYTE * ApiReader::getExportTableFromProcess(ModuleInfo * module, PIMAGE_NT_HEADE
 	{
 		bufferExportTable = new BYTE[readSize];
 
+        if (!bufferExportTable)
+        {
+#ifdef DEBUG_COMMENTS
+            Scylla::debugLog.log(L"Something is wrong with the PE Header here Export table size %d", readSize);
+#endif
+            return 0;
+        }
+
 		if(!readMemoryFromProcess(module->modBaseAddr + pNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress, readSize, bufferExportTable))
 		{
 #ifdef DEBUG_COMMENTS
@@ -315,17 +324,14 @@ void ApiReader::parseModuleWithProcess(ModuleInfo * module)
 	PIMAGE_DOS_HEADER pDosHeader = 0;
 	BYTE *bufferHeader = 0;
 	BYTE *bufferExportTable = 0;
+    PeParser peParser(module->fullPath, false);
 
+    if (!peParser.isValidPeFile())
+        return;
 
-	bufferHeader = getHeaderFromProcess(module);
+    pNtHeader = peParser.getCurrentNtHeader();
 
-	if (bufferHeader == 0)
-		return;
-
-	pDosHeader = (PIMAGE_DOS_HEADER)bufferHeader;
-	pNtHeader = (PIMAGE_NT_HEADERS)((DWORD_PTR)bufferHeader + (DWORD_PTR)(pDosHeader->e_lfanew));
-
-	if (isPeAndExportTableValid(pNtHeader))
+	if (peParser.hasExportDirectory())
 	{
 		bufferExportTable = getExportTableFromProcess(module, pNtHeader);
 
@@ -335,8 +341,6 @@ void ApiReader::parseModuleWithProcess(ModuleInfo * module)
 			delete[] bufferExportTable;
 		}
 	}
-
-	delete[] bufferHeader;
 }
 
 void ApiReader::parseExportTable(ModuleInfo *module, PIMAGE_NT_HEADERS pNtHeader, PIMAGE_EXPORT_DIRECTORY pExportDir, DWORD_PTR deltaAddress)
@@ -623,6 +627,10 @@ void ApiReader::setModulePriority(ModuleInfo * module)
 	{
 		module->priority = 2;
 	}
+    else if (!_wcsnicmp(moduleFileName, L"api-ms-win-", 11))
+    {
+        module->priority = 0;
+    }
 	else
 	{
 		module->priority = 1;

@@ -1271,3 +1271,12 @@ DWORD PeParser::getSectionAddressRVAByIndex( int index )
 {
 	return listPeSection[index].sectionHeader.VirtualAddress;
 }
+
+PIMAGE_NT_HEADERS PeParser::getCurrentNtHeader()
+{
+#ifdef _WIN64
+    return pNTHeader64;
+#else
+    return pNTHeader32;
+#endif
+}

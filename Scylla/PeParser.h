@@ -70,6 +70,8 @@ public:
 	DWORD_PTR convertRVAToOffsetVector(DWORD_PTR dwRVA);
 	DWORD_PTR convertRVAToOffsetRelative(DWORD_PTR dwRVA);
 	DWORD getSectionAddressRVAByIndex( int index );
+
+    PIMAGE_NT_HEADERS getCurrentNtHeader();
 protected:
 	PeParser();
 
