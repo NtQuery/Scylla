@@ -44,6 +44,8 @@ void OptionsGui::saveOptions() const
 	Scylla::config[FIX_DIRECT_IMPORTS_NORMAL].setBool(fixDirectImportsNormal);
 	Scylla::config[FIX_DIRECT_IMPORTS_UNIVERSAL].setBool(fixDirectImportsUniversal);
 	Scylla::config[CREATE_NEW_IAT_IN_SECTION].setBool(createNewIatInSection);
+    Scylla::config[DONT_CREATE_NEW_SECTION].setBool(dontCreateNewSection);
+    Scylla::config[APIS_ALWAYS_FROM_DISK].setBool(readApisAlwaysFromDisk);
 }
 
 void OptionsGui::loadOptions()
@@ -65,4 +67,6 @@ void OptionsGui::loadOptions()
 	fixDirectImportsNormal = Scylla::config[FIX_DIRECT_IMPORTS_NORMAL].getBool();
 	fixDirectImportsUniversal = Scylla::config[FIX_DIRECT_IMPORTS_UNIVERSAL].getBool();
 	createNewIatInSection = Scylla::config[CREATE_NEW_IAT_IN_SECTION].getBool();
+    dontCreateNewSection = Scylla::config[DONT_CREATE_NEW_SECTION].getBool();
+    readApisAlwaysFromDisk = Scylla::config[APIS_ALWAYS_FROM_DISK].getBool();
 }

@@ -23,7 +23,9 @@ ConfigurationHolder::ConfigurationHolder(const WCHAR* fileName)
 	config[SCAN_DIRECT_IMPORTS]			= Configuration(L"SCAN_DIRECT_IMPORTS",			 Configuration::Boolean);
 	config[FIX_DIRECT_IMPORTS_NORMAL]			= Configuration(L"FIX_DIRECT_IMPORTS_NORMAL",			 Configuration::Boolean);
 	config[FIX_DIRECT_IMPORTS_UNIVERSAL]		= Configuration(L"FIX_DIRECT_IMPORTS_UNIVERSAL",			 Configuration::Boolean);
-	config[CREATE_NEW_IAT_IN_SECTION]	= Configuration(L"CREATE_NEW_IAT_IN_SECTION",	 Configuration::Boolean);
+    config[CREATE_NEW_IAT_IN_SECTION]	=   Configuration(L"CREATE_NEW_IAT_IN_SECTION",	 Configuration::Boolean);
+    config[DONT_CREATE_NEW_SECTION] 	=   Configuration(L"DONT_CREATE_NEW_SECTION",	 Configuration::Boolean);
+    config[APIS_ALWAYS_FROM_DISK]	    =   Configuration(L"APIS_ALWAYS_FROM_DISK",	     Configuration::Boolean);
 	buildConfigFilePath(fileName);
 }
 

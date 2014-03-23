@@ -33,6 +33,8 @@ public:
 		DDX_CHECK(IDC_FIXDIRECTIMPORTSNORMAL, fixDirectImportsNormal)
 		DDX_CHECK(IDC_FIXDIRECTIMPORTSUNIVERSAL, fixDirectImportsUniversal)
 		DDX_CHECK(IDC_NEWIATINSECTION, createNewIatInSection)
+        DDX_CHECK(IDC_CHECKNOSECTION, dontCreateNewSection)
+        DDX_CHECK(IDC_CHECKAPIALWAYSDISK, readApisAlwaysFromDisk)
 	END_DDX_MAP()
 
 	BEGIN_MSG_MAP(OptionsGui)
@@ -62,6 +64,8 @@ protected:
 	bool fixDirectImportsNormal;
 	bool fixDirectImportsUniversal;
 	bool createNewIatInSection;
+    bool dontCreateNewSection;
+    bool readApisAlwaysFromDisk;
 	// Controls
 
 	CEdit EditSectionName;

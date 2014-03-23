@@ -13,10 +13,19 @@ std::map<DWORD_PTR, ImportModuleThunk> *  ApiReader::moduleThunkList; //store fo
 DWORD_PTR ApiReader::minApiAddress = 0xFFFFFFFF;
 DWORD_PTR ApiReader::maxApiAddress = 0;
 
-#define DEBUG_COMMENTS
+//#define DEBUG_COMMENTS
 
 void ApiReader::readApisFromModuleList()
 {
+    if (Scylla::config[APIS_ALWAYS_FROM_DISK].isTrue())
+    {
+        readExportTableAlwaysFromDisk = true;
+    }
+    else
+    {
+        readExportTableAlwaysFromDisk = false;
+    }
+
 	for (unsigned int i = 0; i < moduleList.size();i++)
 	{
 		setModulePriority(&moduleList[i]);
@@ -47,13 +56,20 @@ void ApiReader::parseModule(ModuleInfo *module)
 	{
 		parseModuleWithMapping(module);
 	}
-	else if (isModuleLoadedInOwnProcess(module))
+	else if (isModuleLoadedInOwnProcess(module)) //this is always ok
 	{
 		parseModuleWithOwnProcess(module);
 	}
 	else
 	{
-		parseModuleWithProcess(module);
+		if (readExportTableAlwaysFromDisk)
+		{
+			parseModuleWithMapping(module);
+		}
+		else
+		{
+			parseModuleWithProcess(module);
+		}
 	}
 	
 	module->isAlreadyParsed = true;
@@ -324,7 +340,7 @@ void ApiReader::parseModuleWithProcess(ModuleInfo * module)
 	PIMAGE_DOS_HEADER pDosHeader = 0;
 	BYTE *bufferHeader = 0;
 	BYTE *bufferExportTable = 0;
-    PeParser peParser(module->fullPath, false);
+    PeParser peParser(module->modBaseAddr, false);
 
     if (!peParser.isValidPeFile())
         return;

@@ -30,7 +30,7 @@ public:
 	void clearAll();
     bool isInvalidMemoryForIat( DWORD_PTR address );
 private:
-
+    bool readExportTableAlwaysFromDisk;
 	void parseIAT(DWORD_PTR addressIAT, BYTE * iatBuffer, SIZE_T size);
 
 	void addApi(char *functionName, WORD hint, WORD ordinal, DWORD_PTR va, DWORD_PTR rva, bool isForwarded, ModuleInfo *moduleInfo);
