@@ -56,12 +56,15 @@ Keyboard Shortcuts
 Changelog
 ---------
 
-Version 0.9.5a
+Version 0.9.6
 
-- Fixed virtual device bug caused by QueryDosDeviceW bug
+- improved iat search
+- fixed bug in api resolve engine
+- new option: parse APIs always from disk -> slower, useful against pe header modifications
 
 Version 0.9.5
 
+- Fixed virtual device bug caused by QueryDosDeviceW bug
 - improved process lister
 - improved module lister
 - improved dump name
