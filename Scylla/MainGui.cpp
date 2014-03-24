@@ -1261,14 +1261,21 @@ void MainGui::dumpActionHandler()
 			peFile = new PeParser(modBase, true);
 		}
 
-		if (peFile->dumpProcess(modBase, entrypoint, selectedFilePath))
+		if (peFile->isValidPeFile())
 		{
-			Scylla::windowLog.log(L"Dump success %s", selectedFilePath);
+			if (peFile->dumpProcess(modBase, entrypoint, selectedFilePath))
+			{
+				Scylla::windowLog.log(L"Dump success %s", selectedFilePath);
+			}
+			else
+			{
+				Scylla::windowLog.log(L"Error: Cannot dump image.");
+				MessageBox(L"Cannot dump image.", L"Failure", MB_ICONERROR);
+			}
 		}
 		else
 		{
-			Scylla::windowLog.log(L"Error: Cannot dump image.");
-			MessageBox(L"Cannot dump image.", L"Failure", MB_ICONERROR);
+			Scylla::windowLog.log(L"Error: Invalid PE file or invalid PE header. Try reading PE header from disk/process.");
 		}
 
 		delete peFile;

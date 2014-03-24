@@ -1209,7 +1209,7 @@ bool ApiReader::isInvalidMemoryForIat( DWORD_PTR address )
 
    if (VirtualQueryEx(ProcessAccessHelp::hProcess, (LPCVOID)address, &memBasic, sizeof(MEMORY_BASIC_INFORMATION)))
    {
-       if((memBasic.State == MEM_COMMIT) && ProcessAccessHelp::isPageExecutable(memBasic.Protect))
+       if((memBasic.State == MEM_COMMIT) && ProcessAccessHelp::isPageAccessable(memBasic.Protect))
        {
            return false;
        }
