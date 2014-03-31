@@ -140,8 +140,8 @@ void ApiReader::handleForwardedApi(DWORD_PTR vaStringPointer,char * functionName
 
 	searchFunctionName++;
 
-	//Windows 7
-	if (!strncmp(dllName,"api-ms-win-", 11))
+	//Since Windows 7
+	if (!_strnicmp(dllName, "API-", 4) || !_strnicmp(dllName, "EXT-", 4)) //API_SET_PREFIX_NAME, API_SET_EXTENSION
 	{
 		/* 
 		    Info: http://www.nirsoft.net/articles/windows_7_kernel_architecture_changes.html
@@ -643,7 +643,7 @@ void ApiReader::setModulePriority(ModuleInfo * module)
 	{
 		module->priority = 2;
 	}
-    else if (!_wcsnicmp(moduleFileName, L"api-ms-win-", 11))
+    else if (!_wcsnicmp(moduleFileName, L"API-", 4) || !_wcsnicmp(moduleFileName, L"EXT-", 4)) //API_SET_PREFIX_NAME, API_SET_EXTENSION
     {
         module->priority = 0;
     }
