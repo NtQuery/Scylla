@@ -459,7 +459,7 @@ DWORD PeParser::getSectionHeaderBasedFileSize()
 	//this is needed if the sections aren't sorted by their RawOffset (e.g. Petite)
 	for (WORD i = 0; i < getNumberOfSections(); i++)
 	{
-		if (listPeSection[i].sectionHeader.PointerToRawData > lastRawOffset)
+		if ((listPeSection[i].sectionHeader.PointerToRawData + listPeSection[i].sectionHeader.SizeOfRawData) > (lastRawOffset + lastRawSize))
 		{
 			lastRawOffset = listPeSection[i].sectionHeader.PointerToRawData;
 			lastRawSize = listPeSection[i].sectionHeader.SizeOfRawData;
@@ -476,7 +476,7 @@ DWORD PeParser::getSectionHeaderBasedSizeOfImage()
 	//this is needed if the sections aren't sorted by their RawOffset (e.g. Petite)
 	for (WORD i = 0; i < getNumberOfSections(); i++)
 	{
-		if (listPeSection[i].sectionHeader.VirtualAddress > lastVirtualOffset)
+		if ((listPeSection[i].sectionHeader.VirtualAddress + listPeSection[i].sectionHeader.Misc.VirtualSize) > (lastVirtualOffset + lastVirtualSize))
 		{
 			lastVirtualOffset = listPeSection[i].sectionHeader.VirtualAddress;
 			lastVirtualSize = listPeSection[i].sectionHeader.Misc.VirtualSize;
