@@ -32,9 +32,9 @@ void DeviceNameResolver::initDeviceNameList()
 			hardDisk.shortName[1] = TEXT(':');
 			hardDisk.shortName[2] = 0;
 
+            _tcscat_s(longName, TEXT("\\"));
 			hardDisk.longNameLength = _tcslen(longName);
 
-			
 			_tcscpy_s(hardDisk.longName, longName);
 			deviceNameList.push_back(hardDisk);
 		}
