@@ -398,23 +398,16 @@ bool ImportsHandling::setImport(CTreeItem item, const WCHAR * moduleName, const 
 				import->valid = valid;
 				import->suspect = suspect;
 
-				updateImportInTreeView(import, item);
-
-				if (module->isValid() && module->moduleName[0] == L'?')
+				if (module->isValid())
 				{
-					//update module name
-					wcscpy_s(module->moduleName, module->thunkList.begin()->second.moduleName);
 					scanAndFixModuleList();
 					displayAllImports();
 				}
 				else
 				{
-					//updateModuleInTreeView(module, module->hTreeItem);
-
+					updateImportInTreeView(import, item);
 					updateCounts();
 				}
-
-
 				return true;
 			}
 		}
@@ -565,6 +558,7 @@ DWORD_PTR ImportsHandling::getApiAddressByNode(CTreeItem item)
 
 void ImportsHandling::scanAndFixModuleList()
 {
+	WCHAR prevModuleName[MAX_PATH] = {0};
 	std::map<DWORD_PTR, ImportModuleThunk>::iterator it_module;
 	std::map<DWORD_PTR, ImportThunk>::iterator it_import;
 
@@ -574,6 +568,10 @@ void ImportsHandling::scanAndFixModuleList()
 		ImportModuleThunk &moduleThunk = it_module->second;
 
 		it_import = moduleThunk.thunkList.begin();
+
+		ImportThunk * importThunkPrev;
+		importThunkPrev = &it_import->second;
+
 		while (it_import != moduleThunk.thunkList.end())
 		{
 			ImportThunk &importThunk = it_import->second;
@@ -584,7 +582,8 @@ void ImportsHandling::scanAndFixModuleList()
 			}
 			else 
 			{
-				if (isNewModule(importThunk.moduleName))
+				
+				if (_wcsicmp(importThunk.moduleName, prevModuleName))
 				{
 					addModuleToModuleList(importThunk.moduleName, importThunk.rva);
 				}
@@ -592,6 +591,7 @@ void ImportsHandling::scanAndFixModuleList()
 				addFunctionToModuleList(&importThunk);
 			}
 
+			wcscpy_s(prevModuleName, importThunk.moduleName);
 			it_import++;
 		}
 

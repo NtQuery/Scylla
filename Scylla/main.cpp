@@ -112,15 +112,31 @@ void RemoveExceptionHandler()
 LONG WINAPI HandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionInfo)
 {
 	WCHAR registerInfo[220];
-	WCHAR message[159 + _countof(registerInfo)];
+	WCHAR filepath[MAX_PATH] = {0};
+	WCHAR file[MAX_PATH] = {0};
+	WCHAR message[MAX_PATH + 159 + _countof(registerInfo)];
+	DWORD_PTR baseAddress = 0;
 	DWORD_PTR address = (DWORD_PTR)ExceptionInfo->ExceptionRecord->ExceptionAddress;
+
+	wcscpy_s(filepath, L"unknown");
+	wcscpy_s(file, L"unknown");
+
+	if (GetMappedFileNameW(GetCurrentProcess(), (LPVOID)address, filepath, _countof(filepath)) > 0)
+	{
+		WCHAR *temp = wcsrchr(filepath, '\\');
+		if (temp)
+		{
+			temp++;
+			wcscpy_s(file, temp);
+		}
+	}
 	
-	swprintf_s(message, _countof(message), TEXT("ExceptionCode %08X\r\nExceptionFlags %08X\r\nNumberParameters %08X\r\nExceptionAddress VA ")TEXT(PRINTF_DWORD_PTR_FULL_S)TEXT("\r\nExceptionAddress RVA ")TEXT(PRINTF_DWORD_PTR_FULL_S)TEXT("\r\n\r\n"), 
+	swprintf_s(message, _countof(message), TEXT("ExceptionCode %08X\r\nExceptionFlags %08X\r\nNumberParameters %08X\r\nExceptionAddress VA ")TEXT(PRINTF_DWORD_PTR_FULL_S)TEXT("\r\nExceptionAddress module %s\r\n\r\n"), 
 	ExceptionInfo->ExceptionRecord->ExceptionCode,
 	ExceptionInfo->ExceptionRecord->ExceptionFlags, 
 	ExceptionInfo->ExceptionRecord->NumberParameters, 
 	address, 
-	address - (DWORD_PTR)GetModuleHandle(NULL));
+	file);
 
 #ifdef _WIN64
 	swprintf_s(registerInfo, _countof(registerInfo),TEXT("rax=0x%p, rbx=0x%p, rdx=0x%p, rcx=0x%p, rsi=0x%p, rdi=0x%p, rbp=0x%p, rsp=0x%p, rip=0x%p"),

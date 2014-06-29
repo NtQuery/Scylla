@@ -902,6 +902,7 @@ void MainGui::getImportsActionHandler()
 	if (addressIAT && sizeIAT)
 	{
 		apiReader.readAndParseIAT(addressIAT, sizeIAT, importsHandling.moduleList);
+		importsHandling.scanAndFixModuleList();
 		importsHandling.displayAllImports();
 
 		updateStatusBar();
