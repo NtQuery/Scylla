@@ -1,6 +1,7 @@
 #generic files/directories to ignore
 Win32/
 x64/
+ipch/
 *.opensdf
 *.sdf
 *.aps
