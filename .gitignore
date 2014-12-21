@@ -3,6 +3,7 @@ Win32/
 x64/
 *.opensdf
 *.sdf
+*.aps
 *.suo
 Scylla.vcxproj.user
 
@@ -19,4 +20,3 @@ tinyxml/*
 #WTL ignore + exceptions
 WTL/*
 !WTL/README
-
