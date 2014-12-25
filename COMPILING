@@ -1,0 +1,7 @@
+To compile Scylla you need to have VS2008 installed.
+In addition to that you need source codes for the following libraries:
+diStorm
+tinyxml
+WTL
+
+See the corresponding README files for installation instructions.
