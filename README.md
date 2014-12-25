@@ -56,6 +56,13 @@ Keyboard Shortcuts
 Changelog
 ---------
 
+Version 0.9.7
+
+- Fixed bug bad allocation https://forum.tuts4you.com/topic/36458-scylla-097b-crash-on-pep-50-unpackme/
+- Fixed bug https://forum.tuts4you.com/topic/35352-scylla-themida-v2180-iat-problem/
+- Fixed bug with api selection https://forum.tuts4you.com/topic/35912-scylla-097-problem-acprotect/
+- Included .NET binary + source, ScyllaToImprecTree to convert the api export to imprec
+
 Version 0.9.6
 
 - improved iat search
