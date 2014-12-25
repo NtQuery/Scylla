@@ -114,7 +114,7 @@ LONG WINAPI HandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionInfo)
 	WCHAR registerInfo[220];
 	WCHAR filepath[MAX_PATH] = {0};
 	WCHAR file[MAX_PATH] = {0};
-	WCHAR message[MAX_PATH + 159 + _countof(registerInfo)];
+	WCHAR message[MAX_PATH + 200 + _countof(registerInfo)];
 	DWORD_PTR baseAddress = 0;
 	DWORD_PTR address = (DWORD_PTR)ExceptionInfo->ExceptionRecord->ExceptionAddress;
 
@@ -130,12 +130,15 @@ LONG WINAPI HandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionInfo)
 			wcscpy_s(file, temp);
 		}
 	}
+
+	DWORD_PTR moduleBase = (DWORD_PTR)GetModuleHandleW(file);
 	
-	swprintf_s(message, _countof(message), TEXT("ExceptionCode %08X\r\nExceptionFlags %08X\r\nNumberParameters %08X\r\nExceptionAddress VA ")TEXT(PRINTF_DWORD_PTR_FULL_S)TEXT("\r\nExceptionAddress module %s\r\n\r\n"), 
+	swprintf_s(message, _countof(message), TEXT("ExceptionCode %08X\r\nExceptionFlags %08X\r\nNumberParameters %08X\r\nExceptionAddress VA ")TEXT(PRINTF_DWORD_PTR_FULL_S)TEXT(" - Base ")TEXT(PRINTF_DWORD_PTR_FULL_S)TEXT("\r\nExceptionAddress module %s\r\n\r\n"), 
 	ExceptionInfo->ExceptionRecord->ExceptionCode,
 	ExceptionInfo->ExceptionRecord->ExceptionFlags, 
 	ExceptionInfo->ExceptionRecord->NumberParameters, 
-	address, 
+	address,
+	moduleBase,
 	file);
 
 #ifdef _WIN64
