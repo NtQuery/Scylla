@@ -468,6 +468,11 @@ void IATSearch::filterIATPointersList( std::set<DWORD_PTR> & iatPointers )
 		}
 	}
 
+	if (iatPointers.empty()) {
+		return;
+	}
+
+	//delete bad code pointers.
 
 	bool erased = true;
 
@@ -479,7 +484,7 @@ void IATSearch::filterIATPointersList( std::set<DWORD_PTR> & iatPointers )
 
 		for (; iter != iatPointers.end(); iter++)
 		{
-			if ((*iter - lastPointer) > 0x100) //check difference
+			if ((*iter - lastPointer) > 0x100) //check pointer difference, a typical difference is 4 on 32bit systems
 			{
                 if (isIATPointerValid(lastPointer, false) == false || isIATPointerValid(*iter, false) == false)
                 {
@@ -504,6 +509,20 @@ void IATSearch::filterIATPointersList( std::set<DWORD_PTR> & iatPointers )
 
 }
 
+//A big section size is a common anti-debug/anti-dump trick, limit the max size to 100 000 000 bytes
+
+void adjustSizeForBigSections(DWORD * badValue)
+{
+	if (*badValue > 100000000)
+	{
+		*badValue = 100000000;
+	}
+}
+
+bool isSectionSizeTooBig(SIZE_T sectionSize) {
+	return (sectionSize > 100000000);
+}
+
 void IATSearch::getMemoryBaseAndSizeForIat( DWORD_PTR address, DWORD_PTR* baseAddress, DWORD* baseSize )
 {
     MEMORY_BASIC_INFORMATION memBasic1 = {0};
@@ -522,24 +541,34 @@ void IATSearch::getMemoryBaseAndSizeForIat( DWORD_PTR address, DWORD_PTR* baseAd
     *baseAddress = (DWORD_PTR)memBasic2.BaseAddress;
     *baseSize = (DWORD)memBasic2.RegionSize;
 
+	adjustSizeForBigSections(baseSize);
+
     //Get the neighbours
-    if (!VirtualQueryEx(hProcess,(LPCVOID)((DWORD_PTR)memBasic2.BaseAddress - 1), &memBasic1, sizeof(MEMORY_BASIC_INFORMATION)))
+    if (VirtualQueryEx(hProcess,(LPCVOID)((DWORD_PTR)memBasic2.BaseAddress - 1), &memBasic1, sizeof(MEMORY_BASIC_INFORMATION)))
     {
-        return;
-    }
-    if (!VirtualQueryEx(hProcess,(LPCVOID)((DWORD_PTR)memBasic2.BaseAddress + (DWORD_PTR)memBasic2.RegionSize), &memBasic3, sizeof(MEMORY_BASIC_INFORMATION)))
-    {
-        return;
-    }
+		if (VirtualQueryEx(hProcess,(LPCVOID)((DWORD_PTR)memBasic2.BaseAddress + (DWORD_PTR)memBasic2.RegionSize), &memBasic3, sizeof(MEMORY_BASIC_INFORMATION)))
+		{
+			if (memBasic3.State != MEM_COMMIT || 
+				memBasic1.State != MEM_COMMIT || 
+				memBasic3.Protect & PAGE_NOACCESS || 
+				memBasic1.Protect & PAGE_NOACCESS)
+			{
+				return;
+			}
+			else
+			{
+				if (isSectionSizeTooBig(memBasic1.RegionSize) || 
+					isSectionSizeTooBig(memBasic2.RegionSize) || 
+					isSectionSizeTooBig(memBasic3.RegionSize)) {
+					return;
+				}
 
-    if (memBasic3.State != MEM_COMMIT || memBasic1.State != MEM_COMMIT)
-    {
-        return;
+				start = (DWORD_PTR)memBasic1.BaseAddress;
+				end = (DWORD_PTR)memBasic3.BaseAddress + (DWORD_PTR)memBasic3.RegionSize;
+
+				*baseAddress = start;
+				*baseSize = (DWORD)(end - start);
+			}
+		}
     }
-
-    start = (DWORD_PTR)memBasic1.BaseAddress;
-    end = (DWORD_PTR)memBasic3.BaseAddress + (DWORD_PTR)memBasic3.RegionSize;
-
-    *baseAddress = start;
-    *baseSize = (DWORD)(end - start);
 }
