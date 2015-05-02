@@ -486,6 +486,9 @@ void IATSearch::filterIATPointersList( std::set<DWORD_PTR> & iatPointers )
 
 	while(erased)
 	{
+		if (iatPointers.size() <= 1)
+			break;
+
 		iter = iatPointers.begin();
 		lastPointer = *iter;
 		iter++;
@@ -494,9 +497,15 @@ void IATSearch::filterIATPointersList( std::set<DWORD_PTR> & iatPointers )
 		{
 			if ((*iter - lastPointer) > 0x100) //check pointer difference, a typical difference is 4 on 32bit systems
 			{
-                if (isIATPointerValid(lastPointer, false) == false || isIATPointerValid(*iter, false) == false)
+				bool isLastValid = isIATPointerValid(lastPointer, false);
+				bool isCurrentValid = isIATPointerValid(*iter, false);
+                if (isLastValid == false || isCurrentValid == false)
                 {
-                    iter--;
+					if (isLastValid == false)
+					{
+						iter--;
+					}
+                    
                     iatPointers.erase(iter);
                     erased = true;
                     break;
