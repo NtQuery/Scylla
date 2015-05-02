@@ -10,7 +10,7 @@
 stdext::hash_multimap<DWORD_PTR, ApiInfo *> ApiReader::apiList; //api look up table
 std::map<DWORD_PTR, ImportModuleThunk> *  ApiReader::moduleThunkList; //store found apis
 
-DWORD_PTR ApiReader::minApiAddress = 0xFFFFFFFF;
+DWORD_PTR ApiReader::minApiAddress = (DWORD_PTR)-1;
 DWORD_PTR ApiReader::maxApiAddress = 0;
 
 //#define DEBUG_COMMENTS
@@ -140,18 +140,39 @@ void ApiReader::handleForwardedApi(DWORD_PTR vaStringPointer,char * functionName
 
 	searchFunctionName++;
 
+	if (strchr(searchFunctionName,'#'))
+	{
+		searchFunctionName++;
+		ordinal = (WORD)atoi(searchFunctionName);
+	}
+
 	//Since Windows 7
 	if (!_strnicmp(dllName, "API-", 4) || !_strnicmp(dllName, "EXT-", 4)) //API_SET_PREFIX_NAME, API_SET_EXTENSION
 	{
 		/* 
 		    Info: http://www.nirsoft.net/articles/windows_7_kernel_architecture_changes.html
 		*/
+		FARPROC addy = 0;
+		HMODULE hModTemp = GetModuleHandleA(dllName);
+		if (hModTemp == 0)
+		{
+			hModTemp = LoadLibraryA(dllName);
+		}
 
-		FARPROC addy = GetProcAddress(GetModuleHandleA(dllName), searchFunctionName);
-
+		if (ordinal)
+		{
+			addy = GetProcAddress(hModTemp, (char *)ordinal);
+		}
+		else
+		{
+			addy = GetProcAddress(hModTemp, searchFunctionName);
+		}
+#ifdef DEBUG_COMMENTS
+		Scylla::debugLog.log(L"API_SET_PREFIX_NAME %s %S Module Handle %p addy %p",moduleParent->fullPath, dllName, hModTemp, addy);
+#endif
 		if (addy != 0)
 		{
-			addApi(functionNameParent,0, ordinalParent, (DWORD_PTR)addy, (DWORD_PTR)addy - (DWORD_PTR)GetModuleHandleA(dllName), true, moduleParent);
+			addApi(functionNameParent,0, ordinalParent, (DWORD_PTR)addy, (DWORD_PTR)addy - (DWORD_PTR)hModTemp, true, moduleParent);
 		}
 
 		return;
@@ -187,11 +208,9 @@ void ApiReader::handleForwardedApi(DWORD_PTR vaStringPointer,char * functionName
 			}
 		}*/
 
-		if (strchr(searchFunctionName,'#'))
+		if (ordinal)
 		{
 			//forwarding by ordinal
-			searchFunctionName++;
-			ordinal = (WORD)atoi(searchFunctionName);
 			findApiByModuleAndOrdinal(module, ordinal, &vaApi, &rvaApi);
 		}
 		else
@@ -867,8 +886,14 @@ ApiInfo * ApiReader::getScoredApi(stdext::hash_multimap<DWORD_PTR, ApiInfo *>::i
 
 void ApiReader::setMinMaxApiAddress(DWORD_PTR virtualAddress)
 {
+	if (virtualAddress == 0 || virtualAddress == (DWORD_PTR)-1)
+		return;
+
 	if (virtualAddress < minApiAddress)
 	{
+#ifdef DEBUG_COMMENTS
+		Scylla::debugLog.log(L"virtualAddress %p < minApiAddress %p", virtualAddress, minApiAddress);
+#endif
 		minApiAddress = virtualAddress - 1;
 	}
 	if (virtualAddress > maxApiAddress)
@@ -910,10 +935,17 @@ void ApiReader::parseIAT(DWORD_PTR addressIAT, BYTE * iatBuffer, SIZE_T size)
 
         if (!isInvalidMemoryForIat(pIATAddress[i]))
         {
+#ifdef DEBUG_COMMENTS
+			Scylla::debugLog.log(L"min %p max %p address %p", minApiAddress, maxApiAddress, pIATAddress[i]);
+#endif
             if ( (pIATAddress[i] > minApiAddress) && (pIATAddress[i] < maxApiAddress) )
             {
 
                 apiFound = getApiByVirtualAddress(pIATAddress[i], &isSuspect);
+
+#ifdef DEBUG_COMMENTS
+				Scylla::debugLog.log(L"apiFound %p address %p", apiFound, pIATAddress[i]);
+#endif
                 if (apiFound == 0)
                 {
                     Scylla::windowLog.log(L"getApiByVirtualAddress :: No Api found " PRINTF_DWORD_PTR_FULL, pIATAddress[i]);
@@ -1061,7 +1093,7 @@ bool ApiReader::addFunctionToModuleList(ApiInfo * apiFound, DWORD_PTR va, DWORD_
 
 void ApiReader::clearAll()
 {
-	minApiAddress = -1;
+	minApiAddress = (DWORD_PTR)-1;
 	maxApiAddress = 0;
 
 	for ( stdext::hash_map<DWORD_PTR, ApiInfo *>::iterator it = apiList.begin(); it != apiList.end(); ++it )
