@@ -82,6 +82,14 @@ bool IATSearch::findIATAdvanced( DWORD_PTR startAddress, DWORD_PTR* addressIAT, 
 	*addressIAT = *(iatPointers.begin());
 	*sizeIAT = (DWORD)(*(--iatPointers.end()) - *(iatPointers.begin()) + sizeof(DWORD_PTR));
 
+	//some check, more than 2 million addresses?
+	if ((DWORD)(2000000*sizeof(DWORD_PTR)) < *sizeIAT)
+	{
+		*addressIAT = 0;
+		*sizeIAT = 0;
+		return false;
+	}
+
 	Scylla::windowLog.log(L"IAT Search Adv: Found %d (0x%X) possible IAT entries.", iatPointers.size(), iatPointers.size());
 	Scylla::windowLog.log(L"IAT Search Adv: Possible IAT first " PRINTF_DWORD_PTR_FULL L" last " PRINTF_DWORD_PTR_FULL L" entry.", *(iatPointers.begin()), *(--iatPointers.end()));
 
