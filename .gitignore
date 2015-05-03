@@ -8,11 +8,6 @@ ipch/
 *.suo
 Scylla.vcxproj.user
 
-#diStorm ignore + exceptions
-diStorm/*
-!diStorm/README
-!diStorm/diStorm.vcxproj*
-
 #tinyxml ignore + exceptions
 tinyxml/*
 !tinyxml/README
