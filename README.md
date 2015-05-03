@@ -56,6 +56,11 @@ Keyboard Shortcuts
 Changelog
 ---------
 
+Version 0.9.8
+
+- Bugfixes for x64, IAT Search
+- diStorm3 update from Jan 3rd 2015
+
 Version 0.9.7
 
 - Fixed bug bad allocation https://forum.tuts4you.com/topic/36458-scylla-097b-crash-on-pep-50-unpackme/

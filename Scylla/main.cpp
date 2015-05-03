@@ -115,6 +115,7 @@ LONG WINAPI HandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionInfo)
 	WCHAR filepath[MAX_PATH] = {0};
 	WCHAR file[MAX_PATH] = {0};
 	WCHAR message[MAX_PATH + 200 + _countof(registerInfo)];
+	WCHAR osInfo[100];
 	DWORD_PTR baseAddress = 0;
 	DWORD_PTR address = (DWORD_PTR)ExceptionInfo->ExceptionRecord->ExceptionAddress;
 
@@ -130,6 +131,8 @@ LONG WINAPI HandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionInfo)
 			wcscpy_s(file, temp);
 		}
 	}
+
+	swprintf_s(osInfo, _countof(osInfo), TEXT("Exception! Please report it! OS: %X"), GetVersion());
 
 	DWORD_PTR moduleBase = (DWORD_PTR)GetModuleHandleW(file);
 	
@@ -169,7 +172,7 @@ LONG WINAPI HandleUnknownException(struct _EXCEPTION_POINTERS *ExceptionInfo)
 
 	wcscat_s(message, _countof(message), registerInfo);
 
-	MessageBox(0, message, TEXT("Exception! Please report it!"), MB_ICONERROR);
+	MessageBox(0, message, osInfo, MB_ICONERROR);
 
-	return EXCEPTION_EXECUTE_HANDLER;
+	return EXCEPTION_CONTINUE_SEARCH;
 }

@@ -79,6 +79,9 @@ bool IATSearch::findIATAdvanced( DWORD_PTR startAddress, DWORD_PTR* addressIAT, 
 
 	filterIATPointersList(iatPointers);
 
+	if (iatPointers.size() == 0)
+		return false;
+
 	*addressIAT = *(iatPointers.begin());
 	*sizeIAT = (DWORD)(*(--iatPointers.end()) - *(iatPointers.begin()) + sizeof(DWORD_PTR));
 
