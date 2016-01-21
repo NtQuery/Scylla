@@ -51,6 +51,7 @@ bool IATSearch::findIATAdvanced( DWORD_PTR startAddress, DWORD_PTR* addressIAT, 
 #ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"findAPIAddressInIAT2 :: error reading memory");
 #endif
+		delete [] dataBuffer;
 		return false;
 	}
 
@@ -279,6 +280,7 @@ bool IATSearch::findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, D
 #ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"findIATStartAddress :: error reading memory");
 #endif
+		delete [] dataBuffer;
 		return false;
 	}
 

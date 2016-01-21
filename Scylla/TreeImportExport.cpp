@@ -40,6 +40,11 @@ bool TreeImportExport::importTreeList(std::map<DWORD_PTR, ImportModuleThunk> & m
 	}
 
 	TiXmlElement * targetElement = doc.FirstChildElement();
+	if (!targetElement)
+	{
+		Sylla::windowLog.log(L"Load Tree :: Error getting first child element in xml %S\r\n", doc.Value());
+		return false;
+	}
 
 	*addressOEP = ConvertStringToDwordPtr(targetElement->Attribute("oep_va"));
 	*addressIAT = ConvertStringToDwordPtr(targetElement->Attribute("iat_va"));

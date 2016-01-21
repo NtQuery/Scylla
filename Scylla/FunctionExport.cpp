@@ -40,12 +40,14 @@ BOOL DumpProcessW(const WCHAR * fileToDump, DWORD_PTR imagebase, DWORD_PTR entry
 		peFile = new PeParser(imagebase, true);
 	}
 
-	return peFile->dumpProcess(imagebase, entrypoint, fileResult);
+	bool result = peFile->dumpProcess(imagebase, entrypoint, fileResult);
+
+	delete peFile;
+	return result;
 }
 
 BOOL WINAPI ScyllaRebuildFileW(const WCHAR * fileToRebuild, BOOL removeDosStub, BOOL updatePeHeaderChecksum, BOOL createBackup)
 {
-
 	if (createBackup)
 	{
 		if (!ProcessAccessHelp::createBackupFile(fileToRebuild))
@@ -289,7 +291,6 @@ int WINAPI ScyllaIatFixAutoW(DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId
 	moduleList.clear();
 	ProcessAccessHelp::closeProcessHandle();
 	apiReader.clearAll();
-
 
 	return retVal;
 }

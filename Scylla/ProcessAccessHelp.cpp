@@ -601,6 +601,7 @@ LPVOID ProcessAccessHelp::createFileMappingView(const WCHAR * filePath, DWORD ac
 #ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"createFileMappingView :: GetLastError() == ERROR_ALREADY_EXISTS");
 #endif
+		CloseHandle(hMappedFile);
 		return NULL;
 	}
 
