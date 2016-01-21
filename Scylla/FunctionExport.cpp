@@ -168,11 +168,12 @@ BOOL WINAPI ScyllaDumpProcessA(DWORD_PTR pid, const char * fileToDump, DWORD_PTR
 	}
 }
 
-INT WINAPI ScyllaStartGui(DWORD dwProcessId, HINSTANCE mod)
+INT WINAPI ScyllaStartGui(DWORD dwProcessId, HINSTANCE mod, DWORD_PTR entrypoint)
 {
 	GUI_DLL_PARAMETER guiParam;
 	guiParam.dwProcessId = dwProcessId;
 	guiParam.mod = mod;
+	guiParam.entrypoint = entrypoint;
 
 	return InitializeGui(hDllModule, (LPARAM)&guiParam);
 }

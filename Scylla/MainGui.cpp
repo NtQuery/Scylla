@@ -114,6 +114,8 @@ void MainGui::InitDllStartWithPreSelect( PGUI_DLL_PARAMETER guiParam )
 			}
 		}
 	}
+	if (guiParam->entrypoint)
+		EditOEPAddress.SetValue(guiParam->entrypoint);
 }
 
 BOOL MainGui::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)

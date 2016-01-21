@@ -13,7 +13,7 @@ const WCHAR * __stdcall ScyllaVersionInformationW();
 const char * __stdcall ScyllaVersionInformationA();
 DWORD __stdcall ScyllaVersionInformationDword();
 
-int __stdcall ScyllaStartGui(DWORD dwProcessId, HINSTANCE mod);
+int __stdcall ScyllaStartGui(DWORD dwProcessId, HINSTANCE mod, DWORD_PTR entrypoint);
 
 int __stdcall ScyllaIatSearch(DWORD dwProcessId, DWORD_PTR * iatStart, DWORD * iatSize, DWORD_PTR searchStart, BOOL advancedSearch);
 int __stdcall ScyllaIatFixAutoW(DWORD_PTR iatAddr, DWORD iatSize, DWORD dwProcessId, const WCHAR * dumpFile, const WCHAR * iatFixFile);

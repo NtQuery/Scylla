@@ -13,6 +13,7 @@ const int SCY_ERROR_PIDNOTFOUND = -5;
 typedef struct _GUI_DLL_PARAMETER {
 	DWORD dwProcessId;
 	HINSTANCE mod;
+	DWORD_PTR entrypoint;
 } GUI_DLL_PARAMETER, *PGUI_DLL_PARAMETER;
 
 int InitializeGui(HINSTANCE hInstance, LPARAM param);
