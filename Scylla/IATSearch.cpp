@@ -268,7 +268,7 @@ bool IATSearch::findIATStartAndSize(DWORD_PTR address, DWORD_PTR * addressIAT, D
     if (!baseAddress)
         return false;
 
-	dataBuffer = new BYTE[baseSize * (sizeof(DWORD_PTR)*3)];
+	dataBuffer = new (std::nothrow)BYTE[baseSize * (sizeof(DWORD_PTR)*3)];
 
     if (!dataBuffer)
         return false;
@@ -527,6 +527,8 @@ void IATSearch::filterIATPointersList( std::set<DWORD_PTR> & iatPointers )
 				lastPointer = *iter;
 			}
 		}
+		erased = false;
+		lastPointer = *iter;
 	}
 
 }
