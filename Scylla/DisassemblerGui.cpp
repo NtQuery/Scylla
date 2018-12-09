@@ -1,8 +1,11 @@
-#include "DisassemblerGui.h"
 #include <algorithm>
+
+#include "DisassemblerGui.h"
 #include "ProcessAccessHelp.h"
 #include "Architecture.h"
+
 #include <Psapi.h>
+
 #pragma comment(lib, "Psapi.lib")
 
 DisassemblerGui::DisassemblerGui(DWORD_PTR startAddress, ApiReader * apiReaderObject)
@@ -353,29 +356,29 @@ bool DisassemblerGui::getDisassemblyComment(unsigned int index)
 				#ifdef _WIN64
 				addressTemp = (DWORD_PTR)INSTRUCTION_GET_RIP_TARGET(&ProcessAccessHelp::decomposerResult[index]);
 
-				swprintf_s(tempBuffer,L"-> "PRINTF_DWORD_PTR_FULL,addressTemp);
+				swprintf_s(tempBuffer,L"-> ",PRINTF_DWORD_PTR_FULL,addressTemp);
 
 				if(ProcessAccessHelp::readMemoryFromProcess(addressTemp, sizeof(DWORD_PTR), &address))
 				{
-					swprintf_s(tempBuffer,L"%s -> "PRINTF_DWORD_PTR_FULL,tempBuffer,address);
+					swprintf_s(tempBuffer,L"%s -> ",PRINTF_DWORD_PTR_FULL,tempBuffer,address);
 				}
 				#endif
 			}
 			else if (ProcessAccessHelp::decomposerResult[index].ops[0].type == O_PC)
 			{
 				address = (DWORD_PTR)INSTRUCTION_GET_TARGET(&ProcessAccessHelp::decomposerResult[index]);
-				swprintf_s(tempBuffer,L"-> "PRINTF_DWORD_PTR_FULL,address);
+				swprintf_s(tempBuffer, L"-> ", PRINTF_DWORD_PTR_FULL, address);
 			}
 			else if (ProcessAccessHelp::decomposerResult[index].ops[0].type == O_DISP)
 			{
 				addressTemp = (DWORD_PTR)ProcessAccessHelp::decomposerResult[index].disp;
 
-				swprintf_s(tempBuffer,L"-> "PRINTF_DWORD_PTR_FULL,addressTemp);
+				swprintf_s(tempBuffer, L"-> ", PRINTF_DWORD_PTR_FULL, addressTemp);
 
 				address = 0;
 				if(ProcessAccessHelp::readMemoryFromProcess(addressTemp, sizeof(DWORD_PTR), &address))
 				{
-					swprintf_s(tempBuffer,L"%s -> "PRINTF_DWORD_PTR_FULL,tempBuffer,address);
+					swprintf_s(tempBuffer, L"%s -> ", PRINTF_DWORD_PTR_FULL, tempBuffer,address);
 				}
 			}
 		}

@@ -1,8 +1,0 @@
-Download tinyxml from here: https://sourceforge.net/projects/tinyxml/
-Copy the following files in this directory:
-tinystr.cpp
-tinyxml.cpp
-tinyxmlerror.cpp
-tinyxmlparser.cpp
-tinystr.h
-tinyxml.h
