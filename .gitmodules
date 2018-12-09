@@ -1,0 +1,9 @@
+[submodule "libs/distorm"]
+	path = libs/distorm
+	url = https://github.com/gdabah/distorm.git
+[submodule "libs/tinyxml"]
+	path = libs/tinyxml
+	url = https://github.com/icebreaker/TinyXML.git
+[submodule "libs/wtl"]
+	path = libs/wtl
+	url = https://github.com/dacci/wtl.git

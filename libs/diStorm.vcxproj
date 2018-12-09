@@ -22,16 +22,19 @@
     <ProjectGuid>{A4B94DE4-BE0E-4E7D-95E7-7B84E6F117A1}</ProjectGuid>
     <RootNamespace>diStorm</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v141_xp</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v141_xp</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -148,28 +151,28 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\decoder.c" />
-    <ClCompile Include="src\distorm.c" />
-    <ClCompile Include="src\instructions.c" />
-    <ClCompile Include="src\insts.c" />
-    <ClCompile Include="src\mnemonics.c" />
-    <ClCompile Include="src\operands.c" />
-    <ClCompile Include="src\prefix.c" />
-    <ClCompile Include="src\textdefs.c" />
-    <ClCompile Include="src\wstring.c" />
+    <ClCompile Include="distorm\src\decoder.c" />
+    <ClCompile Include="distorm\src\distorm.c" />
+    <ClCompile Include="distorm\src\instructions.c" />
+    <ClCompile Include="distorm\src\insts.c" />
+    <ClCompile Include="distorm\src\mnemonics.c" />
+    <ClCompile Include="distorm\src\operands.c" />
+    <ClCompile Include="distorm\src\prefix.c" />
+    <ClCompile Include="distorm\src\textdefs.c" />
+    <ClCompile Include="distorm\src\wstring.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\config.h" />
-    <ClInclude Include="src\decoder.h" />
+    <ClInclude Include="distorm\src\config.h" />
+    <ClInclude Include="distorm\src\decoder.h" />
     <ClInclude Include="include\distorm.h" />
-    <ClInclude Include="src\instructions.h" />
-    <ClInclude Include="src\insts.h" />
+    <ClInclude Include="distorm\src\instructions.h" />
+    <ClInclude Include="distorm\src\insts.h" />
     <ClInclude Include="include\mnemonics.h" />
-    <ClInclude Include="src\operands.h" />
-    <ClInclude Include="src\prefix.h" />
-    <ClInclude Include="src\textdefs.h" />
-    <ClInclude Include="src\wstring.h" />
-    <ClInclude Include="src\x86defs.h" />
+    <ClInclude Include="distorm\src\operands.h" />
+    <ClInclude Include="distorm\src\prefix.h" />
+    <ClInclude Include="distorm\src\textdefs.h" />
+    <ClInclude Include="distorm\src\wstring.h" />
+    <ClInclude Include="distorm\src\x86defs.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
