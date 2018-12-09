@@ -7,7 +7,7 @@
 #include "StringConversion.h"
 #include "PeParser.h"
 
-stdext::hash_multimap<DWORD_PTR, ApiInfo *> ApiReader::apiList; //api look up table
+std::unordered_map<DWORD_PTR, ApiInfo *> ApiReader::apiList; //api look up table
 std::map<DWORD_PTR, ImportModuleThunk> *  ApiReader::moduleThunkList; //store found apis
 
 DWORD_PTR ApiReader::minApiAddress = (DWORD_PTR)-1;
@@ -679,7 +679,7 @@ bool ApiReader::isApiAddressValid(DWORD_PTR virtualAddress)
 
 ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isSuspect)
 {
-	stdext::hash_multimap<DWORD_PTR, ApiInfo *>::iterator it1, it2;
+	std::unordered_map<DWORD_PTR, ApiInfo *>::iterator it1, it2;
 	size_t c = 0;
 	size_t countDuplicates = apiList.count(virtualAddress);
 	int countHighPriority = 0;
@@ -762,7 +762,7 @@ ApiInfo * ApiReader::getApiByVirtualAddress(DWORD_PTR virtualAddress, bool * isS
 	return (ApiInfo *) 1; 
 }
 
-ApiInfo * ApiReader::getScoredApi(stdext::hash_multimap<DWORD_PTR, ApiInfo *>::iterator it1,size_t countDuplicates, bool hasName, bool hasUnicodeAnsiName, bool hasNoUnderlineInName, bool hasPrioDll,bool hasPrio0Dll,bool hasPrio1Dll, bool hasPrio2Dll, bool firstWin )
+ApiInfo * ApiReader::getScoredApi(std::unordered_map<DWORD_PTR, ApiInfo *>::iterator it1,size_t countDuplicates, bool hasName, bool hasUnicodeAnsiName, bool hasNoUnderlineInName, bool hasPrioDll,bool hasPrio0Dll,bool hasPrio1Dll, bool hasPrio2Dll, bool firstWin )
 {
 	ApiInfo * foundApi = 0;
 	ApiInfo * foundMatchingApi = 0;
@@ -1096,7 +1096,7 @@ void ApiReader::clearAll()
 	minApiAddress = (DWORD_PTR)-1;
 	maxApiAddress = 0;
 
-	for ( stdext::hash_map<DWORD_PTR, ApiInfo *>::iterator it = apiList.begin(); it != apiList.end(); ++it )
+	for ( std::unordered_map<DWORD_PTR, ApiInfo *>::iterator it = apiList.begin(); it != apiList.end(); ++it )
 	{
 		delete it->second;
 	}
