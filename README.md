@@ -17,6 +17,21 @@ But it may work with XP and Vista, too.
 
 Source code is licensed under GNU GENERAL PUBLIC LICENSE v3.0
 
+Building
+--------
+
+  Prerequisite:
+  * Visual Studio 2017 or newer
+  * Windows Desktop Development components
+  * Windows SDK version 8.1+
+  * Git for Windows
+
+Clone this repo and open up your `Developer Command Prompt for VS` to the code folder.
+
+```shell
+> git submodule update --init --recursive
+> msbuild Scylla
+```
 
 Known Bugs
 ----------

@@ -1,7 +1,15 @@
-To compile Scylla you need to have VS2008 installed.
-In addition to that you need source codes for the following libraries:
-diStorm
-tinyxml
-WTL
+Building
+--------
 
-See the corresponding README files for installation instructions.
+  Prerequisite:
+  * Visual Studio 2017 or newer
+  * Windows Desktop Development components
+  * Windows SDK version 8.1+
+  * Git for Windows
+
+Clone this repo and open up your `Developer Command Prompt for VS` to the code folder.
+
+```shell
+> git submodule update --init --recursive
+> msbuild Scylla
+```
