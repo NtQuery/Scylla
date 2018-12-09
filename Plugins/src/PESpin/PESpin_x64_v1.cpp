@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "ScyllaPlugin.h"
 
 const char logFileName[] = "logfile_scylla_plugin.txt";
@@ -486,7 +488,7 @@ BOOL writeToLogFile(const char * text)
 #ifdef UNICODE
 DllExport wchar_t * __cdecl ScyllaPluginNameW()
 {
-	return TEXT(PLUGIN_NAME);
+	return (wchar_t*)TEXT(PLUGIN_NAME);
 }
 #else
 DllExport char * __cdecl ScyllaPluginNameA()

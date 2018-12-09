@@ -1,3 +1,4 @@
+#include "stdafx.h"
 
 #include "ScyllaPlugin.h"
 
@@ -20,10 +21,10 @@ void resolveImports();
 
 #define PLUGIN_NAME "PECompact v2.x"
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason,LPVOID lpvReserved)
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
-	switch(fdwReason) 
-	{ 
+	switch (fdwReason)
+	{
 	case DLL_PROCESS_ATTACH:
 		// Initialize once for each new process.
 		// Return FALSE to fail DLL load.
@@ -63,7 +64,7 @@ BOOL getMappedView()
 		return FALSE;
 	}
 
-	lpViewOfFile = MapViewOfFile(hMapFile, FILE_MAP_ALL_ACCESS,	0, 0, 0); //map the view with full access
+	lpViewOfFile = MapViewOfFile(hMapFile, FILE_MAP_ALL_ACCESS, 0, 0, 0); //map the view with full access
 
 	if (lpViewOfFile == 0)
 	{
@@ -126,7 +127,7 @@ void resolveImports()
 			scyllaExchange->status = SCYLLA_STATUS_UNSUPPORTED_PROTECTION;
 			break;
 		}
-		
+
 		unresolvedImport++; //next pointer to struct
 	}
 }
@@ -148,12 +149,12 @@ BOOL writeToLogFile(const char * text)
 	{
 		if (buffer[i] == '\\')
 		{
-			buffer[i+1] = 0x00;
+			buffer[i + 1] = 0x00;
 			break;
 		}
 	}
 
-	if (lstrcatA(buffer,logFileName) == 0) //append log file name to path
+	if (lstrcatA(buffer, logFileName) == 0) //append log file name to path
 	{
 		return FALSE;
 	}
@@ -175,7 +176,7 @@ BOOL writeToLogFile(const char * text)
 	{
 		wfRet = FALSE;
 	}
-	
+
 	CloseHandle(hFile);
 	return wfRet;
 }
@@ -184,7 +185,7 @@ BOOL writeToLogFile(const char * text)
 #ifdef UNICODE
 DllExport wchar_t * __cdecl ScyllaPluginNameW()
 {
-	return TEXT(PLUGIN_NAME);
+	return (wchar_t*)TEXT(PLUGIN_NAME);
 }
 #else
 DllExport char * __cdecl ScyllaPluginNameA()

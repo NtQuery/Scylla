@@ -1,3 +1,5 @@
+#include "stdafx.h"
+
 #include "ScyllaPlugin.h"
 
 //remove c runtime library
@@ -7,6 +9,7 @@
 //typedef DWORD (__cdecl * def_ImpREC_TraceCDE)(DWORD hFileMap, DWORD dwSizeMap, DWORD dwTimeOut, DWORD dwToTrace, DWORD dwExactCall);
 typedef DWORD (* def_voidFunction)();
 
+#define PLUGIN_NAME "ImprecWrapper"
 #define PLUGIN_IMPREC_EXCHANGE_DLL_PATH "ScyllaImprecPluginExchangePath"
 #define PLUGIN_MAPPING_NAME "Imprec_plugin_exchanging"
 
@@ -81,6 +84,18 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason,LPVOID lpvReserved)
 	}
 	return TRUE;  // Successful DLL_PROCESS_ATTACH.
 }
+
+#ifdef UNICODE
+DllExport wchar_t * __cdecl ScyllaPluginNameW()
+{
+	return (wchar_t*)TEXT(PLUGIN_NAME);
+}
+#else
+DllExport char * __cdecl ScyllaPluginNameA()
+{
+	return PLUGIN_NAME;
+}
+#endif
 
 /*void checkCallingConvention() 
 {
