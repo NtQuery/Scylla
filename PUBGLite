@@ -1,0 +1,12 @@
+struct
+{
+	DWORD GNames = 0x42561D8; // 48 89 1D ? ? ? ? (not unique) func addr:  40 55 53 57 48 8D AC 24 ? ? ? ? 48 81 EC ? ? ? ? E8 ? ? ? ? (func which contains Gnames address)
+	DWORD UWorld = 0x4365CF8; // (48 8B 1D ?? ?? ?? ?? 48 85 DB 74 3B 41)
+	DWORD GObjects = 0x425AD00; // 48 8B 0D ? ? ? ? 48 8D 04 6D ? ? ? ? - 0x10
+}baseaddrs;
+struct
+{
+	DWORD LineOfSight = 0x12AC080; // (40 55 53 56 41 55 41 56 48 8D AC 24 ? ? ? ? 48 81 EC ? ? ? ? 0F 29 B4 24 ? ? ? ? )
+	DWORD WorldToScreen = 0x15DB150; // (48 89 5C 24 ? 48 89 74 24 ? 57 48 81 EC ? ? ? ? 41 0F B6 F9)
+	DWORD GetBoneMatrix = 0x1513D20; // (relative_jump (E8 ? ? ? ? F3 0F 10 48 ? F3 0F 10 40) )
+}functionsaddrs;
