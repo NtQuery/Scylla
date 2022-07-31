@@ -210,7 +210,7 @@ bool ProcessAccessHelp::readMemoryFromProcess(DWORD_PTR address, SIZE_T size, LP
 #ifdef DEBUG_COMMENTS
 		Scylla::debugLog.log(L"readMemoryFromProcess :: Error ReadProcessMemory %X %X err: %u", address, size, GetLastError());
 #endif
-		if (!VirtualProtectEx(hProcess, (LPVOID)address, size, PAGE_READWRITE, &dwProtect))
+		if (!VirtualProtectEx(hProcess, (LPVOID)address, size, PAGE_READONLY, &dwProtect)) // Just try to get Read access, write combination cannot be obtained under certain circumstances and this is abused by some packers
 		{
 #ifdef DEBUG_COMMENTS
 			Scylla::debugLog.log(L"readMemoryFromProcess :: Error VirtualProtectEx %X %X err: %u", address,size, GetLastError());
