@@ -142,8 +142,8 @@ bool ProcessAccessHelp::readMemoryPartlyFromProcess(DWORD_PTR address, SIZE_T si
 			{
 				bytesToRead = size - readBytes;
 			}
-
-			if (memBasic.State == MEM_COMMIT)
+			
+			if (memBasic.State == MEM_COMMIT && memBasic.Protect != PAGE_NOACCESS)
 			{
 				if (!readMemoryFromProcess(addressPart, bytesToRead, (LPVOID)((DWORD_PTR)dataBuffer + readBytes)))
 				{

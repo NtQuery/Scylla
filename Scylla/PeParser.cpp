@@ -539,7 +539,7 @@ bool PeParser::readSectionFromFile(const DWORD readOffset, PeFileSection & peFil
 
 bool PeParser::readSectionFrom(const DWORD_PTR readOffset, PeFileSection & peFileSection, const bool isProcess)
 {
-	const DWORD maxReadSize = 100;
+	const DWORD maxReadSize = 0x100;
 	DWORD currentReadSize;
 	BYTE data[maxReadSize];
 	bool retValue = true;
